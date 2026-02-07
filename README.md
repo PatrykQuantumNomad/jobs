@@ -77,7 +77,7 @@ Click "Import Pipeline Results" in the nav bar, or run the pipeline first and th
 The orchestrator runs 5 phases sequentially:
 
 | Phase | Description |
-|-------|-------------|
+| ------- | ------------- |
 | **0 - Setup** | Validates Python version, credentials, directories |
 | **1 - Login** | Opens browser, logs into Indeed/Dice (uses cached sessions) |
 | **2 - Search** | Runs 10 search queries per platform, extracts job cards |
@@ -87,15 +87,18 @@ The orchestrator runs 5 phases sequentially:
 ## Platform Details
 
 ### Indeed
+
 - **Auth:** Google OAuth (manual first login, session cached afterward)
 - **Anti-bot:** HIGH - uses Playwright stealth + system Chrome
 - **First run:** Browser opens, you log in via Google, press Enter in terminal
 
 ### Dice
+
 - **Auth:** Email + password from `.env`
 - **Anti-bot:** LOW - standard delays sufficient
 
 ### RemoteOK
+
 - **Auth:** None required (public API)
 - **Anti-bot:** None - pure HTTP, no browser needed
 
@@ -115,7 +118,7 @@ DICE_PASSWORD=your-password
 All results are written to `job_pipeline/`:
 
 | File | Contents |
-|------|----------|
+| ------ | ---------- |
 | `raw_indeed.json` | Raw Indeed results before scoring |
 | `raw_dice.json` | Raw Dice results before scoring |
 | `raw_remoteok.json` | Raw RemoteOK results before scoring |
@@ -126,7 +129,7 @@ All results are written to `job_pipeline/`:
 ## Scoring Rubric
 
 | Score | Criteria |
-|-------|----------|
+| ------- | ---------- |
 | **5** | Title match + tech stack overlap + remote + senior level + $200K+ |
 | **4** | Title match + partial tech overlap + remote + senior level |
 | **3** | Related title + some tech overlap + remote or Ontario hybrid |
@@ -160,7 +163,7 @@ uv add --group dev <package>  # dev-only dependency
 
 ## Project Structure
 
-```
+```bash
 .
 ├── pyproject.toml          # Project config, dependencies, scripts
 ├── uv.lock                 # Locked dependency versions
@@ -190,16 +193,32 @@ uv add --group dev <package>  # dev-only dependency
 └── .env                    # Credentials (never commit)
 ```
 
+## Reset Pipeline Data
+
+To wipe all discovered jobs and start fresh (empty database, no raw files):
+
+```bash
+rm -rf job_pipeline/jobs.db job_pipeline/jobs.db-shm job_pipeline/jobs.db-wal
+rm -f job_pipeline/raw_*.json job_pipeline/discovered_jobs.json job_pipeline/tracker.md
+rm -f job_pipeline/descriptions/*.md
+```
+
+The database and output files are recreated automatically the next time you run the pipeline or start the web dashboard.
+
 ## Troubleshooting
 
 ### Indeed login fails / Cloudflare challenge
+
 Run in headed mode (`--headed`) and solve the CAPTCHA manually in the browser window. The session is cached for future runs.
 
 ### "Not Found" on Indeed detail pages
+
 ~50% of Indeed cards have bogus tracking IDs that produce 404s. These are automatically detected and skipped. Valid jobs still get full descriptions.
 
 ### Google blocks OAuth ("controlled by automated test software")
+
 The stealth config uses `channel="chrome"` (system Chrome) with automation flags disabled. If Google still blocks, clear `browser_sessions/indeed/` and re-login.
 
 ### Selectors break (0 jobs extracted)
+
 Indeed and Dice change their DOM frequently. Update selectors in `platforms/indeed_selectors.py` or `platforms/dice_selectors.py`. Run with `--headed` to visually inspect the page.
