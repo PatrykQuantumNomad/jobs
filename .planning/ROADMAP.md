@@ -145,14 +145,13 @@ Plans:
   3. The system checks for duplicate applications before submitting (has this job been applied to before?) and warns the user
   4. Apply actions are logged in the job's activity timeline with timestamps, mode used, and outcome (success/failure/skipped)
   5. For external ATS jobs (Greenhouse, Lever), the system opens the apply URL and pre-fills known fields where possible
-**Plans**: TBD
+**Plans:** 4 plans
 
 Plans:
-- [ ] 08-01: Apply mode configuration and resolution
-- [ ] 08-02: Apply engine with behavioral guardrails
-- [ ] 08-03: Dashboard-to-orchestrator bridge (SSE)
-- [ ] 08-04: Pre-apply duplicate detection
-- [ ] 08-05: External ATS form filling
+- [ ] 08-01-PLAN.md -- Apply config models (ApplyMode, ApplyConfig, ApplyEvent), duplicate detection, config.yaml integration
+- [ ] 08-02-PLAN.md -- Apply engine with thread bridge, event emission, enhanced form filler, event-based confirmation
+- [ ] 08-03-PLAN.md -- Dashboard SSE integration (sse-starlette, htmx SSE extension, apply endpoints, UI)
+- [ ] 08-04-PLAN.md -- Smoke tests and human verification of full apply flow
 
 ## Progress
 
@@ -170,4 +169,4 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 | 5. Dashboard Core | 4/4 | Complete | 2026-02-07 |
 | 6. Dashboard Analytics | 2/2 | Complete | 2026-02-07 |
 | 7. AI Resume & Cover Letter | 4/4 | Complete | 2026-02-07 |
-| 8. One-Click Apply | 0/5 | Not started | - |
+| 8. One-Click Apply | 0/4 | Not started | - |
