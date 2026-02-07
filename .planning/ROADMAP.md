@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Config Externalization** - Single YAML config replaces hardcoded Python settings
 - [x] **Phase 2: Platform Architecture** - Pluggable platform registry with auto-discovery
-- [ ] **Phase 3: Discovery Engine** - Fuzzy dedup, score breakdowns, salary normalization, new job detection
+- [x] **Phase 3: Discovery Engine** - Fuzzy dedup, score breakdowns, salary normalization, new job detection
 - [ ] **Phase 4: Scheduled Automation** - Unattended pipeline runs via cron/launchd
 - [ ] **Phase 5: Dashboard Core** - Search, extended status workflow, bulk actions, export, activity log
 - [ ] **Phase 6: Dashboard Analytics** - Stats, metrics, and kanban board view
@@ -69,7 +69,7 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md -- New processing modules (salary.py, dedup.py), scorer breakdown refactor, model updates
 - [x] 03-02-PLAN.md -- DB schema migration (versioned), orchestrator wiring for salary/dedup/breakdown/delta
-- [ ] 03-03-PLAN.md -- Dashboard UI: NEW badges, inline score breakdown, salary display, company aliases
+- [x] 03-03-PLAN.md -- Dashboard UI: NEW badges, inline score breakdown, salary display, company aliases
 
 ### Phase 4: Scheduled Automation
 **Goal**: The pipeline runs automatically on a schedule without manual CLI invocation, producing fresh results daily
@@ -168,7 +168,7 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 |-------|----------------|--------|-----------|
 | 1. Config Externalization | 3/3 | Complete | 2026-02-07 |
 | 2. Platform Architecture | 2/2 | Complete | 2026-02-07 |
-| 3. Discovery Engine | 2/3 | In progress | - |
+| 3. Discovery Engine | 3/3 | Complete | 2026-02-07 |
 | 4. Scheduled Automation | 0/2 | Not started | - |
 | 5. Dashboard Core | 0/5 | Not started | - |
 | 6. Dashboard Analytics | 0/3 | Not started | - |

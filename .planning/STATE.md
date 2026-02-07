@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 ## Current Position
 
 Phase: 3 of 8 (Discovery Engine)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-07 -- Completed 03-02-PLAN.md (DB migration + orchestrator wiring)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-07 -- Completed 03-03-PLAN.md (dashboard UI -- Phase 3 complete)
 
-Progress: [#######░░░░░░░░░░░░░░░░░░░░░░░] 7/30 (~23%)
+Progress: [########░░░░░░░░░░░░░░░░░░░░░░] 8/30 (~27%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 5.1 min
-- Total execution time: 36 min
+- Total plans completed: 8
+- Average duration: 5.0 min
+- Total execution time: 40 min
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [#######░░░░░░░░░░░░░░░░░░░░�
 |-------|-------|-------|----------|
 | 01-config-externalization | 3/3 | 16 min | 5.3 min |
 | 02-platform-architecture | 2/2 | 9 min | 4.5 min |
-| 03-discovery-engine | 2/3 | 11 min | 5.5 min |
+| 03-discovery-engine | 3/3 | 15 min | 5.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (3 min), 02-02 (6 min), 03-01 (6 min), 03-02 (5 min)
+- Last 5 plans: 02-02 (6 min), 03-01 (6 min), 03-02 (5 min), 03-03 (4 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -73,6 +73,10 @@ Recent decisions affecting current work:
 - [03-02]: ON CONFLICT preserves first_seen_at, updates last_seen_at
 - [03-02]: Removed old _deduplicate entirely -- fuzzy_deduplicate is sole dedup path
 - [03-02]: backfill_score_breakdowns filters dict keys through Job.model_fields
+- [03-03]: parse_json filter returns {} on None/empty/invalid JSON for safe template rendering
+- [03-03]: NEW badge in Score column (not separate column) to keep table compact
+- [03-03]: No salary placeholder for missing data -- blank cell, not "N/A" or dash
+- [03-03]: Tech keywords shown only on detail page, not dashboard cards, to avoid clutter
 
 ### Pending Todos
 
@@ -86,5 +90,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 3 plan 2 complete. Ready for 03-03 (dashboard UI for new columns)
-Resume file: .planning/phases/03-discovery-engine/03-03-PLAN.md
+Stopped at: Phase 3 complete (all 3 plans). Ready for Phase 4 (Scheduled Automation)
+Resume file: .planning/ROADMAP.md (Phase 4 planning)
