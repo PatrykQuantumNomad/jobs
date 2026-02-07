@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 ## Current Position
 
 Phase: 2 of 8 (Platform Architecture)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-07 -- Completed 02-01-PLAN.md (Protocol definitions, registry, mixin)
+Last activity: 2026-02-07 -- Completed 02-02-PLAN.md (Platform adapter migration + orchestrator refactor)
 
-Progress: [####░░░░░░░░░░░░░░░░░░░░░░░░░░] 4/30 (~13%)
+Progress: [#####░░░░░░░░░░░░░░░░░░░░░░░░░] 5/30 (~17%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 4.8 min
-- Total execution time: 19 min
+- Total plans completed: 5
+- Average duration: 5.0 min
+- Total execution time: 25 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-config-externalization | 3/3 | 16 min | 5.3 min |
-| 02-platform-architecture | 1/3 | 3 min | 3.0 min |
+| 02-platform-architecture | 2/3 | 9 min | 4.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min), 01-02 (5 min), 01-03 (5 min), 02-01 (3 min)
-- Trend: improving
+- Last 5 plans: 01-02 (5 min), 01-03 (5 min), 02-01 (3 min), 02-02 (6 min)
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -60,6 +60,9 @@ Recent decisions affecting current work:
 - [02-01]: BrowserPlatform.init(context) receives BrowserContext; APIPlatform.init() takes no args
 - [02-01]: inspect.signature() validates parameter counts (not types) for protocol compliance
 - [02-01]: Registry imports protocols lazily inside decorator to avoid circular dependencies
+- [02-02]: Big-bang migration -- all three adapters migrated together for atomic consistency
+- [02-02]: RemoteOK async-to-sync conversion eliminates asyncio from orchestrator entirely
+- [02-02]: No --platforms choices constraint -- registry validates at runtime via KeyError
 
 ### Pending Todos
 
@@ -73,5 +76,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed 02-01-PLAN.md (Protocol definitions, registry, mixin)
+Stopped at: Completed 02-02-PLAN.md (Platform adapter migration + orchestrator refactor)
 Resume file: None
