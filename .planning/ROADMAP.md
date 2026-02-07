@@ -79,11 +79,11 @@ Plans:
   1. User configures a schedule in `config.yaml` (e.g., "daily at 8am") and the system generates the appropriate cron/launchd configuration
   2. Scheduled runs execute the full pipeline (search, score, persist to SQLite) without any human interaction required for the discovery phases
   3. Run history is logged so the user can see when the last run happened, how many new jobs were found, and whether any errors occurred
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 04-01: Scheduler configuration and runner
-- [ ] 04-02: Run history and error logging
+- [ ] 04-01-PLAN.md -- ScheduleConfig model, --scheduled flag, input() guards, scheduler.py CLI (launchd plist management)
+- [ ] 04-02-PLAN.md -- run_history table, pipeline run recording, /runs dashboard page
 
 ### Phase 5: Dashboard Core
 **Goal**: The web dashboard becomes the primary interface for managing the job search -- users can find specific jobs, track them through an application pipeline, take bulk actions, export data, and see a full activity timeline per job
