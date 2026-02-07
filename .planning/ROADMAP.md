@@ -51,26 +51,25 @@ Plans:
   4. Existing Indeed, Dice, and RemoteOK adapters work identically after migration to the new architecture
 
 Plans:
-- [ ] 02-01-PLAN.md -- Protocol definitions (BrowserPlatform, APIPlatform), registry decorator with fail-fast validation, and BrowserPlatformMixin
-- [ ] 02-02-PLAN.md -- Big-bang migration: all three adapters to protocols, orchestrator to registry-based iteration, auto-discovery in __init__.py, BasePlatform ABC deleted
+- [x] 02-01-PLAN.md -- Protocol definitions (BrowserPlatform, APIPlatform), registry decorator with fail-fast validation, and BrowserPlatformMixin
+- [x] 02-02-PLAN.md -- Big-bang migration: all three adapters to protocols, orchestrator to registry-based iteration, auto-discovery in __init__.py, BasePlatform ABC deleted
 
 ### Phase 3: Discovery Engine
 **Goal**: The scrape-and-score loop produces smarter, more transparent results -- fuzzy company matching catches duplicates the current exact-match misses, score breakdowns explain why each job scored what it did, salary data is comparable across platforms, and repeat runs highlight what is new
 **Depends on**: Phase 1
 **Requirements**: DISC-01, DISC-02, DISC-03, CFG-03
+**Plans:** 3 plans
 **Success Criteria** (what must be TRUE):
   1. After a repeat pipeline run, newly discovered jobs are flagged as "new" in the dashboard while previously seen jobs are not
   2. Jobs from the same company posted under variant names ("Google" vs "Google LLC" vs "Alphabet") are merged into a single listing
   3. Each scored job shows a point-by-point breakdown (e.g., "title +2, tech overlap +2, remote +1, salary 0") visible in the dashboard detail view
   4. Salary figures from all platforms are normalized to annual USD so "$175000", "USD 224,400.00 per year", and "150000-180000 CAD" are directly comparable
   5. Delta detection persists across runs -- the system remembers which jobs it has seen before using the SQLite database
-**Plans**: TBD
 
 Plans:
-- [ ] 03-01: Salary normalization
-- [ ] 03-02: Fuzzy deduplication engine
-- [ ] 03-03: Score breakdown and transparency
-- [ ] 03-04: New job detection (delta tracking)
+- [ ] 03-01-PLAN.md -- New processing modules (salary.py, dedup.py), scorer breakdown refactor, model updates
+- [ ] 03-02-PLAN.md -- DB schema migration (versioned), orchestrator wiring for salary/dedup/breakdown/delta
+- [ ] 03-03-PLAN.md -- Dashboard UI: NEW badges, inline score breakdown, salary display, company aliases
 
 ### Phase 4: Scheduled Automation
 **Goal**: The pipeline runs automatically on a schedule without manual CLI invocation, producing fresh results daily
@@ -169,7 +168,7 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 |-------|----------------|--------|-----------|
 | 1. Config Externalization | 3/3 | Complete | 2026-02-07 |
 | 2. Platform Architecture | 2/2 | Complete | 2026-02-07 |
-| 3. Discovery Engine | 0/4 | Not started | - |
+| 3. Discovery Engine | 0/3 | Not started | - |
 | 4. Scheduled Automation | 0/2 | Not started | - |
 | 5. Dashboard Core | 0/5 | Not started | - |
 | 6. Dashboard Analytics | 0/3 | Not started | - |
