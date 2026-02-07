@@ -13,10 +13,13 @@ from config import (
     ensure_directories,
     get_settings,
 )
+from dedup import fuzzy_deduplicate
 from models import Job, JobStatus
 from platforms import get_all_platforms, get_browser_context, close_browser
 from platforms.registry import get_platform, PlatformInfo
+from salary import parse_salary, parse_salary_ints, NormalizedSalary
 from scorer import JobScorer
+from webapp import db as webdb
 
 
 class Orchestrator:
@@ -31,6 +34,8 @@ class Orchestrator:
         self.discovered_jobs: list[Job] = []
         self.headless = headless
         self._failed_logins: set[str] = set()
+        self.searched_platforms: list[str] = []
+        self.run_timestamp: str = ""
 
     # -- Full pipeline ---------------------------------------------------------
 
@@ -42,14 +47,32 @@ class Orchestrator:
         for name in platforms:
             get_platform(name)  # Raises KeyError if not registered
 
+        self.run_timestamp = datetime.now().isoformat()
+
         print("=" * 60)
         print("  JOB SEARCH AUTOMATION PIPELINE")
         print("=" * 60)
 
         self.phase_0_setup()
         self.phase_1_login(platforms)
+
+        # Track which platforms were actually searched (exclude failed logins)
+        self.searched_platforms = [p for p in platforms if p not in self._failed_logins]
+
         self.phase_2_search(platforms)
         self.phase_3_score()
+
+        # Delta cleanup: remove stale jobs from searched platforms
+        if self.searched_platforms:
+            stale_count = webdb.remove_stale_jobs(
+                self.searched_platforms, self.run_timestamp
+            )
+            if stale_count:
+                print(f"  Removed {stale_count} stale jobs")
+
+        # One-time backfill: score breakdowns for legacy jobs
+        self._backfill_breakdowns()
+
         self.phase_4_apply()
 
         self._print_summary()
@@ -177,12 +200,59 @@ class Orchestrator:
         all_jobs = self._load_raw_results()
         print(f"  Total raw jobs: {len(all_jobs)}")
 
-        unique = self._deduplicate(all_jobs)
+        # Salary normalization
+        for job in all_jobs:
+            if job.salary_min is not None or job.salary_max is not None:
+                # RemoteOK-style integer salaries
+                sal = parse_salary_ints(job.salary_min, job.salary_max)
+            else:
+                sal = parse_salary(job.salary)
+
+            if sal.min_annual is not None:
+                job.salary_min = sal.min_annual
+            if sal.max_annual is not None:
+                job.salary_max = sal.max_annual
+            if sal.display:
+                job.salary_display = sal.display
+            if sal.currency:
+                job.salary_currency = sal.currency
+
+        # Fuzzy deduplication (replaces old exact-match _deduplicate)
+        unique = fuzzy_deduplicate(all_jobs)
         print(f"  After dedup:    {len(unique)}")
 
-        scored = self.scorer.score_batch(unique)
+        # Score with breakdowns
+        scored_pairs = self.scorer.score_batch_with_breakdown(unique)
 
-        filtered = [j for j in scored if (j.score or 0) >= 3]
+        # Persist to DB with new fields
+        for job, breakdown in scored_pairs:
+            webdb.upsert_job({
+                "id": job.id,
+                "platform": job.platform,
+                "title": job.title,
+                "company": job.company,
+                "location": job.location,
+                "url": job.url,
+                "salary": job.salary,
+                "salary_min": job.salary_min,
+                "salary_max": job.salary_max,
+                "apply_url": job.apply_url,
+                "description": job.description,
+                "posted_date": job.posted_date,
+                "tags": job.tags,
+                "easy_apply": job.easy_apply,
+                "score": job.score,
+                "status": job.status.value if isinstance(job.status, JobStatus) else job.status,
+                "applied_date": job.applied_date,
+                "notes": job.notes,
+                "score_breakdown": breakdown.to_dict(),
+                "company_aliases": job.company_aliases,
+                "salary_display": job.salary_display,
+                "salary_currency": job.salary_currency,
+            })
+
+        scored_jobs = [job for job, _ in scored_pairs]
+        filtered = [j for j in scored_jobs if (j.score or 0) >= 3]
         print(f"  Score 3+:       {len(filtered)}")
 
         self._save_scored(filtered)
@@ -202,23 +272,6 @@ class Orchestrator:
                 jobs.append(Job(**item))
         return jobs
 
-    def _deduplicate(self, jobs: list[Job]) -> list[Job]:
-        seen: dict[str, Job] = {}
-        for job in jobs:
-            key = job.dedup_key()
-            if key not in seen:
-                seen[key] = job
-            else:
-                existing = seen[key]
-                # Prefer the version with more data
-                has_salary = bool(job.salary_min or job.salary_max)
-                existing_has = bool(existing.salary_min or existing.salary_max)
-                if (has_salary and not existing_has) or (
-                    len(job.description) > len(existing.description)
-                ):
-                    seen[key] = job
-        return list(seen.values())
-
     def _save_scored(self, jobs: list[Job]) -> None:
         path = JOB_PIPELINE_DIR / "discovered_jobs.json"
         data = [j.model_dump(mode="json") for j in jobs]
@@ -233,8 +286,8 @@ class Orchestrator:
             path = JOB_DESCRIPTIONS_DIR / filename
 
             salary_line = (
-                f"**Salary:** ${job.salary_min:,}--${job.salary_max:,}\n"
-                if job.salary_min
+                f"**Salary:** {job.salary_display}\n"
+                if job.salary_display
                 else "**Salary:** Not listed\n"
             )
 
@@ -273,11 +326,7 @@ class Orchestrator:
             "|-------|---------|-------|----------|--------|----------|--------|\n",
         ]
         for j in sorted(jobs, key=lambda x: (x.score or 0), reverse=True):
-            sal = (
-                f"${j.salary_min // 1000}K--${j.salary_max // 1000}K"
-                if j.salary_min and j.salary_max
-                else "N/A"
-            )
+            sal = j.salary_display if j.salary_display else "N/A"
             lines.append(
                 f"| {j.score} | {j.company} | {j.title} | "
                 f"{j.location} | {sal} | {j.platform} | {j.status} |\n"
@@ -285,6 +334,20 @@ class Orchestrator:
 
         path.write_text("".join(lines))
         print(f"  Tracker updated -> {path}")
+
+    # -- Backfill --------------------------------------------------------------
+
+    def _backfill_breakdowns(self) -> None:
+        """One-time backfill: add score breakdowns to legacy scored jobs."""
+        def _scorer_fn(job_dict: dict) -> tuple[int, dict]:
+            job = Job(**{k: v for k, v in job_dict.items()
+                         if k in Job.model_fields and v is not None})
+            score, breakdown = self.scorer.score_job_with_breakdown(job)
+            return score, breakdown.to_dict()
+
+        count = webdb.backfill_score_breakdowns(_scorer_fn)
+        if count:
+            print(f"  Backfilled {count} score breakdowns")
 
     # -- Phase 4: apply (human-in-the-loop) ------------------------------------
 
@@ -299,11 +362,7 @@ class Orchestrator:
 
         print(f"\n  {len(top)} top-scoring jobs:\n")
         for idx, j in enumerate(top, 1):
-            sal = (
-                f"${j.salary_min // 1000}K--${j.salary_max // 1000}K"
-                if j.salary_min and j.salary_max
-                else "N/A"
-            )
+            sal = j.salary_display if j.salary_display else "N/A"
             print(f"  {idx}. [{j.score}/5] {j.company} -- {j.title}")
             print(f"     Salary: {sal}  |  Location: {j.location}  |  {j.platform}")
             print(f"     URL: {j.url}\n")
