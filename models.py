@@ -40,6 +40,13 @@ class Job(BaseModel):
     tags: list[str] = Field(default_factory=list)
     easy_apply: bool = False
 
+    # Salary normalization
+    salary_display: str = ""
+    salary_currency: str = "USD"
+
+    # Deduplication
+    company_aliases: list[str] = Field(default_factory=list)
+
     # Scoring & tracking
     score: int | None = Field(default=None, ge=1, le=5)
     status: JobStatus = JobStatus.DISCOVERED
