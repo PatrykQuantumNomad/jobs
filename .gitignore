@@ -1,0 +1,29 @@
+# Environment
+.env
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Browser sessions (contain login cookies/localStorage)
+browser_sessions/
+
+# Debug artifacts
+debug_screenshots/
+
+# Generated job data
+job_pipeline/*.json
+job_pipeline/descriptions/*.md
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo

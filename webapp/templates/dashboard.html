@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Job Tracker{% endblock %}
+
+{% block content %}
+<!-- Stats Bar -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow-sm p-4 border">
+        <div class="text-sm text-gray-500">Total Jobs</div>
+        <div class="text-2xl font-bold">{{ stats.total }}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-4 border">
+        <div class="text-sm text-gray-500">Score 5</div>
+        <div class="text-2xl font-bold score-5">{{ stats.by_score.get(5, 0) }}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-4 border">
+        <div class="text-sm text-gray-500">Score 4</div>
+        <div class="text-2xl font-bold score-4">{{ stats.by_score.get(4, 0) }}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-4 border">
+        <div class="text-sm text-gray-500">Applied</div>
+        <div class="text-2xl font-bold text-purple-600">{{ stats.by_status.get('applied', 0) }}</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-lg shadow-sm border p-4 mb-6">
+    <form method="get" action="/" class="flex flex-wrap items-center gap-4">
+        <div>
+            <label class="text-xs text-gray-500 block mb-1">Min Score</label>
+            <select name="score" class="border rounded px-3 py-1.5 text-sm">
+                <option value="">All</option>
+                {% for s in [5, 4, 3, 2, 1] %}
+                <option value="{{ s }}" {% if filters.score == s %}selected{% endif %}>{{ s }}+</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="text-xs text-gray-500 block mb-1">Platform</label>
+            <select name="platform" class="border rounded px-3 py-1.5 text-sm">
+                <option value="">All</option>
+                {% for p in stats.by_platform.keys() %}
+                <option value="{{ p }}" {% if filters.platform == p %}selected{% endif %}>{{ p }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="text-xs text-gray-500 block mb-1">Status</label>
+            <select name="status" class="border rounded px-3 py-1.5 text-sm">
+                <option value="">All</option>
+                {% for s in statuses %}
+                <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="text-xs text-gray-500 block mb-1">Sort</label>
+            <select name="sort" class="border rounded px-3 py-1.5 text-sm">
+                {% for opt in [("score", "Score"), ("company", "Company"), ("title", "Title"), ("created_at", "Date Added"), ("salary_min", "Salary")] %}
+                <option value="{{ opt[0] }}" {% if filters.sort == opt[0] %}selected{% endif %}>{{ opt[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="text-xs text-gray-500 block mb-1">Direction</label>
+            <select name="dir" class="border rounded px-3 py-1.5 text-sm">
+                <option value="desc" {% if filters.dir == 'desc' %}selected{% endif %}>Desc</option>
+                <option value="asc" {% if filters.dir == 'asc' %}selected{% endif %}>Asc</option>
+            </select>
+        </div>
+        <div class="self-end">
+            <button type="submit" class="bg-gray-800 text-white px-4 py-1.5 rounded text-sm font-medium hover:bg-gray-900">
+                Filter
+            </button>
+        </div>
+        <div class="self-end">
+            <a href="/" class="text-sm text-gray-500 hover:text-gray-700 underline">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Job Table -->
+<div class="bg-white rounded-lg shadow-sm border overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b">
+            <tr>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Score</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Company</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Title</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600 hidden md:table-cell">Location</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600 hidden lg:table-cell">Salary</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Platform</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y">
+            {% for job in jobs %}
+            <tr class="job-row" onclick="window.location='/jobs/{{ job.dedup_key | urlencode }}'">
+                <td class="px-4 py-3">
+                    {% if job.score %}
+                    <span class="score-{{ job.score }}">{{ job.score }}</span>
+                    {% else %}
+                    <span class="text-gray-300">—</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-900">{{ job.company }}</td>
+                <td class="px-4 py-3 text-gray-700">{{ job.title }}</td>
+                <td class="px-4 py-3 text-gray-500 hidden md:table-cell">{{ job.location or '—' }}</td>
+                <td class="px-4 py-3 text-gray-500 hidden lg:table-cell">
+                    {% if job.salary %}
+                        {{ job.salary }}
+                    {% elif job.salary_min %}
+                        ${{ "{:,}".format(job.salary_min) }}{% if job.salary_max %} – ${{ "{:,}".format(job.salary_max) }}{% endif %}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    <span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">{{ job.platform }}</span>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="status-badge status-{{ job.status }}">{{ job.status }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not jobs %}
+            <tr>
+                <td colspan="7" class="px-4 py-12 text-center text-gray-400">
+                    No jobs found. Click "Import Pipeline Results" to load data.
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4 text-sm text-gray-400">{{ jobs | length }} jobs displayed</div>
+{% endblock %}
