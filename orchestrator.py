@@ -7,25 +7,35 @@ import json
 import sys
 from datetime import datetime
 
-from config import Config
+from config import (
+    JOB_DESCRIPTIONS_DIR,
+    JOB_PIPELINE_DIR,
+    PROJECT_ROOT,
+    ensure_directories,
+    get_settings,
+)
 from models import Job, JobStatus
 from scorer import JobScorer
 
 
 class Orchestrator:
-    """Five-phase pipeline: setup → login → search → score → apply."""
+    """Five-phase pipeline: setup -> login -> search -> score -> apply."""
 
     def __init__(self, headless: bool = True) -> None:
-        self.scorer = JobScorer()
+        self.settings = get_settings()
+        self.scorer = JobScorer(
+            profile=self.settings.build_candidate_profile(),
+            weights=self.settings.scoring.weights,
+        )
         self.discovered_jobs: list[Job] = []
         self.headless = headless
         self._failed_logins: set[str] = set()
 
-    # ── Full pipeline ────────────────────────────────────────────────────
+    # -- Full pipeline -------------------------------------------------------
 
     def run(self, platforms: list[str] | None = None) -> None:
         if platforms is None:
-            platforms = ["indeed", "dice", "remoteok"]
+            platforms = self.settings.enabled_platforms()
 
         print("=" * 60)
         print("  JOB SEARCH AUTOMATION PIPELINE")
@@ -39,7 +49,7 @@ class Orchestrator:
 
         self._print_summary()
 
-    # ── Phase 0: environment validation ──────────────────────────────────
+    # -- Phase 0: environment validation -------------------------------------
 
     def phase_0_setup(self) -> None:
         print("\n[Phase 0] Environment Setup")
@@ -48,32 +58,33 @@ class Orchestrator:
         v = sys.version_info
         print(f"  Python {v.major}.{v.minor}.{v.micro}")
 
-        if not (Config.PROJECT_ROOT / ".env").exists():
-            print("  ERROR: .env not found — copy .env.example and fill in credentials")
+        if not (PROJECT_ROOT / ".env").exists():
+            print("  ERROR: .env not found -- copy .env.example and fill in credentials")
             sys.exit(1)
 
         print("  Credentials:")
         for p in ("indeed", "dice", "remoteok"):
-            ok = Config.validate_platform_credentials(p)
+            ok = self.settings.validate_platform_credentials(p)
             print(f"    {p:10s} {'OK' if ok else 'MISSING'}")
 
-        Config.ensure_directories()
+        ensure_directories()
 
-        if not Config.RESUME_ATS_PATH.exists():
-            print(f"  WARNING: ATS resume not found at {Config.RESUME_ATS_PATH}")
+        resume_path = PROJECT_ROOT / self.settings.candidate_resume_path
+        if not resume_path.exists():
+            print(f"  WARNING: ATS resume not found at {resume_path}")
 
         print("  Setup complete.")
 
-    # ── Phase 1: login ───────────────────────────────────────────────────
+    # -- Phase 1: login ------------------------------------------------------
 
     def phase_1_login(self, platforms: list[str]) -> None:
         print("\n[Phase 1] Platform Login")
         print("-" * 60)
 
-        if "indeed" in platforms and Config.validate_platform_credentials("indeed"):
+        if "indeed" in platforms and self.settings.validate_platform_credentials("indeed"):
             self._login_platform("indeed")
 
-        if "dice" in platforms and Config.validate_platform_credentials("dice"):
+        if "dice" in platforms and self.settings.validate_platform_credentials("dice"):
             self._login_platform("dice")
 
         if "remoteok" in platforms:
@@ -93,14 +104,14 @@ class Orchestrator:
                 from platforms.dice import DicePlatform
                 DicePlatform(ctx).login()
         except Exception as exc:
-            print(f"  {name}: login failed — {exc}")
+            print(f"  {name}: login failed -- {exc}")
             print(f"  Skipping {name} for this run.")
             self._failed_logins.add(name)
         finally:
             if pw and ctx:
                 close_browser(pw, ctx)
 
-    # ── Phase 2: search ──────────────────────────────────────────────────
+    # -- Phase 2: search -----------------------------------------------------
 
     def phase_2_search(self, platforms: list[str]) -> None:
         print("\n[Phase 2] Job Search")
@@ -112,7 +123,7 @@ class Orchestrator:
             if name in self._failed_logins:
                 print(f"  Skipping {name} (login failed)")
                 continue
-            if not Config.validate_platform_credentials(name):
+            if not self.settings.validate_platform_credentials(name):
                 continue
             jobs = self._search_browser_platform(name)
             self._save_raw(name, jobs)
@@ -124,7 +135,7 @@ class Orchestrator:
     def _search_browser_platform(self, name: str) -> list[Job]:
         from platforms.stealth import close_browser, get_browser_context
 
-        queries = Config.get_search_queries(platform=name)
+        queries = self.settings.get_search_queries(platform=name)
         all_jobs: list[Job] = []
 
         pw, ctx = get_browser_context(name, headless=self.headless)
@@ -143,7 +154,7 @@ class Orchestrator:
                     job = platform.get_job_details(job)
                     all_jobs.append(job)
             except RuntimeError as exc:
-                print(f"  {name}: error on '{q.query}' — {exc}")
+                print(f"  {name}: error on '{q.query}' -- {exc}")
                 continue
 
         close_browser(pw, ctx)
@@ -153,7 +164,7 @@ class Orchestrator:
         from platforms.remoteok import RemoteOKPlatform
 
         platform = RemoteOKPlatform()
-        queries = Config.get_search_queries(platform="remoteok")
+        queries = self.settings.get_search_queries(platform="remoteok")
         all_jobs: list[Job] = []
 
         for q in queries:
@@ -164,12 +175,12 @@ class Orchestrator:
         return all_jobs
 
     def _save_raw(self, platform: str, jobs: list[Job]) -> None:
-        path = Config.JOB_PIPELINE_DIR / f"raw_{platform}.json"
+        path = JOB_PIPELINE_DIR / f"raw_{platform}.json"
         data = [j.model_dump(mode="json") for j in jobs]
         path.write_text(json.dumps(data, indent=2, default=str))
-        print(f"  Saved {len(jobs)} raw jobs → {path}")
+        print(f"  Saved {len(jobs)} raw jobs -> {path}")
 
-    # ── Phase 3: score & deduplicate ─────────────────────────────────────
+    # -- Phase 3: score & deduplicate ----------------------------------------
 
     def phase_3_score(self) -> None:
         print("\n[Phase 3] Scoring & Deduplication")
@@ -195,7 +206,7 @@ class Orchestrator:
     def _load_raw_results(self) -> list[Job]:
         jobs: list[Job] = []
         for name in ("indeed", "dice", "remoteok"):
-            path = Config.JOB_PIPELINE_DIR / f"raw_{name}.json"
+            path = JOB_PIPELINE_DIR / f"raw_{name}.json"
             if not path.exists():
                 continue
             data = json.loads(path.read_text())
@@ -221,20 +232,20 @@ class Orchestrator:
         return list(seen.values())
 
     def _save_scored(self, jobs: list[Job]) -> None:
-        path = Config.JOB_PIPELINE_DIR / "discovered_jobs.json"
+        path = JOB_PIPELINE_DIR / "discovered_jobs.json"
         data = [j.model_dump(mode="json") for j in jobs]
         path.write_text(json.dumps(data, indent=2, default=str))
-        print(f"  Saved scored jobs → {path}")
+        print(f"  Saved scored jobs -> {path}")
 
     def _save_descriptions(self, jobs: list[Job]) -> None:
         for job in jobs:
             safe_company = _sanitize(job.company)
             safe_title = _sanitize(job.title)
             filename = f"{safe_company}_{safe_title}.md"
-            path = Config.JOB_DESCRIPTIONS_DIR / filename
+            path = JOB_DESCRIPTIONS_DIR / filename
 
             salary_line = (
-                f"**Salary:** ${job.salary_min:,}–${job.salary_max:,}\n"
+                f"**Salary:** ${job.salary_min:,}--${job.salary_max:,}\n"
                 if job.salary_min
                 else "**Salary:** Not listed\n"
             )
@@ -252,7 +263,7 @@ class Orchestrator:
             path.write_text(content)
 
     def _write_tracker(self, jobs: list[Job]) -> None:
-        path = Config.JOB_PIPELINE_DIR / "tracker.md"
+        path = JOB_PIPELINE_DIR / "tracker.md"
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
         counts = {5: 0, 4: 0, 3: 0}
@@ -275,7 +286,7 @@ class Orchestrator:
         ]
         for j in sorted(jobs, key=lambda x: (x.score or 0), reverse=True):
             sal = (
-                f"${j.salary_min // 1000}K–${j.salary_max // 1000}K"
+                f"${j.salary_min // 1000}K--${j.salary_max // 1000}K"
                 if j.salary_min and j.salary_max
                 else "N/A"
             )
@@ -285,9 +296,9 @@ class Orchestrator:
             )
 
         path.write_text("".join(lines))
-        print(f"  Tracker updated → {path}")
+        print(f"  Tracker updated -> {path}")
 
-    # ── Phase 4: apply (human-in-the-loop) ───────────────────────────────
+    # -- Phase 4: apply (human-in-the-loop) ----------------------------------
 
     def phase_4_apply(self) -> None:
         print("\n[Phase 4] Application (Human-in-the-Loop)")
@@ -301,11 +312,11 @@ class Orchestrator:
         print(f"\n  {len(top)} top-scoring jobs:\n")
         for idx, j in enumerate(top, 1):
             sal = (
-                f"${j.salary_min // 1000}K–${j.salary_max // 1000}K"
+                f"${j.salary_min // 1000}K--${j.salary_max // 1000}K"
                 if j.salary_min and j.salary_max
                 else "N/A"
             )
-            print(f"  {idx}. [{j.score}/5] {j.company} — {j.title}")
+            print(f"  {idx}. [{j.score}/5] {j.company} -- {j.title}")
             print(f"     Salary: {sal}  |  Location: {j.location}  |  {j.platform}")
             print(f"     URL: {j.url}\n")
 
@@ -327,8 +338,8 @@ class Orchestrator:
     def _apply_to(self, job: Job) -> None:
         from platforms.stealth import close_browser, get_browser_context
 
-        print(f"\n  Applying: {job.company} — {job.title}")
-        resume = Config.RESUME_ATS_PATH
+        print(f"\n  Applying: {job.company} -- {job.title}")
+        resume = PROJECT_ROOT / self.settings.candidate_resume_path
 
         if job.platform == "remoteok":
             print(f"  External application required: {job.apply_url or job.url}")
@@ -361,7 +372,7 @@ class Orchestrator:
         # Re-save tracker with updated status
         self._write_tracker(self.discovered_jobs)
 
-    # ── Summary ──────────────────────────────────────────────────────────
+    # -- Summary -------------------------------------------------------------
 
     def _print_summary(self) -> None:
         total = len(self.discovered_jobs)
@@ -375,38 +386,73 @@ class Orchestrator:
         print(f"  Total scored jobs (3+): {total}")
         print(f"  Score 5: {score5}  |  Score 4: {score4}")
         print(f"  Applications submitted: {applied}")
-        print(f"  Tracker: {Config.JOB_PIPELINE_DIR / 'tracker.md'}")
+        print(f"  Tracker: {JOB_PIPELINE_DIR / 'tracker.md'}")
         print("=" * 60)
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────
+# -- Helpers -----------------------------------------------------------------
 
 
 def _sanitize(text: str) -> str:
     """Make text safe for filenames."""
-    return "".join(c if c.isalnum() or c in " -_" else "" for c in text).strip().replace(" ", "_")[:60]
+    safe = "".join(c if c.isalnum() or c in " -_" else "" for c in text)
+    return safe.strip().replace(" ", "_")[:60]
 
 
-# ── CLI entry point ──────────────────────────────────────────────────────
+# -- CLI entry point ---------------------------------------------------------
 
 
 def main() -> None:
     import argparse
+
+    from pydantic import ValidationError
 
     parser = argparse.ArgumentParser(description="Job Search Automation Pipeline")
     parser.add_argument(
         "--platforms",
         nargs="+",
         choices=["indeed", "dice", "remoteok"],
-        default=["indeed", "dice", "remoteok"],
-        help="Platforms to search (default: all)",
+        default=None,
+        help="Platforms to search (default: all enabled in config.yaml)",
     )
     parser.add_argument(
         "--headed",
         action="store_true",
         help="Run browser in headed (visible) mode for debugging",
     )
+    parser.add_argument(
+        "--validate",
+        action="store_true",
+        help="Validate config.yaml and .env without running the pipeline",
+    )
     args = parser.parse_args()
+
+    if args.validate:
+        try:
+            settings = get_settings()
+        except ValidationError as exc:
+            print("Config validation FAILED:\n")
+            for err in exc.errors():
+                loc = " -> ".join(str(part) for part in err["loc"])
+                print(f"  {loc}: {err['msg']}")
+            sys.exit(1)
+
+        print("Config validation passed.\n")
+
+        # Credential completeness warnings
+        if settings.platforms.indeed.enabled and not settings.indeed_email:
+            print("  WARNING: Indeed is enabled but INDEED_EMAIL is not set in .env")
+        if settings.platforms.dice.enabled:
+            if not settings.dice_email:
+                print("  WARNING: Dice is enabled but DICE_EMAIL is not set in .env")
+            if not settings.dice_password:
+                print("  WARNING: Dice is enabled but DICE_PASSWORD is not set in .env")
+
+        print(f"\n  Enabled platforms: {', '.join(settings.enabled_platforms())}")
+        print(f"  Search queries:    {len(settings.search.queries)}")
+        print(f"  Target titles:     {len(settings.scoring.target_titles)}")
+        print(f"  Tech keywords:     {len(settings.scoring.tech_keywords)}")
+        sys.exit(0)
 
     Orchestrator(headless=not args.headed).run(platforms=args.platforms)
 
