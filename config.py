@@ -21,7 +21,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic_settings.main import YamlConfigSettingsSource
 
@@ -108,7 +108,24 @@ class TimingConfig(BaseModel):
 
 
 class ScheduleConfig(BaseModel):
-    """Top-level ``schedule:`` section -- placeholder for Phase 4."""
+    """Top-level ``schedule:`` section of config.yaml."""
+
+    enabled: bool = False
+    hour: int = Field(default=8, ge=0, le=23)
+    minute: int = Field(default=0, ge=0, le=59)
+    weekdays: list[int] | None = Field(
+        default=None,
+        description="Days of week to run (0=Sun, 1=Mon, ..., 6=Sat). None = daily.",
+    )
+
+    @field_validator("weekdays")
+    @classmethod
+    def validate_weekdays(cls, v: list[int] | None) -> list[int] | None:
+        if v is not None:
+            for day in v:
+                if not (0 <= day <= 6):
+                    raise ValueError(f"Weekday must be 0-6, got {day}")
+        return v
 
 
 # -- Root settings model -----------------------------------------------------

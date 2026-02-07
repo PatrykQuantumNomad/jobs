@@ -66,6 +66,12 @@ class IndeedPlatform(BrowserPlatformMixin):
         print("  Indeed: no active session -- opening login page for manual auth")
         self.page.goto(INDEED_URLS["login"], timeout=timeout)
 
+        if getattr(self, '_unattended', False):
+            raise RuntimeError(
+                "Indeed session expired. Run the pipeline manually "
+                "(without --scheduled) to re-authenticate."
+            )
+
         print("  +------------------------------------------------------+")
         print("  |  1. Solve the Cloudflare challenge if it appears     |")
         print("  |  2. Log in via Google in the browser window          |")

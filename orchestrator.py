@@ -25,14 +25,17 @@ from webapp import db as webdb
 class Orchestrator:
     """Five-phase pipeline: setup -> login -> search -> score -> apply."""
 
-    def __init__(self, headless: bool = True) -> None:
+    def __init__(self, headless: bool = True, scheduled: bool = False) -> None:
         self.settings = get_settings()
         self.scorer = JobScorer(
             profile=self.settings.build_candidate_profile(),
             weights=self.settings.scoring.weights,
         )
         self.discovered_jobs: list[Job] = []
+        self.scheduled = scheduled
         self.headless = headless
+        if scheduled:
+            self.headless = True  # Force headless in scheduled mode
         self._failed_logins: set[str] = set()
         self.searched_platforms: list[str] = []
         self.run_timestamp: str = ""
@@ -126,6 +129,7 @@ class Orchestrator:
             pw, ctx = get_browser_context(name, headless=self.headless)
             platform = info.cls()
             platform.init(ctx)
+            platform._unattended = self.scheduled  # Propagate unattended flag
             with platform:
                 platform.login()
         except Exception as exc:
@@ -165,6 +169,8 @@ class Orchestrator:
         else:
             platform.init()
             pw, ctx = None, None
+
+        platform._unattended = self.scheduled  # Propagate unattended flag
 
         with platform:
             for q in queries:
@@ -352,6 +358,10 @@ class Orchestrator:
     # -- Phase 4: apply (human-in-the-loop) ------------------------------------
 
     def phase_4_apply(self) -> None:
+        if self.scheduled:
+            print("\n[Phase 4] Skipped (scheduled mode -- requires human approval)")
+            return
+
         print("\n[Phase 4] Application (Human-in-the-Loop)")
         print("-" * 60)
 
@@ -466,6 +476,11 @@ def main() -> None:
         help="Run browser in headed (visible) mode for debugging",
     )
     parser.add_argument(
+        "--scheduled",
+        action="store_true",
+        help="Unattended mode: headless, no input prompts, logs run history",
+    )
+    parser.add_argument(
         "--validate",
         action="store_true",
         help="Validate config.yaml and .env without running the pipeline",
@@ -499,7 +514,7 @@ def main() -> None:
         print(f"  Tech keywords:     {len(settings.scoring.tech_keywords)}")
         sys.exit(0)
 
-    Orchestrator(headless=not args.headed).run(platforms=args.platforms)
+    Orchestrator(headless=not args.headed, scheduled=args.scheduled).run(platforms=args.platforms)
 
 
 if __name__ == "__main__":

@@ -77,7 +77,14 @@ class BrowserPlatformMixin:
 
         Displays a prominent banner with the platform name and the message,
         then waits for user input on stdin.
+
+        Raises ``RuntimeError`` if the platform is running in unattended mode
+        (``_unattended`` flag set by the orchestrator in ``--scheduled`` mode).
         """
+        if getattr(self, '_unattended', False):
+            raise RuntimeError(
+                f"Human input required but running in unattended mode: {message}"
+            )
         print(f"\n{'=' * 60}")
         print(f"  HUMAN INPUT REQUIRED — {self.platform_name.upper()}")
         print(f"{'=' * 60}")
