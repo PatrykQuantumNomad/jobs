@@ -1,0 +1,13 @@
+<div class="kanban-card bg-white rounded-lg shadow-sm border p-3 cursor-grab active:cursor-grabbing"
+     data-key="{{ job.dedup_key }}">
+    <a href="/jobs/{{ job.dedup_key }}" class="block no-underline text-inherit">
+        <div class="font-medium text-sm truncate text-gray-900">{{ job.title }}</div>
+        <div class="text-xs text-gray-500 mt-1 truncate">{{ job.company }}</div>
+        <div class="flex items-center gap-2 mt-2">
+            {% if job.score %}
+            <span class="score-{{ job.score }} text-xs font-semibold">{{ job.score }}/5</span>
+            {% endif %}
+            <span class="text-xs text-gray-400">{{ job.platform }}</span>
+        </div>
+    </a>
+</div>

@@ -217,11 +217,12 @@ async def job_detail(request: Request, dedup_key: str):
 @app.post("/jobs/{dedup_key:path}/status")
 async def update_status(dedup_key: str, status: str = Form(...)):
     db.update_job_status(dedup_key, status)
-    job = db.get_job(dedup_key)
     label = status.replace("_", " ").title()
-    return HTMLResponse(
+    response = HTMLResponse(
         f'<span class="status-badge status-{status}">{label}</span>'
     )
+    response.headers["HX-Trigger"] = "statsChanged"
+    return response
 
 
 @app.post("/jobs/{dedup_key:path}/notes")
@@ -279,6 +280,46 @@ async def analytics_page(request: Request):
 async def analytics_api():
     enhanced = db.get_enhanced_stats()
     return JSONResponse(content=enhanced)
+
+
+KANBAN_STATUSES = [
+    "saved", "applied", "phone_screen", "technical",
+    "final_interview", "offer", "rejected", "withdrawn", "ghosted",
+]
+
+
+@app.get("/kanban", response_class=HTMLResponse)
+async def kanban_page(request: Request):
+    columns: dict[str, list[dict]] = {}
+    for status in KANBAN_STATUSES:
+        columns[status] = db.get_jobs(status=status, sort_by="score", sort_dir="desc")
+    stats = db.get_stats()
+    enhanced = db.get_enhanced_stats()
+    return templates.TemplateResponse(
+        "kanban.html",
+        {
+            "request": request,
+            "kanban_statuses": KANBAN_STATUSES,
+            "columns": columns,
+            "stats": stats,
+            "enhanced_stats": enhanced,
+            "statuses": STATUSES,
+        },
+    )
+
+
+@app.get("/api/stats-cards", response_class=HTMLResponse)
+async def stats_cards(request: Request):
+    stats = db.get_stats()
+    enhanced = db.get_enhanced_stats()
+    return templates.TemplateResponse(
+        "partials/stats_cards.html",
+        {
+            "request": request,
+            "stats": stats,
+            "enhanced_stats": enhanced,
+        },
+    )
 
 
 def main() -> None:
