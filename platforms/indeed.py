@@ -12,7 +12,7 @@ from urllib.parse import urlencode
 from playwright.sync_api import BrowserContext
 from playwright.sync_api import TimeoutError as PwTimeout
 
-from config import Config
+from config import get_settings
 from models import Job, SearchQuery
 from platforms.base import BasePlatform
 from platforms.indeed_selectors import (
@@ -34,7 +34,9 @@ class IndeedPlatform(BasePlatform):
 
     def login(self) -> bool:
         """Session-based login — uses cached session or waits for manual Google auth."""
-        self.page.goto(INDEED_URLS["base"], timeout=Config.PAGE_LOAD_TIMEOUT)
+        settings = get_settings()
+        timeout = settings.timing.page_load_timeout
+        self.page.goto(INDEED_URLS["base"], timeout=timeout)
         self.human_delay("nav")
 
         if self.is_logged_in():
@@ -43,7 +45,7 @@ class IndeedPlatform(BasePlatform):
 
         # Session expired or first run — need manual login
         print("  Indeed: no active session — opening login page for manual auth")
-        self.page.goto(INDEED_URLS["login"], timeout=Config.PAGE_LOAD_TIMEOUT)
+        self.page.goto(INDEED_URLS["login"], timeout=timeout)
 
         print("  ┌──────────────────────────────────────────────────────┐")
         print("  │  1. Solve the Cloudflare challenge if it appears     │")
@@ -53,7 +55,7 @@ class IndeedPlatform(BasePlatform):
         input("  Press ENTER after logging in > ")
 
         # Navigate to homepage to verify session
-        self.page.goto(INDEED_URLS["base"], timeout=Config.PAGE_LOAD_TIMEOUT)
+        self.page.goto(INDEED_URLS["base"], timeout=timeout)
         self.human_delay("nav")
 
         if self.is_logged_in():
@@ -74,11 +76,12 @@ class IndeedPlatform(BasePlatform):
         jobs: list[Job] = []
         seen_ids: set[str] = set()
         base_url = self._build_search_url(query)
+        timeout = get_settings().timing.page_load_timeout
         print(f"  Indeed: searching '{query.query}' …")
 
         for page_idx in range(query.max_pages):
             url = f"{base_url}&start={page_idx * 10}"
-            self.page.goto(url, timeout=Config.PAGE_LOAD_TIMEOUT)
+            self.page.goto(url, timeout=timeout)
             self.human_delay("nav")
 
             self._check_challenges(f"search_page_{page_idx + 1}")
@@ -112,7 +115,7 @@ class IndeedPlatform(BasePlatform):
         if not job.url:
             return job
         try:
-            self.page.goto(str(job.url), timeout=Config.PAGE_LOAD_TIMEOUT)
+            self.page.goto(str(job.url), timeout=get_settings().timing.page_load_timeout)
             self.human_delay("nav")
 
             if self._detect_captcha():
@@ -154,7 +157,7 @@ class IndeedPlatform(BasePlatform):
     # ── Apply (human-in-the-loop) ────────────────────────────────────────
 
     def apply(self, job: Job, resume_path: Path) -> bool:
-        self.page.goto(str(job.url), timeout=Config.PAGE_LOAD_TIMEOUT)
+        self.page.goto(str(job.url), timeout=get_settings().timing.page_load_timeout)
         self.human_delay("nav")
 
         if not self.element_exists(INDEED_SELECTORS["apply_button"], timeout=5000):
@@ -244,7 +247,7 @@ class IndeedPlatform(BasePlatform):
         url = f"{INDEED_URLS['search']}?{urlencode(params)}"
         url += f"&{INDEED_SEARCH_PARAMS['remote_filter']}"
         # Salary filter — Indeed expects salaryType=$XXX,XXX+ (URL-encoded)
-        salary = f"${Config.MIN_SALARY:,}+"
+        salary = f"${get_settings().search.min_salary:,}+"
         url += f"&{urlencode({'salaryType': salary})}"
         url += f"&{INDEED_SEARCH_PARAMS['recency_14d']}"
         url += f"&{INDEED_SEARCH_PARAMS['sort_date']}"
@@ -267,10 +270,7 @@ class IndeedPlatform(BasePlatform):
 
             # Get title text from the link's span child (or the link itself)
             title_el = title_link.query_selector("span")
-            if title_el:
-                title = title_el.inner_text().strip()
-            else:
-                title = title_link.inner_text().strip()
+            title = title_el.inner_text().strip() if title_el else title_link.inner_text().strip()
             if not title:
                 return None
 

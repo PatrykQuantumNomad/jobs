@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from playwright.sync_api import BrowserContext
 from playwright.sync_api import TimeoutError as PwTimeout
 
-from config import Config
+from config import get_settings
 from models import Job, SearchQuery
 from platforms.base import BasePlatform
 from platforms.dice_selectors import DICE_SEARCH_PARAMS, DICE_SELECTORS, DICE_URLS
@@ -29,10 +29,12 @@ class DicePlatform(BasePlatform):
     # ── Authentication ───────────────────────────────────────────────────
 
     def login(self) -> bool:
-        if not Config.validate_platform_credentials("dice"):
+        settings = get_settings()
+        if not settings.validate_platform_credentials("dice"):
             raise ValueError("Dice credentials not found in .env")
 
-        self.page.goto(DICE_URLS["base"], timeout=Config.PAGE_LOAD_TIMEOUT)
+        timeout = settings.timing.page_load_timeout
+        self.page.goto(DICE_URLS["base"], timeout=timeout)
         self.human_delay("nav")
 
         if self.is_logged_in():
@@ -40,12 +42,12 @@ class DicePlatform(BasePlatform):
             return False
 
         print("  Dice: logging in …")
-        self.page.goto(DICE_URLS["login"], timeout=Config.PAGE_LOAD_TIMEOUT)
+        self.page.goto(DICE_URLS["login"], timeout=timeout)
         self.human_delay("nav")
 
         try:
             # Step 1: enter email and click Continue
-            self.page.fill(DICE_SELECTORS["login_email"], Config.DICE_EMAIL)
+            self.page.fill(DICE_SELECTORS["login_email"], settings.dice_email)
             self.human_delay("form")
             self.page.click(DICE_SELECTORS["login_continue"])
             self.human_delay("nav")
@@ -54,7 +56,7 @@ class DicePlatform(BasePlatform):
             self.page.wait_for_selector(
                 DICE_SELECTORS["login_password"], timeout=15_000
             )
-            self.page.fill(DICE_SELECTORS["login_password"], Config.DICE_PASSWORD)
+            self.page.fill(DICE_SELECTORS["login_password"], settings.dice_password)
             self.human_delay("form")
             self.page.click(DICE_SELECTORS["login_submit"])
             self.page.wait_for_url("**/dashboard/**", timeout=15_000)
@@ -78,11 +80,12 @@ class DicePlatform(BasePlatform):
     def search(self, query: SearchQuery) -> list[Job]:
         jobs: list[Job] = []
         base_url = self._build_search_url(query)
+        timeout = get_settings().timing.page_load_timeout
         print(f"  Dice: searching '{query.query}' …")
 
         for page_num in range(1, query.max_pages + 1):
             url = f"{base_url}&page={page_num}"
-            self.page.goto(url, timeout=Config.PAGE_LOAD_TIMEOUT)
+            self.page.goto(url, timeout=timeout)
             self.human_delay("nav")
 
             try:
@@ -107,7 +110,7 @@ class DicePlatform(BasePlatform):
 
     def get_job_details(self, job: Job) -> Job:
         try:
-            self.page.goto(str(job.url), timeout=Config.PAGE_LOAD_TIMEOUT)
+            self.page.goto(str(job.url), timeout=get_settings().timing.page_load_timeout)
             self.human_delay("nav")
             self.page.wait_for_selector(
                 DICE_SELECTORS["job_description"], timeout=10_000
@@ -122,7 +125,7 @@ class DicePlatform(BasePlatform):
     # ── Apply (human-in-the-loop) ────────────────────────────────────────
 
     def apply(self, job: Job, resume_path: Path) -> bool:
-        self.page.goto(str(job.url), timeout=Config.PAGE_LOAD_TIMEOUT)
+        self.page.goto(str(job.url), timeout=get_settings().timing.page_load_timeout)
         self.human_delay("nav")
 
         if not self.element_exists(DICE_SELECTORS["apply_button"], timeout=5000):
@@ -240,7 +243,7 @@ def _parse_card_text(card_text: str, title: str) -> tuple[str, str | None]:
         Full-time           (optional)
         USD 224,400 ...     (optional salary line)
     """
-    lines = [l.strip() for l in card_text.split("\n") if l.strip()]
+    lines = [ln.strip() for ln in card_text.split("\n") if ln.strip()]
     location = ""
     salary = None
 
@@ -249,10 +252,7 @@ def _parse_card_text(card_text: str, title: str) -> tuple[str, str | None]:
         if line == title and i + 1 < len(lines):
             loc_line = lines[i + 1]
             # Location line may contain "•" separator with date
-            if "•" in loc_line:
-                location = loc_line.split("•")[0].strip()
-            else:
-                location = loc_line
+            location = loc_line.split("•")[0].strip() if "•" in loc_line else loc_line
             break
 
     # Look for salary pattern anywhere in the text
