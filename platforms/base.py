@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from config import Config
+from config import DEBUG_SCREENSHOTS_DIR, get_settings
 
 if TYPE_CHECKING:
     from playwright.sync_api import BrowserContext, Page
@@ -56,16 +56,17 @@ class BasePlatform(ABC):
 
     def human_delay(self, delay_type: str = "nav") -> None:
         """Randomised delay — *nav* (2-5 s) or *form* (1-2 s)."""
+        timing = get_settings().timing
         if delay_type == "nav":
-            time.sleep(random.uniform(Config.NAV_DELAY_MIN, Config.NAV_DELAY_MAX))
+            time.sleep(random.uniform(timing.nav_delay_min, timing.nav_delay_max))
         else:
-            time.sleep(random.uniform(Config.FORM_DELAY_MIN, Config.FORM_DELAY_MAX))
+            time.sleep(random.uniform(timing.form_delay_min, timing.form_delay_max))
 
     def screenshot(self, name: str) -> Path:
         """Save a full-page screenshot to debug_screenshots/."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{self.platform_name}_{name}_{timestamp}.png"
-        filepath = Config.DEBUG_SCREENSHOTS_DIR / filename
+        filepath = DEBUG_SCREENSHOTS_DIR / filename
         self.page.screenshot(path=str(filepath), full_page=True)
         print(f"  Screenshot saved: {filepath}")
         return filepath

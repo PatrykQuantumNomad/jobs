@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
-from config import Config
+from config import get_settings
 from models import Job, SearchQuery
 
 
@@ -29,6 +29,7 @@ class RemoteOKPlatform:
 
     async def search(self, query: SearchQuery) -> list[Job]:
         """Fetch all jobs from the API and filter by tag overlap."""
+        settings = get_settings()
         try:
             resp = await self.client.get(self.API_URL)
             resp.raise_for_status()
@@ -48,7 +49,7 @@ class RemoteOKPlatform:
             # Skip jobs whose known salary is below the minimum threshold.
             # Jobs with no salary data are kept (benefit of the doubt).
             sal_max = entry.get("salary_max")
-            if sal_max and int(sal_max) < Config.MIN_SALARY:
+            if sal_max and int(sal_max) < settings.search.min_salary:
                 continue
             job = self._parse(entry)
             if job is not None:
@@ -74,7 +75,7 @@ class RemoteOKPlatform:
     def _filter_terms(self, query: str) -> list[str]:
         """Extract candidate tech keywords that appear in the query string."""
         tokens = re.findall(r"[a-z0-9/+#.-]+", query.lower())
-        tech = {kw.lower() for kw in Config.CANDIDATE.tech_keywords}
+        tech = {kw.lower() for kw in get_settings().scoring.tech_keywords}
         return [t for t in tokens if t in tech]
 
     def _matches(self, entry: dict, terms: list[str]) -> bool:
@@ -103,7 +104,7 @@ class RemoteOKPlatform:
         posted_date: str | None = None
         if epoch := entry.get("epoch"):
             posted_date = datetime.fromtimestamp(
-                int(epoch), tz=timezone.utc
+                int(epoch), tz=UTC
             ).isoformat()
 
         return Job(
