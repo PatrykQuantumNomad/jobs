@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from config import Config
+from config import ScoringWeights, get_settings
 from models import CandidateProfile, Job, JobStatus
 
 
@@ -14,19 +14,29 @@ class JobScorer:
       Tech overlap    0-2
       Location        0-1
       Salary          0-1
+
+    Weights are configurable via ``ScoringWeights`` (default values reproduce
+    the original hardcoded scoring exactly).
     """
 
-    def __init__(self, profile: CandidateProfile | None = None) -> None:
-        self.profile = profile or Config.CANDIDATE
+    def __init__(
+        self,
+        profile: CandidateProfile | None = None,
+        weights: ScoringWeights | None = None,
+    ) -> None:
+        settings = get_settings()
+        self.profile = profile or settings.build_candidate_profile()
+        self.weights = weights or settings.scoring.weights
 
     # ── Public API ───────────────────────────────────────────────────────
 
     def score_job(self, job: Job) -> int:
+        w = self.weights
         raw = (
-            self._title_score(job.title)
-            + self._tech_score(job)
-            + self._location_score(job.location)
-            + self._salary_score(job)
+            self._title_score(job.title) * w.title_match / 2.0
+            + self._tech_score(job) * w.tech_overlap / 2.0
+            + self._location_score(job.location) * w.remote
+            + self._salary_score(job) * w.salary
         )
         if raw >= 5:
             return 5

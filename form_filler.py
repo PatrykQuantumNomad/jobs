@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from config import Config
+from config import get_settings
 from models import CandidateProfile
 
 if TYPE_CHECKING:
@@ -47,7 +47,7 @@ class FormFiller:
     """
 
     def __init__(self, profile: CandidateProfile | None = None) -> None:
-        self.profile = profile or Config.CANDIDATE
+        self.profile = profile or get_settings().build_candidate_profile()
 
     def fill_form(self, page: Page, resume_path: Path | None = None) -> dict[str, str]:
         """Scan and fill form fields on *page*.
