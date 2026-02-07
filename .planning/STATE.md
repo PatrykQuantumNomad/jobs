@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 4 - Scheduled Automation
+**Current focus:** Phase 4 complete. Ready for Phase 5 - Dashboard Core
 
 ## Current Position
 
-Phase: 4 of 8 (Scheduled Automation)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-07 -- Completed 04-01-PLAN.md (scheduler config, unattended mode, launchd CLI)
+Phase: 4 of 8 (Scheduled Automation) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-02-07 -- Completed 04-02-PLAN.md (run history table, pipeline recording, /runs dashboard)
 
-Progress: [#########░░░░░░░░░░░░░░░░░░░░░] 9/30 (~30%)
+Progress: [##########░░░░░░░░░░░░░░░░░░░░] 10/30 (~33%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 4.9 min
-- Total execution time: 44 min
+- Total plans completed: 10
+- Average duration: 4.8 min
+- Total execution time: 48 min
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [#########░░░░░░░░░░░░░░░░░░░░
 | 01-config-externalization | 3/3 | 16 min | 5.3 min |
 | 02-platform-architecture | 2/2 | 9 min | 4.5 min |
 | 03-discovery-engine | 3/3 | 15 min | 5.0 min |
-| 04-scheduled-automation | 1/2 | 4 min | 4.0 min |
+| 04-scheduled-automation | 2/2 | 8 min | 4.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (6 min), 03-02 (5 min), 03-03 (4 min), 04-01 (4 min)
+- Last 5 plans: 03-02 (5 min), 03-03 (4 min), 04-01 (4 min), 04-02 (4 min)
 - Trend: stable/improving
 
 *Updated after each plan completion*
@@ -81,6 +81,9 @@ Recent decisions affecting current work:
 - [04-01]: getattr(self, '_unattended', False) for backward-compatible unattended checks
 - [04-01]: sys.executable resolved to absolute path for venv Python in plist
 - [04-01]: launchctl bootstrap/bootout (modern API) instead of deprecated load/unload
+- [04-02]: Error tracking via self._run_errors list populated in _login_platform and _search_platform
+- [04-02]: try/finally wraps entire pipeline so crashes still produce a run_history entry
+- [04-02]: record_run protected by its own try/except to avoid masking pipeline errors
 
 ### Pending Todos
 
@@ -94,5 +97,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 4, Plan 1 complete. Ready for Plan 04-02 (run history table and /runs dashboard page)
-Resume file: .planning/phases/04-scheduled-automation/04-02-PLAN.md
+Stopped at: Phase 4 complete. Ready for Phase 5 (Dashboard Core)
+Resume file: .planning/ROADMAP.md (Phase 5 planning)

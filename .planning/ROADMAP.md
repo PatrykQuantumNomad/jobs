@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Config Externalization** - Single YAML config replaces hardcoded Python settings
 - [x] **Phase 2: Platform Architecture** - Pluggable platform registry with auto-discovery
 - [x] **Phase 3: Discovery Engine** - Fuzzy dedup, score breakdowns, salary normalization, new job detection
-- [ ] **Phase 4: Scheduled Automation** - Unattended pipeline runs via cron/launchd
+- [x] **Phase 4: Scheduled Automation** - Unattended pipeline runs via cron/launchd
 - [ ] **Phase 5: Dashboard Core** - Search, extended status workflow, bulk actions, export, activity log
 - [ ] **Phase 6: Dashboard Analytics** - Stats, metrics, and kanban board view
 - [ ] **Phase 7: AI Resume & Cover Letter** - LLM-powered resume tailoring and cover letter generation
@@ -83,7 +83,7 @@ Plans:
 
 Plans:
 - [x] 04-01-PLAN.md -- ScheduleConfig model, --scheduled flag, input() guards, scheduler.py CLI (launchd plist management)
-- [ ] 04-02-PLAN.md -- run_history table, pipeline run recording, /runs dashboard page
+- [x] 04-02-PLAN.md -- run_history table, pipeline run recording, /runs dashboard page
 
 ### Phase 5: Dashboard Core
 **Goal**: The web dashboard becomes the primary interface for managing the job search -- users can find specific jobs, track them through an application pipeline, take bulk actions, export data, and see a full activity timeline per job
@@ -169,7 +169,7 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 | 1. Config Externalization | 3/3 | Complete | 2026-02-07 |
 | 2. Platform Architecture | 2/2 | Complete | 2026-02-07 |
 | 3. Discovery Engine | 3/3 | Complete | 2026-02-07 |
-| 4. Scheduled Automation | 1/2 | In progress | - |
+| 4. Scheduled Automation | 2/2 | Complete | 2026-02-07 |
 | 5. Dashboard Core | 0/5 | Not started | - |
 | 6. Dashboard Analytics | 0/3 | Not started | - |
 | 7. AI Resume & Cover Letter | 0/5 | Not started | - |
