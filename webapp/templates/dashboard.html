@@ -89,11 +89,38 @@
     </form>
 </div>
 
+<!-- Bulk Action Bar -->
+<div id="bulk-bar" class="hidden bg-indigo-50 border border-indigo-200 rounded-lg p-3 mb-4 flex items-center gap-4">
+    <span id="selected-count" class="text-sm font-medium text-indigo-800">0 selected</span>
+    <select name="bulk_status" class="border rounded px-3 py-1.5 text-sm">
+        <option value="">Change status to...</option>
+        {% for s in statuses %}
+        <option value="{{ s }}">{{ s | replace('_', ' ') | title }}</option>
+        {% endfor %}
+    </select>
+    <button type="button"
+            hx-post="/bulk/status"
+            hx-include="#bulk-form, [name='q'], [name='score'], [name='platform'], [name='status'], [name='sort'], [name='dir']"
+            hx-target="#job-table-body"
+            hx-swap="innerHTML"
+            class="bg-indigo-600 text-white px-4 py-1.5 rounded text-sm font-medium hover:bg-indigo-700">
+        Apply
+    </button>
+    <button type="button" onclick="clearSelection()" class="text-sm text-gray-500 hover:text-gray-700">
+        Clear
+    </button>
+</div>
+
 <!-- Job Table -->
+<form id="bulk-form">
 <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
     <table class="w-full text-sm">
         <thead class="bg-gray-50 border-b">
             <tr>
+                <th class="px-4 py-3 w-10">
+                    <input type="checkbox" id="select-all" class="rounded border-gray-300"
+                           onchange="toggleSelectAll(this)">
+                </th>
                 <th class="px-4 py-3 text-left font-medium text-gray-600">Score</th>
                 <th class="px-4 py-3 text-left font-medium text-gray-600">Company</th>
                 <th class="px-4 py-3 text-left font-medium text-gray-600">Title</th>
@@ -108,6 +135,50 @@
         </tbody>
     </table>
 </div>
+</form>
 
-<div class="mt-4 text-sm text-gray-400">{{ jobs | length }} jobs displayed</div>
+<div class="mt-4 flex items-center justify-between">
+    <div class="text-sm text-gray-400">{{ jobs | length }} jobs displayed</div>
+    <div class="flex gap-2">
+        <a id="export-csv-link"
+           href="/export/csv?q={{ filters.q or '' | urlencode }}&score={{ filters.score or '' }}&platform={{ filters.platform or '' }}&status={{ filters.status or '' }}&sort={{ filters.sort or 'score' }}&dir={{ filters.dir or 'desc' }}"
+           class="text-sm px-3 py-1.5 rounded border text-gray-600 hover:bg-gray-50">
+            Export CSV
+        </a>
+        <a id="export-json-link"
+           href="/export/json?q={{ filters.q or '' | urlencode }}&score={{ filters.score or '' }}&platform={{ filters.platform or '' }}&status={{ filters.status or '' }}&sort={{ filters.sort or 'score' }}&dir={{ filters.dir or 'desc' }}"
+           class="text-sm px-3 py-1.5 rounded border text-gray-600 hover:bg-gray-50">
+            Export JSON
+        </a>
+    </div>
+</div>
+
+<script>
+function toggleSelectAll(el) {
+    document.querySelectorAll('input[name="job_keys"]').forEach(cb => {
+        cb.checked = el.checked;
+    });
+    updateBulkBar();
+}
+
+function updateBulkBar() {
+    const count = document.querySelectorAll('input[name="job_keys"]:checked').length;
+    document.getElementById('selected-count').textContent = count + ' selected';
+    document.getElementById('bulk-bar').classList.toggle('hidden', count === 0);
+}
+
+function clearSelection() {
+    document.querySelectorAll('input[name="job_keys"]').forEach(cb => cb.checked = false);
+    document.getElementById('select-all').checked = false;
+    updateBulkBar();
+}
+
+// Re-attach after htmx swaps (checkboxes are replaced)
+document.body.addEventListener('htmx:afterSwap', function(e) {
+    if (e.detail.target.id === 'job-table-body') {
+        document.getElementById('select-all').checked = false;
+        updateBulkBar();
+    }
+});
+</script>
 {% endblock %}
