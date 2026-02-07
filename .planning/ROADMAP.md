@@ -95,14 +95,13 @@ Plans:
   3. User can select multiple jobs with checkboxes and update all their statuses in a single action
   4. User can export the current filtered view to CSV or JSON with one click from the dashboard
   5. Each job has an activity log showing a timeline of all events: when it was discovered, every status change, notes added, and application timestamps
-**Plans**: TBD
+**Plans:** 4 plans
 
 Plans:
-- [ ] 05-01: Text search implementation
-- [ ] 05-02: Extended status workflow and transitions
-- [ ] 05-03: Bulk actions
-- [ ] 05-04: Export (CSV/JSON)
-- [ ] 05-05: Activity log per job
+- [ ] 05-01-PLAN.md -- Schema migration (FTS5, activity_log, status vocabulary), JobStatus enum expansion, CSS classes
+- [ ] 05-02-PLAN.md -- Text search with FTS5 backend, htmx active search, partial template extraction
+- [ ] 05-03-PLAN.md -- Activity timeline on job detail page, status dropdown with 9 user-facing statuses
+- [ ] 05-04-PLAN.md -- Bulk status actions (checkboxes, select-all, bulk bar), CSV/JSON export
 
 ### Phase 6: Dashboard Analytics
 **Goal**: Users can visualize their job search progress with metrics and manage their pipeline through an intuitive kanban board
@@ -170,7 +169,7 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 | 2. Platform Architecture | 2/2 | Complete | 2026-02-07 |
 | 3. Discovery Engine | 3/3 | Complete | 2026-02-07 |
 | 4. Scheduled Automation | 2/2 | Complete | 2026-02-07 |
-| 5. Dashboard Core | 0/5 | Not started | - |
+| 5. Dashboard Core | 0/4 | Not started | - |
 | 6. Dashboard Analytics | 0/3 | Not started | - |
 | 7. AI Resume & Cover Letter | 0/5 | Not started | - |
 | 8. One-Click Apply | 0/5 | Not started | - |
