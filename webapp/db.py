@@ -20,7 +20,7 @@ else:
 # Schema
 # ---------------------------------------------------------------------------
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 5
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS jobs (
@@ -81,6 +81,54 @@ MIGRATIONS: dict[int, list[str]] = {
             duration_seconds REAL DEFAULT 0.0
         )""",
     ],
+    4: [
+        # FTS5 virtual table for full-text search on jobs
+        """CREATE VIRTUAL TABLE IF NOT EXISTS jobs_fts USING fts5(
+            title, company, description,
+            content='jobs',
+            content_rowid=rowid
+        )""",
+        # Trigger: keep FTS in sync on INSERT
+        """CREATE TRIGGER IF NOT EXISTS jobs_fts_ai AFTER INSERT ON jobs BEGIN
+            INSERT INTO jobs_fts(rowid, title, company, description)
+            VALUES (new.rowid, new.title, new.company, new.description);
+        END""",
+        # Trigger: keep FTS in sync on DELETE
+        """CREATE TRIGGER IF NOT EXISTS jobs_fts_ad AFTER DELETE ON jobs BEGIN
+            INSERT INTO jobs_fts(jobs_fts, rowid, title, company, description)
+            VALUES ('delete', old.rowid, old.title, old.company, old.description);
+        END""",
+        # Trigger: keep FTS in sync on UPDATE
+        """CREATE TRIGGER IF NOT EXISTS jobs_fts_au AFTER UPDATE ON jobs BEGIN
+            INSERT INTO jobs_fts(jobs_fts, rowid, title, company, description)
+            VALUES ('delete', old.rowid, old.title, old.company, old.description);
+            INSERT INTO jobs_fts(rowid, title, company, description)
+            VALUES (new.rowid, new.title, new.company, new.description);
+        END""",
+        # Rebuild FTS index for existing data
+        "INSERT INTO jobs_fts(jobs_fts) VALUES('rebuild')",
+        # Activity log table
+        """CREATE TABLE IF NOT EXISTS activity_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            dedup_key TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            old_value TEXT,
+            new_value TEXT,
+            detail TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_activity_dedup ON activity_log(dedup_key)",
+        "CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_log(created_at)",
+        # Backfill discovered events for existing jobs
+        """INSERT INTO activity_log (dedup_key, event_type, new_value, created_at)
+        SELECT dedup_key, 'discovered', platform, COALESCE(first_seen_at, created_at)
+        FROM jobs""",
+    ],
+    5: [
+        # Migrate old status values to new vocabulary
+        "UPDATE jobs SET status = 'saved' WHERE status = 'approved'",
+        "UPDATE jobs SET status = 'withdrawn' WHERE status = 'skipped'",
+    ],
 }
 
 # ---------------------------------------------------------------------------
@@ -122,8 +170,9 @@ def migrate_db(conn: sqlite3.Connection) -> None:
             try:
                 conn.execute(sql)
             except sqlite3.OperationalError as exc:
-                # Idempotency: ignore "duplicate column name" errors
-                if "duplicate column name" in str(exc).lower():
+                msg = str(exc).lower()
+                # Idempotency: ignore "duplicate column name" and "already exists" errors
+                if "duplicate column name" in msg or "already exists" in msg:
                     continue
                 raise
         conn.commit()
@@ -379,6 +428,10 @@ def get_job(dedup_key: str) -> dict | None:
 
 def update_job_status(dedup_key: str, status: str) -> None:
     now = datetime.now().isoformat()
+    # Fetch old status for activity logging
+    old_job = get_job(dedup_key)
+    old_status = old_job["status"] if old_job else None
+
     applied_date = now if status == "applied" else None
     with get_conn() as conn:
         if applied_date:
@@ -392,6 +445,8 @@ def update_job_status(dedup_key: str, status: str) -> None:
                 (status, now, dedup_key),
             )
 
+    log_activity(dedup_key, "status_change", old_value=old_status, new_value=status)
+
 
 def update_job_notes(dedup_key: str, notes: str) -> None:
     now = datetime.now().isoformat()
@@ -400,6 +455,38 @@ def update_job_notes(dedup_key: str, notes: str) -> None:
             "UPDATE jobs SET notes = ?, updated_at = ? WHERE dedup_key = ?",
             (notes, now, dedup_key),
         )
+    log_activity(dedup_key, "note_added", detail=notes)
+
+
+# ---------------------------------------------------------------------------
+# Activity log
+# ---------------------------------------------------------------------------
+
+
+def log_activity(
+    dedup_key: str,
+    event_type: str,
+    old_value: str | None = None,
+    new_value: str | None = None,
+    detail: str | None = None,
+) -> None:
+    """Record an activity event for a job."""
+    with get_conn() as conn:
+        conn.execute(
+            """INSERT INTO activity_log (dedup_key, event_type, old_value, new_value, detail)
+               VALUES (?, ?, ?, ?, ?)""",
+            (dedup_key, event_type, old_value, new_value, detail),
+        )
+
+
+def get_activity_log(dedup_key: str) -> list[dict]:
+    """Return activity log entries for a job, newest first."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM activity_log WHERE dedup_key = ? ORDER BY created_at DESC",
+            (dedup_key,),
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 def get_stats() -> dict:

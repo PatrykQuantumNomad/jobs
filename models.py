@@ -9,12 +9,19 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class JobStatus(str, Enum):
+    # Pipeline-managed (set by orchestrator)
     DISCOVERED = "discovered"
     SCORED = "scored"
-    APPROVED = "approved"
+    # User-managed (set from dashboard)
+    SAVED = "saved"
     APPLIED = "applied"
+    PHONE_SCREEN = "phone_screen"
+    TECHNICAL = "technical"
+    FINAL_INTERVIEW = "final_interview"
+    OFFER = "offer"
     REJECTED = "rejected"
-    SKIPPED = "skipped"
+    WITHDRAWN = "withdrawn"
+    GHOSTED = "ghosted"
 
 
 class Job(BaseModel):
