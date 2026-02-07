@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 7 - AI Resume & Cover Letter. Plan 03 complete, 1 remaining.
+**Current focus:** Phase 7 complete. Ready for Phase 8 - One-Click Apply.
 
 ## Current Position
 
-Phase: 7 of 8 (AI Resume & Cover Letter)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-02-07 -- Completed 07-03-PLAN.md (PDF rendering and diff)
+Phase: 7 of 8 (AI Resume & Cover Letter) -- COMPLETE
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-02-07 -- Completed 07-04-PLAN.md (dashboard integration)
 
-Progress: [######################░░░░░░░░] 22/30 (~73%)
+Progress: [#######################░░░░░░░] 23/30 (~77%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22
-- Average duration: 4.1 min
-- Total execution time: 91 min
+- Total plans completed: 23
+- Average duration: 4.3 min
+- Total execution time: 99 min
 
 **By Phase:**
 
@@ -33,10 +33,10 @@ Progress: [######################░░░░░░░░] 22/30 (~73%)
 | 04-scheduled-automation | 2/2 | 8 min | 4.0 min |
 | 05-dashboard-core | 4/4 | 12 min | 3.0 min |
 | 06-dashboard-analytics | 2/2 | 8 min | 4.0 min |
-| 07-ai-resume-cover-letter | 3/4 | 14 min | 4.7 min |
+| 07-ai-resume-cover-letter | 4/4 | 22 min | 5.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 06-02 (4 min), 07-01 (4 min), 07-02 (6 min), 07-03 (4 min)
+- Last 5 plans: 07-01 (4 min), 07-02 (6 min), 07-03 (4 min), 07-04 (8 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -124,6 +124,10 @@ Recent decisions affecting current work:
 - [07-03]: TYPE_CHECKING guard for model imports to avoid circular dependencies
 - [07-03]: Calibri with Carlito fallback for ATS compatibility (Carlito is the open-source metric-equivalent)
 - [07-03]: Context-mode diff with 3 surrounding lines for focused comparison without noise
+- [07-04]: Lazy imports for resume_ai modules to avoid startup failure when AI deps not installed
+- [07-04]: AI endpoints registered before catch-all /jobs/{path} GET route (FastAPI path ordering)
+- [07-04]: asyncio.to_thread for all LLM calls (non-blocking event loop)
+- [07-04]: Post-generation validate_no_fabrication() runs before returning diff view
 
 ### Pending Todos
 
@@ -137,5 +141,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 7, Plan 03 complete. Ready for Plan 04 (dashboard integration).
-Resume file: .planning/phases/07-ai-resume-cover-letter/07-04-PLAN.md
+Stopped at: Phase 7 COMPLETE. All 4 plans executed. Ready for Phase 8 planning.
+Resume file: .planning/ROADMAP.md (Phase 8: One-Click Apply)

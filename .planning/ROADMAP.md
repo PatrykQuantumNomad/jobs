@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Scheduled Automation** - Unattended pipeline runs via cron/launchd
 - [x] **Phase 5: Dashboard Core** - Search, extended status workflow, bulk actions, export, activity log
 - [x] **Phase 6: Dashboard Analytics** - Stats, metrics, and kanban board view
-- [ ] **Phase 7: AI Resume & Cover Letter** - LLM-powered resume tailoring and cover letter generation
+- [x] **Phase 7: AI Resume & Cover Letter** - LLM-powered resume tailoring and cover letter generation
 - [ ] **Phase 8: One-Click Apply** - Apply modes and dashboard-triggered application submission
 
 ## Phase Details
@@ -130,10 +130,10 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 07-01-PLAN.md -- Dependencies, Pydantic models, PDF extractor, resume version tracker + DB migration
-- [ ] 07-02-PLAN.md -- Resume tailoring and cover letter generation with Anthropic structured outputs
-- [ ] 07-03-PLAN.md -- PDF renderer (WeasyPrint + Jinja2 templates) and diff generator (difflib)
-- [ ] 07-04-PLAN.md -- Dashboard integration (tailor/generate buttons, diff view, version history, PDF download)
+- [x] 07-01-PLAN.md -- Dependencies, Pydantic models, PDF extractor, resume version tracker + DB migration
+- [x] 07-02-PLAN.md -- Resume tailoring and cover letter generation with Anthropic structured outputs
+- [x] 07-03-PLAN.md -- PDF renderer (WeasyPrint + Jinja2 templates) and diff generator (difflib)
+- [x] 07-04-PLAN.md -- Dashboard integration (tailor/generate buttons, diff view, version history, PDF download)
 
 ### Phase 8: One-Click Apply
 **Goal**: Users can apply to jobs directly from the dashboard with configurable automation levels -- from fully automated (with approval gate) to manual URL opening
@@ -169,5 +169,5 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 | 4. Scheduled Automation | 2/2 | Complete | 2026-02-07 |
 | 5. Dashboard Core | 4/4 | Complete | 2026-02-07 |
 | 6. Dashboard Analytics | 2/2 | Complete | 2026-02-07 |
-| 7. AI Resume & Cover Letter | 0/4 | Not started | - |
+| 7. AI Resume & Cover Letter | 4/4 | Complete | 2026-02-07 |
 | 8. One-Click Apply | 0/5 | Not started | - |
