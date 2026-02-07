@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import urllib.parse
+from datetime import date
 from pathlib import Path
+from typing import Annotated
 
 from fastapi import FastAPI, Form, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -86,6 +90,103 @@ async def search_jobs(
     return templates.TemplateResponse(
         "partials/job_rows.html",
         {"request": request, "jobs": jobs, "statuses": STATUSES},
+    )
+
+
+@app.post("/bulk/status", response_class=HTMLResponse)
+async def bulk_status_update(
+    request: Request,
+    job_keys: Annotated[list[str], Form()] = [],
+    bulk_status: str = Form(""),
+    q: str = Form(""),
+    score: int | None = Form(None),
+    platform: str | None = Form(None),
+    status: str | None = Form(None),
+    sort: str = Form("score"),
+    dir: str = Form("desc"),
+):
+    if bulk_status and job_keys:
+        for key in job_keys:
+            db.update_job_status(key, bulk_status)
+    # Re-fetch with current filters and return updated table body
+    jobs = db.get_jobs(
+        search=q if q else None,
+        score_min=score,
+        platform=platform,
+        status=status,
+        sort_by=sort,
+        sort_dir=dir,
+    )
+    return templates.TemplateResponse(
+        "partials/job_rows.html",
+        {"request": request, "jobs": jobs, "statuses": STATUSES},
+    )
+
+
+@app.get("/export/csv")
+async def export_csv(
+    q: str = Query(""),
+    score: int | None = Query(None),
+    platform: str | None = Query(None),
+    status: str | None = Query(None),
+    sort: str = Query("score"),
+    dir: str = Query("desc"),
+):
+    jobs = db.get_jobs(
+        search=q if q else None,
+        score_min=score,
+        platform=platform,
+        status=status,
+        sort_by=sort,
+        sort_dir=dir,
+    )
+    output = io.StringIO()
+    fields = [
+        "title", "company", "location", "salary_display", "platform",
+        "status", "score", "url", "posted_date", "created_at",
+    ]
+    writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
+    writer.writeheader()
+    for job in jobs:
+        writer.writerow(job)
+    output.seek(0)
+    filename = f"jobs_export_{date.today().isoformat()}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get("/export/json")
+async def export_json(
+    q: str = Query(""),
+    score: int | None = Query(None),
+    platform: str | None = Query(None),
+    status: str | None = Query(None),
+    sort: str = Query("score"),
+    dir: str = Query("desc"),
+):
+    jobs = db.get_jobs(
+        search=q if q else None,
+        score_min=score,
+        platform=platform,
+        status=status,
+        sort_by=sort,
+        sort_dir=dir,
+    )
+    fields = [
+        "title", "company", "location", "salary_display", "platform",
+        "status", "score", "url", "apply_url", "posted_date",
+        "created_at", "notes",
+    ]
+    export_data = [{k: job.get(k) for k in fields} for job in jobs]
+    output = json.dumps(export_data, indent=2)
+    filename = f"jobs_export_{date.today().isoformat()}.json"
+    return StreamingResponse(
+        iter([output]),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
