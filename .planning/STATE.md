@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 5 in progress - Dashboard Core (search done, bulk actions next)
+**Current focus:** Phase 5 in progress - Dashboard Core (activity timeline done, 1 plan remaining)
 
 ## Current Position
 
 Phase: 5 of 8 (Dashboard Core)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-07 -- Completed 05-02-PLAN.md (FTS5 search UI, partial template, /search endpoint)
+Last activity: 2026-02-07 -- Completed 05-03-PLAN.md (activity timeline UI, human-readable status labels)
 
-Progress: [############░░░░░░░░░░░░░░░░░░] 12/30 (~40%)
+Progress: [#############░░░░░░░░░░░░░░░░░] 13/30 (~43%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: 4.5 min
-- Total execution time: 54 min
+- Total plans completed: 13
+- Average duration: 4.4 min
+- Total execution time: 57 min
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [############░░░░░░░░░░░░░░░░░░] 1
 | 02-platform-architecture | 2/2 | 9 min | 4.5 min |
 | 03-discovery-engine | 3/3 | 15 min | 5.0 min |
 | 04-scheduled-automation | 2/2 | 8 min | 4.0 min |
-| 05-dashboard-core | 2/4 | 6 min | 3.0 min |
+| 05-dashboard-core | 3/4 | 9 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (4 min), 04-02 (4 min), 05-01 (3 min), 05-02 (3 min)
+- Last 5 plans: 04-02 (4 min), 05-01 (3 min), 05-02 (3 min), 05-03 (3 min)
 - Trend: stable/improving
 
 *Updated after each plan completion*
@@ -91,6 +91,9 @@ Recent decisions affecting current work:
 - [05-02]: FTS5 prefix matching: auto-append * to each word when no FTS5 operators detected
 - [05-02]: Partial template for table rows enables reuse by search, bulk actions (05-03), and filtering (05-04)
 - [05-02]: hx-include captures active filter state so search respects score/platform/status filters
+- [05-03]: Log "discovered" activity in upsert_job() for new jobs (not just migration backfill)
+- [05-03]: Human-readable status labels via Jinja2 replace/title filters (no server-side mapping dict)
+- [05-03]: Activity timeline placed between Notes and Metadata in sidebar
 
 ### Pending Todos
 
@@ -104,5 +107,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 5, Plan 2 complete. Ready for Plan 3 (bulk status updates)
-Resume file: .planning/phases/05-dashboard-core/05-03-PLAN.md
+Stopped at: Phase 5, Plan 3 complete. Ready for Plan 4 (remaining dashboard features)
+Resume file: .planning/phases/05-dashboard-core/05-04-PLAN.md
