@@ -20,7 +20,7 @@ else:
 # Schema
 # ---------------------------------------------------------------------------
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS jobs (
@@ -66,6 +66,21 @@ MIGRATIONS: dict[int, list[str]] = {
         "UPDATE jobs SET first_seen_at = created_at WHERE first_seen_at IS NULL",
         "UPDATE jobs SET last_seen_at = updated_at WHERE last_seen_at IS NULL",
     ],
+    3: [
+        """CREATE TABLE IF NOT EXISTS run_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            started_at TEXT NOT NULL,
+            finished_at TEXT NOT NULL,
+            mode TEXT NOT NULL DEFAULT 'manual',
+            platforms_searched TEXT NOT NULL DEFAULT '[]',
+            total_raw INTEGER DEFAULT 0,
+            total_scored INTEGER DEFAULT 0,
+            new_jobs INTEGER DEFAULT 0,
+            errors TEXT DEFAULT '[]',
+            status TEXT NOT NULL DEFAULT 'success',
+            duration_seconds REAL DEFAULT 0.0
+        )""",
+    ],
 }
 
 # ---------------------------------------------------------------------------
@@ -83,10 +98,12 @@ def get_conn() -> sqlite3.Connection:
             _memory_conn = sqlite3.connect(":memory:")
             _memory_conn.row_factory = sqlite3.Row
             _memory_conn.execute("PRAGMA journal_mode=WAL")
+            _memory_conn.execute("PRAGMA busy_timeout = 5000")
         return _memory_conn
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout = 5000")
     return conn
 
 
@@ -409,6 +426,49 @@ def get_stats() -> dict:
         "by_status": by_status,
         "by_platform": by_platform,
     }
+
+
+# ---------------------------------------------------------------------------
+# Run history
+# ---------------------------------------------------------------------------
+
+
+def record_run(
+    started_at: str,
+    finished_at: str,
+    mode: str,
+    platforms_searched: list[str],
+    total_raw: int,
+    total_scored: int,
+    new_jobs: int,
+    errors: list[str],
+    status: str,
+    duration_seconds: float,
+) -> None:
+    """Record a pipeline run in the run_history table."""
+    with get_conn() as conn:
+        conn.execute(
+            """INSERT INTO run_history
+               (started_at, finished_at, mode, platforms_searched,
+                total_raw, total_scored, new_jobs, errors, status, duration_seconds)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                started_at, finished_at, mode,
+                json.dumps(platforms_searched),
+                total_raw, total_scored, new_jobs,
+                json.dumps(errors), status, duration_seconds,
+            ),
+        )
+
+
+def get_run_history(limit: int = 50) -> list[dict]:
+    """Return recent pipeline runs, newest first."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM run_history ORDER BY id DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 # Initialize on import
