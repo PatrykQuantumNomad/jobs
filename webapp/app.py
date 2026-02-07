@@ -114,6 +114,15 @@ async def import_jobs():
     return RedirectResponse(url="/?imported=" + str(count), status_code=303)
 
 
+@app.get("/runs", response_class=HTMLResponse)
+async def run_history(request: Request):
+    runs = db.get_run_history(limit=50)
+    return templates.TemplateResponse(
+        "run_history.html",
+        {"request": request, "runs": runs},
+    )
+
+
 @app.get("/stats", response_class=HTMLResponse)
 async def stats_page(request: Request):
     stats = db.get_stats()

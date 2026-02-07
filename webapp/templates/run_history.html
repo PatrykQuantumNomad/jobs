@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Run History — Job Tracker{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Run History</h1>
+    <p class="text-sm text-gray-500 mt-1">Pipeline execution log — most recent runs first</p>
+</div>
+
+<div class="bg-white rounded-lg shadow-sm border overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b">
+            <tr>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Time</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Mode</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Platforms</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Raw Jobs</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Scored (3+)</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">New Jobs</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Errors</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-600">Duration</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y">
+            {% for run in runs %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ run.started_at[:19] | replace("T", " ") }}</td>
+                <td class="px-4 py-3">
+                    {% if run.mode == "scheduled" %}
+                    <span class="text-xs px-2 py-0.5 rounded bg-green-100 text-green-800 font-semibold">scheduled</span>
+                    {% else %}
+                    <span class="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-semibold">manual</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-gray-600">
+                    {% set platforms = run.platforms_searched | parse_json %}
+                    {% if platforms is iterable and platforms is not string %}
+                        {{ platforms | join(", ") }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-gray-700">{{ run.total_raw }}</td>
+                <td class="px-4 py-3 text-gray-700">{{ run.total_scored }}</td>
+                <td class="px-4 py-3 font-medium text-gray-900">{{ run.new_jobs }}</td>
+                <td class="px-4 py-3">
+                    {% set errs = run.errors | parse_json %}
+                    {% if errs is iterable and errs is not string and errs | length > 0 %}
+                    <details class="cursor-pointer">
+                        <summary class="text-xs px-2 py-0.5 rounded bg-red-100 text-red-800 font-semibold inline-block">
+                            {{ errs | length }} error{{ "s" if errs | length > 1 else "" }}
+                        </summary>
+                        <ul class="mt-1 text-xs text-red-700 list-disc list-inside">
+                            {% for err in errs %}
+                            <li>{{ err }}</li>
+                            {% endfor %}
+                        </ul>
+                    </details>
+                    {% else %}
+                    <span class="text-gray-400">—</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    {% if run.status == "success" %}
+                    <span class="text-xs px-2 py-0.5 rounded bg-green-100 text-green-800 font-semibold">success</span>
+                    {% elif run.status == "partial" %}
+                    <span class="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-semibold">partial</span>
+                    {% elif run.status == "failed" %}
+                    <span class="text-xs px-2 py-0.5 rounded bg-red-100 text-red-800 font-semibold">failed</span>
+                    {% else %}
+                    <span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-semibold">{{ run.status }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-gray-600 whitespace-nowrap">
+                    {% set mins = (run.duration_seconds // 60) | int %}
+                    {% set secs = (run.duration_seconds % 60) | int %}
+                    {% if mins > 0 %}{{ mins }}m {% endif %}{{ secs }}s
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not runs %}
+            <tr>
+                <td colspan="9" class="px-4 py-12 text-center text-gray-400">
+                    No pipeline runs recorded yet. Run the pipeline to see history here.
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4 text-sm text-gray-400">{{ runs | length }} run{{ "s" if runs | length != 1 else "" }} displayed</div>
+{% endblock %}

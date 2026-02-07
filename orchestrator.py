@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time as _time
 from datetime import datetime
 
 from config import (
@@ -37,6 +38,7 @@ class Orchestrator:
         if scheduled:
             self.headless = True  # Force headless in scheduled mode
         self._failed_logins: set[str] = set()
+        self._run_errors: list[str] = []
         self.searched_platforms: list[str] = []
         self.run_timestamp: str = ""
 
@@ -50,35 +52,78 @@ class Orchestrator:
         for name in platforms:
             get_platform(name)  # Raises KeyError if not registered
 
+        run_start = _time.monotonic()
+        run_started_at = datetime.now().isoformat()
         self.run_timestamp = datetime.now().isoformat()
 
-        print("=" * 60)
-        print("  JOB SEARCH AUTOMATION PIPELINE")
-        print("=" * 60)
+        try:
+            print("=" * 60)
+            print("  JOB SEARCH AUTOMATION PIPELINE")
+            print("=" * 60)
 
-        self.phase_0_setup()
-        self.phase_1_login(platforms)
+            self.phase_0_setup()
+            self.phase_1_login(platforms)
 
-        # Track which platforms were actually searched (exclude failed logins)
-        self.searched_platforms = [p for p in platforms if p not in self._failed_logins]
+            # Track which platforms were actually searched (exclude failed logins)
+            self.searched_platforms = [p for p in platforms if p not in self._failed_logins]
 
-        self.phase_2_search(platforms)
-        self.phase_3_score()
+            self.phase_2_search(platforms)
+            self.phase_3_score()
 
-        # Delta cleanup: remove stale jobs from searched platforms
-        if self.searched_platforms:
-            stale_count = webdb.remove_stale_jobs(
-                self.searched_platforms, self.run_timestamp
-            )
-            if stale_count:
-                print(f"  Removed {stale_count} stale jobs")
+            # Delta cleanup: remove stale jobs from searched platforms
+            if self.searched_platforms:
+                stale_count = webdb.remove_stale_jobs(
+                    self.searched_platforms, self.run_timestamp
+                )
+                if stale_count:
+                    print(f"  Removed {stale_count} stale jobs")
 
-        # One-time backfill: score breakdowns for legacy jobs
-        self._backfill_breakdowns()
+            # One-time backfill: score breakdowns for legacy jobs
+            self._backfill_breakdowns()
 
-        self.phase_4_apply()
+            self.phase_4_apply()
 
-        self._print_summary()
+            self._print_summary()
+        except Exception as exc:
+            self._run_errors.append(f"Pipeline crash: {exc}")
+            raise
+        finally:
+            # Always record the run, even on crash
+            run_finished_at = datetime.now().isoformat()
+            run_duration = _time.monotonic() - run_start
+
+            # Count raw jobs from files
+            total_raw = 0
+            for name in get_all_platforms():
+                raw_path = JOB_PIPELINE_DIR / f"raw_{name}.json"
+                if raw_path.exists():
+                    try:
+                        total_raw += len(json.loads(raw_path.read_text()))
+                    except (json.JSONDecodeError, OSError):
+                        pass
+
+            run_status = "success"
+            if self._run_errors:
+                if self.discovered_jobs:
+                    run_status = "partial"
+                else:
+                    run_status = "failed"
+
+            try:
+                webdb.record_run(
+                    started_at=run_started_at,
+                    finished_at=run_finished_at,
+                    mode="scheduled" if self.scheduled else "manual",
+                    platforms_searched=self.searched_platforms,
+                    total_raw=total_raw,
+                    total_scored=len(self.discovered_jobs),
+                    new_jobs=sum(1 for j in self.discovered_jobs if j.score and j.score >= 3),
+                    errors=self._run_errors,
+                    status=run_status,
+                    duration_seconds=round(run_duration, 1),
+                )
+            except Exception as rec_exc:
+                print(f"  WARNING: Failed to record run history: {rec_exc}")
 
     # -- Phase 0: environment validation ---------------------------------------
 
@@ -136,6 +181,7 @@ class Orchestrator:
             print(f"  {info.name}: login failed -- {exc}")
             print(f"  Skipping {info.name} for this run.")
             self._failed_logins.add(name)
+            self._run_errors.append(f"{info.name}: login failed -- {exc}")
         finally:
             if pw and ctx:
                 close_browser(pw, ctx)
@@ -184,6 +230,7 @@ class Orchestrator:
                         all_jobs.extend(found)
                 except Exception as exc:
                     print(f"  {info.name}: error on '{q.query}' -- {exc}")
+                    self._run_errors.append(f"{info.name}: error on '{q.query}' -- {exc}")
                     continue
 
         if info.platform_type == "browser" and pw and ctx:
