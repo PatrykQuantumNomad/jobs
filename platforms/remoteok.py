@@ -1,16 +1,23 @@
-"""RemoteOK platform — pure HTTP API, no browser needed."""
+"""RemoteOK platform -- pure HTTP API, no browser needed."""
 
 from __future__ import annotations
 
 import re
 from datetime import UTC, datetime
+from pathlib import Path
 
 import httpx
 
 from config import get_settings
 from models import Job, SearchQuery
+from platforms.registry import register_platform
 
 
+@register_platform(
+    "remoteok",
+    name="RemoteOK",
+    platform_type="api",
+)
 class RemoteOKPlatform:
     """RemoteOK API client.  No authentication, no browser automation."""
 
@@ -18,27 +25,39 @@ class RemoteOKPlatform:
     platform_name = "remoteok"
 
     def __init__(self) -> None:
-        self.client = httpx.AsyncClient(
+        self.client: httpx.Client | None = None
+
+    def init(self) -> None:
+        """Initialize the sync HTTP client."""
+        self.client = httpx.Client(
             headers={
                 "User-Agent": "JobSearchBot/1.0 (pgolabek@gmail.com)",
             },
             timeout=30.0,
         )
 
-    # ── Public API ───────────────────────────────────────────────────────
+    def __enter__(self) -> RemoteOKPlatform:
+        return self
 
-    async def search(self, query: SearchQuery) -> list[Job]:
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        if self.client is not None:
+            self.client.close()
+            self.client = None
+
+    # -- Public API ------------------------------------------------------------
+
+    def search(self, query: SearchQuery) -> list[Job]:
         """Fetch all jobs from the API and filter by tag overlap."""
         settings = get_settings()
         try:
-            resp = await self.client.get(self.API_URL)
+            resp = self.client.get(self.API_URL)
             resp.raise_for_status()
             data = resp.json()
         except (httpx.HTTPError, ValueError) as exc:
             print(f"  RemoteOK API error: {exc}")
             return []
 
-        # Index 0 is legal/metadata — real jobs start at 1
+        # Index 0 is legal/metadata -- real jobs start at 1
         raw_jobs = data[1:] if len(data) > 1 else []
 
         filter_terms = self._filter_terms(query.query)
@@ -59,18 +78,15 @@ class RemoteOKPlatform:
         return jobs
 
     def get_job_details(self, job: Job) -> Job:
-        """API already provides full descriptions — nothing extra to fetch."""
+        """API already provides full descriptions -- nothing extra to fetch."""
         return job
 
-    def apply(self, job: Job) -> bool:
+    def apply(self, job: Job, resume_path: Path | None = None) -> bool:
         """RemoteOK has no built-in apply; jobs redirect to external ATS."""
-        print(f"  RemoteOK: external application required — {job.apply_url or job.url}")
+        print(f"  RemoteOK: external application required -- {job.apply_url or job.url}")
         return False
 
-    async def close(self) -> None:
-        await self.client.aclose()
-
-    # ── Private helpers ──────────────────────────────────────────────────
+    # -- Private helpers -------------------------------------------------------
 
     def _filter_terms(self, query: str) -> list[str]:
         """Extract candidate tech keywords that appear in the query string."""

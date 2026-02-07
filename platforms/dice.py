@@ -9,24 +9,43 @@ from urllib.parse import urlencode
 from playwright.sync_api import BrowserContext
 from playwright.sync_api import TimeoutError as PwTimeout
 
-from config import get_settings
+from config import PROJECT_ROOT, get_settings
 from models import Job, SearchQuery
-from platforms.base import BasePlatform
+from platforms.mixins import BrowserPlatformMixin
+from platforms.registry import register_platform
 from platforms.dice_selectors import DICE_SEARCH_PARAMS, DICE_SELECTORS, DICE_URLS
 
 
-class DicePlatform(BasePlatform):
+@register_platform(
+    "dice",
+    name="Dice",
+    platform_type="browser",
+    capabilities=["easy_apply"],
+)
+class DicePlatform(BrowserPlatformMixin):
     """Dice job search and Easy Apply automation.
 
-    Anti-bot level: LOW — standard delays sufficient.
+    Anti-bot level: LOW -- standard delays sufficient.
     """
 
     platform_name = "dice"
 
-    def __init__(self, context: BrowserContext) -> None:
-        super().__init__(context)
+    def __init__(self) -> None:
+        self.context: BrowserContext | None = None
+        self.page = None
 
-    # ── Authentication ───────────────────────────────────────────────────
+    def init(self, context: BrowserContext) -> None:
+        """Receive Playwright BrowserContext from orchestrator."""
+        self.context = context
+        self.page = context.pages[0] if context.pages else context.new_page()
+
+    def __enter__(self) -> DicePlatform:
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        pass  # BrowserContext lifecycle managed by orchestrator
+
+    # -- Authentication --------------------------------------------------------
 
     def login(self) -> bool:
         settings = get_settings()
@@ -41,7 +60,7 @@ class DicePlatform(BasePlatform):
             print("  Dice: already logged in (cached session)")
             return False
 
-        print("  Dice: logging in …")
+        print("  Dice: logging in ...")
         self.page.goto(DICE_URLS["login"], timeout=timeout)
         self.human_delay("nav")
 
@@ -63,7 +82,7 @@ class DicePlatform(BasePlatform):
 
             if not self.is_logged_in():
                 self.screenshot("login_failed")
-                raise RuntimeError("Dice login failed — check credentials")
+                raise RuntimeError("Dice login failed -- check credentials")
 
             print("  Dice: login successful")
             return True
@@ -75,13 +94,13 @@ class DicePlatform(BasePlatform):
         url = self.page.url
         return "dice.com" in url and "/login" not in url
 
-    # ── Search ───────────────────────────────────────────────────────────
+    # -- Search ----------------------------------------------------------------
 
     def search(self, query: SearchQuery) -> list[Job]:
         jobs: list[Job] = []
         base_url = self._build_search_url(query)
         timeout = get_settings().timing.page_load_timeout
-        print(f"  Dice: searching '{query.query}' …")
+        print(f"  Dice: searching '{query.query}' ...")
 
         for page_num in range(1, query.max_pages + 1):
             url = f"{base_url}&page={page_num}"
@@ -122,9 +141,12 @@ class DicePlatform(BasePlatform):
             print(f"    Dice: timeout fetching details for {job.title}")
         return job
 
-    # ── Apply (human-in-the-loop) ────────────────────────────────────────
+    # -- Apply (human-in-the-loop) ---------------------------------------------
 
-    def apply(self, job: Job, resume_path: Path) -> bool:
+    def apply(self, job: Job, resume_path: Path | None = None) -> bool:
+        if resume_path is None:
+            resume_path = PROJECT_ROOT / get_settings().candidate_resume_path
+
         self.page.goto(str(job.url), timeout=get_settings().timing.page_load_timeout)
         self.human_delay("nav")
 
@@ -138,7 +160,7 @@ class DicePlatform(BasePlatform):
         # Resume upload
         if self.element_exists(DICE_SELECTORS["resume_upload"], timeout=5000):
             resp = self.wait_for_human(
-                f"Resume upload for {job.company} — {job.title}\n"
+                f"Resume upload for {job.company} -- {job.title}\n"
                 f"  File: {resume_path}\n"
                 "  Type 'yes' to upload, anything else to skip:"
             )
@@ -150,7 +172,7 @@ class DicePlatform(BasePlatform):
         # Final confirmation
         self.screenshot("before_submit")
         resp = self.wait_for_human(
-            f"Ready to submit to {job.company} — {job.title}\n"
+            f"Ready to submit to {job.company} -- {job.title}\n"
             f"  Type 'SUBMIT' to confirm:"
         )
         if resp != "SUBMIT":
@@ -162,7 +184,7 @@ class DicePlatform(BasePlatform):
         print(f"    Dice: submitted application for {job.title}")
         return True
 
-    # ── Private helpers ──────────────────────────────────────────────────
+    # -- Private helpers -------------------------------------------------------
 
     def _build_search_url(self, query: SearchQuery) -> str:
         params = {
@@ -205,7 +227,7 @@ class DicePlatform(BasePlatform):
                     break
 
             # Parse location and salary from card inner text
-            # Format: "Company\nApply Now\nTitle\nLocation\n•\nDate\nDescription..."
+            # Format: "Company\nApply Now\nTitle\nLocation\n*\nDate\nDescription..."
             card_text = card.inner_text()
             location, salary_text = _parse_card_text(card_text, title)
             sal_min, sal_max = _parse_salary(salary_text)
@@ -224,11 +246,11 @@ class DicePlatform(BasePlatform):
                 easy_apply=has_easy,
             )
         except Exception as exc:
-            print(f"    Dice: card extraction error — {exc}")
+            print(f"    Dice: card extraction error -- {exc}")
             return None
 
 
-# ── Module-level helpers ─────────────────────────────────────────────────
+# -- Module-level helpers ------------------------------------------------------
 
 
 def _parse_card_text(card_text: str, title: str) -> tuple[str, str | None]:
@@ -238,7 +260,7 @@ def _parse_card_text(card_text: str, title: str) -> tuple[str, str | None]:
         Company
         Apply Now          (or Easy Apply)
         Title
-        Location • Date
+        Location * Date
         Description snippet...
         Full-time           (optional)
         USD 224,400 ...     (optional salary line)
@@ -251,8 +273,8 @@ def _parse_card_text(card_text: str, title: str) -> tuple[str, str | None]:
     for i, line in enumerate(lines):
         if line == title and i + 1 < len(lines):
             loc_line = lines[i + 1]
-            # Location line may contain "•" separator with date
-            location = loc_line.split("•")[0].strip() if "•" in loc_line else loc_line
+            # Location line may contain "*" separator with date
+            location = loc_line.split("\u2022")[0].strip() if "\u2022" in loc_line else loc_line
             break
 
     # Look for salary pattern anywhere in the text

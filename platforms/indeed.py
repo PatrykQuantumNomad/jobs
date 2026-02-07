@@ -1,6 +1,6 @@
 """Indeed.com automation using Playwright + stealth.
 
-Anti-bot level: HIGH — Cloudflare Turnstile, fingerprinting, behavioural analysis.
+Anti-bot level: HIGH -- Cloudflare Turnstile, fingerprinting, behavioural analysis.
 """
 
 from __future__ import annotations
@@ -12,9 +12,10 @@ from urllib.parse import urlencode
 from playwright.sync_api import BrowserContext
 from playwright.sync_api import TimeoutError as PwTimeout
 
-from config import get_settings
+from config import PROJECT_ROOT, get_settings
 from models import Job, SearchQuery
-from platforms.base import BasePlatform
+from platforms.mixins import BrowserPlatformMixin
+from platforms.registry import register_platform
 from platforms.indeed_selectors import (
     INDEED_SEARCH_PARAMS,
     INDEED_SELECTORS,
@@ -22,18 +23,36 @@ from platforms.indeed_selectors import (
 )
 
 
-class IndeedPlatform(BasePlatform):
+@register_platform(
+    "indeed",
+    name="Indeed",
+    platform_type="browser",
+    capabilities=["easy_apply"],
+)
+class IndeedPlatform(BrowserPlatformMixin):
     """Indeed job search and Indeed Apply automation."""
 
     platform_name = "indeed"
 
-    def __init__(self, context: BrowserContext) -> None:
-        super().__init__(context)
+    def __init__(self) -> None:
+        self.context: BrowserContext | None = None
+        self.page = None
 
-    # ── Authentication ───────────────────────────────────────────────────
+    def init(self, context: BrowserContext) -> None:
+        """Receive Playwright BrowserContext from orchestrator."""
+        self.context = context
+        self.page = context.pages[0] if context.pages else context.new_page()
+
+    def __enter__(self) -> IndeedPlatform:
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        pass  # BrowserContext lifecycle managed by orchestrator
+
+    # -- Authentication --------------------------------------------------------
 
     def login(self) -> bool:
-        """Session-based login — uses cached session or waits for manual Google auth."""
+        """Session-based login -- uses cached session or waits for manual Google auth."""
         settings = get_settings()
         timeout = settings.timing.page_load_timeout
         self.page.goto(INDEED_URLS["base"], timeout=timeout)
@@ -43,15 +62,15 @@ class IndeedPlatform(BasePlatform):
             print("  Indeed: already logged in (cached session)")
             return False
 
-        # Session expired or first run — need manual login
-        print("  Indeed: no active session — opening login page for manual auth")
+        # Session expired or first run -- need manual login
+        print("  Indeed: no active session -- opening login page for manual auth")
         self.page.goto(INDEED_URLS["login"], timeout=timeout)
 
-        print("  ┌──────────────────────────────────────────────────────┐")
-        print("  │  1. Solve the Cloudflare challenge if it appears     │")
-        print("  │  2. Log in via Google in the browser window          │")
-        print("  │  3. Press ENTER here when you're logged in           │")
-        print("  └──────────────────────────────────────────────────────┘")
+        print("  +------------------------------------------------------+")
+        print("  |  1. Solve the Cloudflare challenge if it appears     |")
+        print("  |  2. Log in via Google in the browser window          |")
+        print("  |  3. Press ENTER here when you're logged in           |")
+        print("  +------------------------------------------------------+")
         input("  Press ENTER after logging in > ")
 
         # Navigate to homepage to verify session
@@ -59,25 +78,25 @@ class IndeedPlatform(BasePlatform):
         self.human_delay("nav")
 
         if self.is_logged_in():
-            print("  Indeed: login detected — session cached for future runs")
+            print("  Indeed: login detected -- session cached for future runs")
             return True
 
         self.screenshot("login_failed")
         raise RuntimeError(
-            "Indeed login not detected — try again or check the browser window"
+            "Indeed login not detected -- try again or check the browser window"
         )
 
     def is_logged_in(self) -> bool:
         return self.element_exists(INDEED_SELECTORS["logged_in_indicator"])
 
-    # ── Search ───────────────────────────────────────────────────────────
+    # -- Search ----------------------------------------------------------------
 
     def search(self, query: SearchQuery) -> list[Job]:
         jobs: list[Job] = []
         seen_ids: set[str] = set()
         base_url = self._build_search_url(query)
         timeout = get_settings().timing.page_load_timeout
-        print(f"  Indeed: searching '{query.query}' …")
+        print(f"  Indeed: searching '{query.query}' ...")
 
         for page_idx in range(query.max_pages):
             url = f"{base_url}&start={page_idx * 10}"
@@ -148,15 +167,18 @@ class IndeedPlatform(BasePlatform):
             if not job.description:
                 self.screenshot(f"no_desc_{job.id[:8]}")
                 print(
-                    f"    Indeed: no description found for {job.title} — screenshot saved"
+                    f"    Indeed: no description found for {job.title} -- screenshot saved"
                 )
         except Exception as exc:
-            print(f"    Indeed: error fetching details for {job.title} — {exc}")
+            print(f"    Indeed: error fetching details for {job.title} -- {exc}")
         return job
 
-    # ── Apply (human-in-the-loop) ────────────────────────────────────────
+    # -- Apply (human-in-the-loop) ---------------------------------------------
 
-    def apply(self, job: Job, resume_path: Path) -> bool:
+    def apply(self, job: Job, resume_path: Path | None = None) -> bool:
+        if resume_path is None:
+            resume_path = PROJECT_ROOT / get_settings().candidate_resume_path
+
         self.page.goto(str(job.url), timeout=get_settings().timing.page_load_timeout)
         self.human_delay("nav")
 
@@ -170,7 +192,7 @@ class IndeedPlatform(BasePlatform):
         # Resume upload if prompted
         if self.element_exists(INDEED_SELECTORS["resume_upload"], timeout=5000):
             resp = self.wait_for_human(
-                f"Resume upload for {job.company} — {job.title}\n"
+                f"Resume upload for {job.company} -- {job.title}\n"
                 f"  File: {resume_path}\n"
                 "  Type 'yes' to upload, anything else to skip:"
             )
@@ -184,7 +206,7 @@ class IndeedPlatform(BasePlatform):
         # Final confirmation
         self.screenshot("before_submit")
         resp = self.wait_for_human(
-            f"Ready to submit to {job.company} — {job.title}\n"
+            f"Ready to submit to {job.company} -- {job.title}\n"
             "  Type 'SUBMIT' to confirm:"
         )
         if resp != "SUBMIT":
@@ -200,7 +222,7 @@ class IndeedPlatform(BasePlatform):
         print("    Indeed: submit button not found")
         return False
 
-    # ── Sponsored card detection ────────────────────────────────────────
+    # -- Sponsored card detection ----------------------------------------------
 
     @staticmethod
     def _is_sponsored(card) -> bool:
@@ -215,7 +237,7 @@ class IndeedPlatform(BasePlatform):
             pass
         return False
 
-    # ── Challenge detection ──────────────────────────────────────────────
+    # -- Challenge detection ---------------------------------------------------
 
     def _detect_captcha(self) -> bool:
         return self.element_exists(
@@ -231,7 +253,7 @@ class IndeedPlatform(BasePlatform):
             self.screenshot(f"captcha_{context}")
             raise RuntimeError(
                 f"Indeed CAPTCHA detected ({context}). "
-                "Human intervention required — solve in browser_sessions/indeed/."
+                "Human intervention required -- solve in browser_sessions/indeed/."
             )
         if self._detect_email_verification():
             self.screenshot(f"email_verify_{context}")
@@ -240,13 +262,13 @@ class IndeedPlatform(BasePlatform):
                 "Check pgolabek@gmail.com for verification code."
             )
 
-    # ── Private helpers ──────────────────────────────────────────────────
+    # -- Private helpers -------------------------------------------------------
 
     def _build_search_url(self, query: SearchQuery) -> str:
         params = {"q": query.query, "l": query.location}
         url = f"{INDEED_URLS['search']}?{urlencode(params)}"
         url += f"&{INDEED_SEARCH_PARAMS['remote_filter']}"
-        # Salary filter — Indeed expects salaryType=$XXX,XXX+ (URL-encoded)
+        # Salary filter -- Indeed expects salaryType=$XXX,XXX+ (URL-encoded)
         salary = f"${get_settings().search.min_salary:,}+"
         url += f"&{urlencode({'salaryType': salary})}"
         url += f"&{INDEED_SEARCH_PARAMS['recency_14d']}"
@@ -255,7 +277,7 @@ class IndeedPlatform(BasePlatform):
 
     def _extract_card(self, card) -> Job | None:
         try:
-            # Skip sponsored/promoted cards — they have fake job IDs that 404
+            # Skip sponsored/promoted cards -- they have fake job IDs that 404
             if self._is_sponsored(card):
                 return None
 
@@ -298,24 +320,24 @@ class IndeedPlatform(BasePlatform):
                 salary_max=sal_max,
             )
         except Exception as exc:
-            print(f"    Indeed: card extraction error — {exc}")
+            print(f"    Indeed: card extraction error -- {exc}")
             return None
 
 
-# ── Module-level helpers ─────────────────────────────────────────────────
+# -- Module-level helpers ------------------------------------------------------
 
 
 def _parse_salary(text: str | None) -> tuple[int | None, int | None]:
-    """Parse Indeed salary formats — handles annual and hourly rates."""
+    """Parse Indeed salary formats -- handles annual and hourly rates."""
     if not text:
         return None, None
 
     lower = text.lower()
 
-    # Determine multiplier (hourly → annual)
+    # Determine multiplier (hourly -> annual)
     multiplier = 1
     if "hour" in lower:
-        multiplier = 2080  # 40 h/wk × 52 wk
+        multiplier = 2080  # 40 h/wk x 52 wk
     elif "month" in lower:
         multiplier = 12
 
