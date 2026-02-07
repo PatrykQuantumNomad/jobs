@@ -119,6 +119,11 @@ Recent decisions affecting current work:
 - [07-02]: Validator works on plain text strings (not Pydantic models) for flexibility across resume and cover letter
 - [07-02]: Conservative company detection with stop-word filter to minimize false positives
 - [07-02]: Known tech keywords set (~100 terms) for skill extraction covers project domain
+- [07-03]: Standalone HTML templates (not extending base.html) since WeasyPrint renders to PDF, not browser
+- [07-03]: Lazy Jinja2 Environment initialization via module-level _env pattern for efficiency
+- [07-03]: TYPE_CHECKING guard for model imports to avoid circular dependencies
+- [07-03]: Calibri with Carlito fallback for ATS compatibility (Carlito is the open-source metric-equivalent)
+- [07-03]: Context-mode diff with 3 surrounding lines for focused comparison without noise
 
 ### Pending Todos
 
@@ -132,5 +137,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 7, Plan 02 complete. Ready for Plan 03 (dashboard integration).
-Resume file: .planning/phases/07-ai-resume-cover-letter/07-03-PLAN.md
+Stopped at: Phase 7, Plan 03 complete. Ready for Plan 04 (dashboard integration).
+Resume file: .planning/phases/07-ai-resume-cover-letter/07-04-PLAN.md
