@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cover Letter - {{ candidate_name }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 1in;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Calibri', 'Carlito', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .sender-info {
+            margin-bottom: 20pt;
+        }
+
+        .sender-name {
+            font-weight: bold;
+            font-size: 12pt;
+            color: #111;
+        }
+
+        .sender-contact {
+            font-size: 10pt;
+            color: #555;
+        }
+
+        .date {
+            margin-bottom: 20pt;
+            color: #333;
+        }
+
+        .greeting {
+            margin-bottom: 12pt;
+            font-weight: bold;
+        }
+
+        p {
+            margin-bottom: 12pt;
+        }
+
+        .sign-off {
+            margin-top: 24pt;
+        }
+
+        .signature-name {
+            font-weight: bold;
+            margin-top: 24pt;
+        }
+    </style>
+</head>
+<body>
+    <div class="sender-info">
+        <div class="sender-name">{{ candidate_name }}</div>
+        <div class="sender-contact">{{ candidate_email }} | {{ candidate_phone }}</div>
+    </div>
+
+    <div class="date">{{ date }}</div>
+
+    <div class="greeting">{{ greeting }}</div>
+
+    <p>{{ opening_paragraph }}</p>
+
+    {% for para in body_paragraphs %}
+    <p>{{ para }}</p>
+    {% endfor %}
+
+    <p>{{ closing_paragraph }}</p>
+
+    <div class="sign-off">{{ sign_off }}</div>
+    <div class="signature-name">{{ candidate_name }}</div>
+</body>
+</html>

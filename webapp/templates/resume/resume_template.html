@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ name }} - Resume</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 0.6in 0.7in;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Calibri', 'Carlito', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 18pt;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            color: #111;
+        }
+
+        .contact-info {
+            text-align: center;
+            font-size: 9pt;
+            color: #555;
+            margin-top: 4pt;
+        }
+
+        h2 {
+            font-size: 13pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 1px solid #555;
+            padding-bottom: 2px;
+            margin-top: 14pt;
+            margin-bottom: 6pt;
+            color: #222;
+        }
+
+        .summary-text {
+            margin-bottom: 4pt;
+        }
+
+        .skills-section {
+            margin-bottom: 4pt;
+        }
+
+        .skill-category {
+            font-weight: bold;
+        }
+
+        .experience-entry {
+            page-break-inside: avoid;
+            margin-bottom: 8pt;
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8pt;
+        }
+
+        .job-title {
+            font-weight: bold;
+        }
+
+        .job-company {
+            font-weight: bold;
+        }
+
+        .job-period {
+            font-style: italic;
+            color: #555;
+        }
+
+        ul {
+            margin: 2pt 0;
+            padding-left: 16pt;
+        }
+
+        li {
+            margin-bottom: 2pt;
+        }
+
+        .projects-list {
+            margin-top: 2pt;
+        }
+
+        .projects-list li {
+            margin-bottom: 3pt;
+        }
+
+        .education-text {
+            margin-top: 2pt;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ name }}</h1>
+    <div class="contact-info">{{ contact_info }}</div>
+
+    <h2>Professional Summary</h2>
+    <p class="summary-text">{{ summary }}</p>
+
+    <h2>Technical Skills</h2>
+    {% for section in skills %}
+    <div class="skills-section">
+        <span class="skill-category">{{ section.category }}:</span>
+        {{ section.skills | join(', ') }}
+    </div>
+    {% endfor %}
+
+    <h2>Work Experience</h2>
+    {% for exp in experience %}
+    <div class="experience-entry">
+        <div class="job-header">
+            <div>
+                <span class="job-title">{{ exp.title }}</span> &mdash;
+                <span class="job-company">{{ exp.company }}</span>
+            </div>
+            <span class="job-period">{{ exp.period }}</span>
+        </div>
+        <ul>
+            {% for achievement in exp.achievements %}
+            <li>{{ achievement }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+
+    <h2>Key Projects</h2>
+    <ul class="projects-list">
+        {% for project in projects %}
+        <li>{{ project }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Education</h2>
+    <p class="education-text">{{ education }}</p>
+</body>
+</html>
