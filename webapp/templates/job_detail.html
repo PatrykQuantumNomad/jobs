@@ -135,6 +135,39 @@
             </form>
         </div>
 
+        <!-- AI Resume Tools -->
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">AI Resume Tools</h2>
+            <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/tailor-resume"
+                    hx-target="#resume-ai-result"
+                    hx-swap="innerHTML"
+                    hx-indicator="#resume-spinner"
+                    class="w-full bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700 mb-2">
+                Tailor Resume
+            </button>
+            <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/cover-letter"
+                    hx-target="#resume-ai-result"
+                    hx-swap="innerHTML"
+                    hx-indicator="#resume-spinner"
+                    class="w-full bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700 mb-2">
+                Generate Cover Letter
+            </button>
+            <div id="resume-spinner" class="htmx-indicator text-center py-4">
+                <span class="text-sm text-gray-500">Generating... this may take 10-15 seconds</span>
+            </div>
+            <div id="resume-ai-result"></div>
+        </div>
+
+        <!-- Resume Versions -->
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Resume Versions</h2>
+            <div hx-get="/jobs/{{ job.dedup_key | urlencode }}/resume-versions"
+                 hx-trigger="load"
+                 hx-target="this">
+                <p class="text-sm text-gray-400">Loading...</p>
+            </div>
+        </div>
+
         <!-- Activity Timeline -->
         <div class="bg-white rounded-lg shadow-sm border p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-3">Activity</h2>
@@ -149,6 +182,8 @@
                         {% elif event.event_type == 'viewed' %}bg-gray-400
                         {% elif event.event_type == 'applied' %}bg-purple-400
                         {% elif event.event_type == 'scored' %}bg-blue-400
+                        {% elif event.event_type == 'resume_tailored' %}bg-indigo-400
+                        {% elif event.event_type == 'cover_letter_generated' %}bg-emerald-400
                         {% else %}bg-gray-300
                         {% endif %}"></div>
                     <div class="flex-1 min-w-0">
@@ -167,8 +202,12 @@
                                 Scored: {{ event.new_value }}
                             {% elif event.event_type == 'applied' %}
                                 Application submitted
+                            {% elif event.event_type == 'resume_tailored' %}
+                                Resume tailored{% if event.detail %}: {{ event.detail }}{% endif %}
+                            {% elif event.event_type == 'cover_letter_generated' %}
+                                Cover letter generated{% if event.detail %}: {{ event.detail }}{% endif %}
                             {% else %}
-                                {{ event.event_type }}
+                                {{ event.event_type }}{% if event.detail %}: {{ event.detail }}{% endif %}
                             {% endif %}
                         </div>
                         <div class="text-xs text-gray-400 mt-0.5">{{ event.created_at }}</div>

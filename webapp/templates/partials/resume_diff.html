@@ -1,0 +1,33 @@
+{# htmx partial: Resume diff view with validation status and download link #}
+
+{% if not validation_valid %}
+<div class="bg-amber-50 border border-amber-400 text-amber-800 px-4 py-3 rounded mb-4">
+    <p class="font-bold">Warning: Potential fabrication detected</p>
+    <p class="text-sm">The validator found entities in the tailored resume that do not appear in the original. Please review carefully before using this resume:</p>
+    <ul class="list-disc list-inside text-sm mt-2">
+        {% for warning in validation_warnings %}
+        <li>{{ warning }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% else %}
+<div class="bg-green-50 border border-green-400 text-green-800 px-4 py-3 rounded mb-4">
+    <p class="text-sm font-medium">Validation passed: No fabricated content detected</p>
+</div>
+{% endif %}
+
+<div class="bg-blue-50 border border-blue-400 text-blue-800 px-4 py-3 rounded mb-4">
+    <p class="text-sm font-medium">Resume tailored successfully</p>
+</div>
+
+{% if tailoring_notes %}
+<p class="text-sm text-gray-600 italic mb-4">{{ tailoring_notes }}</p>
+{% endif %}
+
+<a href="{{ download_url }}"
+   class="inline-block bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700 mb-4"
+   download>Download PDF ({{ filename }})</a>
+
+<div class="mt-4 overflow-x-auto border rounded">
+    {{ diff_html | safe }}
+</div>

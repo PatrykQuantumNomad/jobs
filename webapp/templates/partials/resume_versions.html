@@ -1,0 +1,29 @@
+{# htmx partial: Resume version history for a job #}
+
+{% if versions %}
+<div class="space-y-3">
+    {% for v in versions %}
+    <div class="flex items-center justify-between gap-3 text-sm border-b pb-2 last:border-b-0">
+        <div class="flex items-center gap-2 min-w-0">
+            {% if v.resume_type == "resume" %}
+            <span class="flex-shrink-0 text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium">Resume</span>
+            {% elif v.resume_type == "cover_letter" %}
+            <span class="flex-shrink-0 text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-medium">Cover Letter</span>
+            {% else %}
+            <span class="flex-shrink-0 text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">{{ v.resume_type }}</span>
+            {% endif %}
+            <span class="text-xs text-gray-400 truncate">{{ v.created_at }}</span>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="text-xs text-gray-400">{{ v.model_used }}</span>
+            {% set fname = v.file_path.split('/')[-1] %}
+            <a href="/resumes/tailored/{{ fname }}"
+               class="text-xs text-indigo-600 hover:text-indigo-800 underline"
+               download>Download</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-sm text-gray-400">No tailored documents yet.</p>
+{% endif %}
