@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 7 - AI Resume & Cover Letter. Plan 01 complete, 3 remaining.
+**Current focus:** Phase 7 - AI Resume & Cover Letter. Plan 03 complete, 1 remaining.
 
 ## Current Position
 
 Phase: 7 of 8 (AI Resume & Cover Letter)
-Plan: 1 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-07 -- Completed 07-01-PLAN.md (foundation: models, extractor, tracker)
+Last activity: 2026-02-07 -- Completed 07-03-PLAN.md (PDF rendering and diff)
 
-Progress: [####################░░░░░░░░░░] 20/30 (~67%)
+Progress: [######################░░░░░░░░] 22/30 (~73%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
+- Total plans completed: 22
 - Average duration: 4.1 min
-- Total execution time: 81 min
+- Total execution time: 91 min
 
 **By Phase:**
 
@@ -33,10 +33,10 @@ Progress: [####################░░░░░░░░░░] 20/30 (~67%)
 | 04-scheduled-automation | 2/2 | 8 min | 4.0 min |
 | 05-dashboard-core | 4/4 | 12 min | 3.0 min |
 | 06-dashboard-analytics | 2/2 | 8 min | 4.0 min |
-| 07-ai-resume-cover-letter | 1/4 | 4 min | 4.0 min |
+| 07-ai-resume-cover-letter | 3/4 | 14 min | 4.7 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-04 (3 min), 06-01 (4 min), 06-02 (4 min), 07-01 (4 min)
+- Last 5 plans: 06-02 (4 min), 07-01 (4 min), 07-02 (6 min), 07-03 (4 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -114,6 +114,11 @@ Recent decisions affecting current work:
 - [07-01]: WorkExperience.achievements reorder-only constraint documented in Field description
 - [07-01]: resume_versions table uses job_dedup_key FK to jobs table for referential integrity
 - [07-01]: get_all_versions() LEFT JOINs jobs table to enrich with title/company metadata
+- [07-02]: Temperature=0 for resume tailoring (max factual accuracy), 0.3 for cover letter (natural writing)
+- [07-02]: Stop-word filtering in entity extraction to prevent false positives from sentence-start capitalization
+- [07-02]: Validator works on plain text strings (not Pydantic models) for flexibility across resume and cover letter
+- [07-02]: Conservative company detection with stop-word filter to minimize false positives
+- [07-02]: Known tech keywords set (~100 terms) for skill extraction covers project domain
 
 ### Pending Todos
 
@@ -127,5 +132,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 7, Plan 01 complete. Ready for Plan 02 (LLM tailoring engine).
-Resume file: .planning/phases/07-ai-resume-cover-letter/07-02-PLAN.md
+Stopped at: Phase 7, Plan 02 complete. Ready for Plan 03 (dashboard integration).
+Resume file: .planning/phases/07-ai-resume-cover-letter/07-03-PLAN.md
