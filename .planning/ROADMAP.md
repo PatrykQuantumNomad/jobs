@@ -43,17 +43,16 @@ Plans:
 **Goal**: Adding a new job board requires creating one file that implements a protocol -- no changes to the orchestrator, config, or scoring pipeline
 **Depends on**: Phase 1
 **Requirements**: PLAT-01
+**Plans:** 2 plans
 **Success Criteria** (what must be TRUE):
   1. Platform implementations use Protocol-based contracts (BrowserPlatform, APIPlatform) instead of BasePlatform ABC inheritance
   2. New platforms are auto-discovered via a registry decorator -- adding a file to `platforms/` is sufficient to register it
   3. Orchestrator iterates over registered platforms from config without any if/elif branching for platform names
   4. Existing Indeed, Dice, and RemoteOK adapters work identically after migration to the new architecture
-**Plans**: TBD
 
 Plans:
-- [ ] 02-01: Platform protocols and registry
-- [ ] 02-02: Migrate existing adapters
-- [ ] 02-03: Orchestrator refactor
+- [ ] 02-01-PLAN.md -- Protocol definitions (BrowserPlatform, APIPlatform), registry decorator with fail-fast validation, and BrowserPlatformMixin
+- [ ] 02-02-PLAN.md -- Big-bang migration: all three adapters to protocols, orchestrator to registry-based iteration, auto-discovery in __init__.py, BasePlatform ABC deleted
 
 ### Phase 3: Discovery Engine
 **Goal**: The scrape-and-score loop produces smarter, more transparent results -- fuzzy company matching catches duplicates the current exact-match misses, score breakdowns explain why each job scored what it did, salary data is comparable across platforms, and repeat runs highlight what is new
@@ -169,7 +168,7 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Config Externalization | 3/3 | Complete | 2026-02-07 |
-| 2. Platform Architecture | 0/3 | Not started | - |
+| 2. Platform Architecture | 0/2 | Not started | - |
 | 3. Discovery Engine | 0/4 | Not started | - |
 | 4. Scheduled Automation | 0/2 | Not started | - |
 | 5. Dashboard Core | 0/5 | Not started | - |
