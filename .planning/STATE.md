@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 ## Current Position
 
 Phase: 1 of 8 (Config Externalization)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-07 -- Completed 01-01-PLAN.md (AppSettings foundation)
+Last activity: 2026-02-07 -- Completed 01-02-PLAN.md (pipeline core migration)
 
-Progress: [#░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1/30 (~3%)
+Progress: [##░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/30 (~7%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 6 min
-- Total execution time: 6 min
+- Total plans completed: 2
+- Average duration: 5.5 min
+- Total execution time: 11 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-config-externalization | 1/3 | 6 min | 6 min |
+| 01-config-externalization | 2/3 | 11 min | 5.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min)
-- Trend: -
+- Last 5 plans: 01-01 (6 min), 01-02 (5 min)
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -50,6 +50,9 @@ Recent decisions affecting current work:
 - [01-01]: Backward-compatible Config shim added to avoid breaking 6+ existing consumers during migration
 - [01-01]: extra="ignore" on AppSettings root to tolerate unrecognized env vars
 - [01-01]: Personal profile fields default to empty strings, populated from .env via build_candidate_profile()
+- [01-02]: Weighted scoring formula with default weights reproduces original hardcoded scoring exactly
+- [01-02]: Orchestrator loads settings eagerly in __init__, passes derived objects to collaborators
+- [01-02]: --platforms CLI default changed from hardcoded list to settings.enabled_platforms()
 
 ### Pending Todos
 
@@ -63,5 +66,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed 01-01-PLAN.md, ready for 01-02-PLAN.md (consumer migration: scorer, form_filler, orchestrator)
+Stopped at: Completed 01-02-PLAN.md, ready for 01-03-PLAN.md (platform module migration + Config shim removal)
 Resume file: None
