@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 6 Complete - Dashboard Analytics. Ready for Phase 7.
+**Current focus:** Phase 7 - AI Resume & Cover Letter. Plan 01 complete, 3 remaining.
 
 ## Current Position
 
-Phase: 6 of 8 (Dashboard Analytics) -- COMPLETE
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-02-07 -- Completed 06-02-PLAN.md (kanban board)
+Phase: 7 of 8 (AI Resume & Cover Letter)
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-07 -- Completed 07-01-PLAN.md (foundation: models, extractor, tracker)
 
-Progress: [###################░░░░░░░░░░░] 19/30 (~63%)
+Progress: [####################░░░░░░░░░░] 20/30 (~67%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 19
+- Total plans completed: 20
 - Average duration: 4.1 min
-- Total execution time: 77 min
+- Total execution time: 81 min
 
 **By Phase:**
 
@@ -33,9 +33,10 @@ Progress: [###################░░░░░░░░░░░] 19/30 (~63%)
 | 04-scheduled-automation | 2/2 | 8 min | 4.0 min |
 | 05-dashboard-core | 4/4 | 12 min | 3.0 min |
 | 06-dashboard-analytics | 2/2 | 8 min | 4.0 min |
+| 07-ai-resume-cover-letter | 1/4 | 4 min | 4.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-03 (3 min), 05-04 (3 min), 06-01 (4 min), 06-02 (4 min)
+- Last 5 plans: 05-04 (3 min), 06-01 (4 min), 06-02 (4 min), 07-01 (4 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -109,6 +110,10 @@ Recent decisions affecting current work:
 - [06-02]: KANBAN_STATUSES excludes discovered and scored (user-managed pipeline only)
 - [06-02]: HX-Trigger: statsChanged from POST /jobs/{key}/status triggers stats refresh
 - [06-02]: Jinja2 namespace() pattern for cross-loop variable mutation in empty state check
+- [07-01]: Field(description=...) on every Pydantic model field for LLM structured output guidance
+- [07-01]: WorkExperience.achievements reorder-only constraint documented in Field description
+- [07-01]: resume_versions table uses job_dedup_key FK to jobs table for referential integrity
+- [07-01]: get_all_versions() LEFT JOINs jobs table to enrich with title/company metadata
 
 ### Pending Todos
 
@@ -122,5 +127,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 6 complete. Ready for Phase 7 (AI Resume & Cover Letter).
-Resume file: .planning/ROADMAP.md (Phase 7 planning)
+Stopped at: Phase 7, Plan 01 complete. Ready for Plan 02 (LLM tailoring engine).
+Resume file: .planning/phases/07-ai-resume-cover-letter/07-02-PLAN.md
