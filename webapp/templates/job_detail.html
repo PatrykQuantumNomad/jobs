@@ -98,7 +98,7 @@
         <div class="bg-white rounded-lg shadow-sm border p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-3">Status</h2>
             <div id="status-display" class="mb-3">
-                <span class="status-badge status-{{ job.status }}">{{ job.status }}</span>
+                <span class="status-badge status-{{ job.status }}">{{ job.status | replace('_', ' ') | title }}</span>
             </div>
             <form hx-post="/jobs/{{ job.dedup_key | urlencode }}/status"
                   hx-target="#status-display"
@@ -106,7 +106,7 @@
                   class="flex gap-2">
                 <select name="status" class="border rounded px-3 py-1.5 text-sm flex-1">
                     {% for s in statuses %}
-                    <option value="{{ s }}" {% if job.status == s %}selected{% endif %}>{{ s }}</option>
+                    <option value="{{ s }}" {% if job.status == s %}selected{% endif %}>{{ s | replace('_', ' ') | title }}</option>
                     {% endfor %}
                 </select>
                 <button type="submit"
@@ -133,6 +133,52 @@
                     <span id="notes-status"></span>
                 </div>
             </form>
+        </div>
+
+        <!-- Activity Timeline -->
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Activity</h2>
+            {% if activity %}
+            <div class="space-y-3">
+                {% for event in activity %}
+                <div class="flex gap-3 text-sm">
+                    <div class="flex-shrink-0 w-2 h-2 mt-1.5 rounded-full
+                        {% if event.event_type == 'status_change' %}bg-indigo-400
+                        {% elif event.event_type == 'discovered' %}bg-green-400
+                        {% elif event.event_type == 'note_added' %}bg-yellow-400
+                        {% elif event.event_type == 'viewed' %}bg-gray-400
+                        {% elif event.event_type == 'applied' %}bg-purple-400
+                        {% elif event.event_type == 'scored' %}bg-blue-400
+                        {% else %}bg-gray-300
+                        {% endif %}"></div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-gray-700">
+                            {% if event.event_type == 'status_change' %}
+                                Status changed
+                                {% if event.old_value %}from <span class="status-badge status-{{ event.old_value }}">{{ event.old_value | replace('_', ' ') | title }}</span>{% endif %}
+                                to <span class="status-badge status-{{ event.new_value }}">{{ event.new_value | replace('_', ' ') | title }}</span>
+                            {% elif event.event_type == 'discovered' %}
+                                Discovered on {{ event.new_value }}
+                            {% elif event.event_type == 'note_added' %}
+                                Note updated
+                            {% elif event.event_type == 'viewed' %}
+                                Viewed for the first time
+                            {% elif event.event_type == 'scored' %}
+                                Scored: {{ event.new_value }}
+                            {% elif event.event_type == 'applied' %}
+                                Application submitted
+                            {% else %}
+                                {{ event.event_type }}
+                            {% endif %}
+                        </div>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ event.created_at }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-400">No activity recorded.</p>
+            {% endif %}
         </div>
 
         <!-- Metadata -->
