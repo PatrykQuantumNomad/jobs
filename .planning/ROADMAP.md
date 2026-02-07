@@ -61,7 +61,7 @@ Plans:
 **Plans:** 3 plans
 **Success Criteria** (what must be TRUE):
   1. After a repeat pipeline run, newly discovered jobs are flagged as "new" in the dashboard while previously seen jobs are not
-  2. Jobs from the same company posted under variant names ("Google" vs "Google LLC" vs "Alphabet") are merged into a single listing
+  2. Jobs from the same company posted under close variant names ("Google" vs "Google LLC") are merged into a single listing, while distant parent companies ("Alphabet") remain separate
   3. Each scored job shows a point-by-point breakdown (e.g., "title +2, tech overlap +2, remote +1, salary 0") visible in the dashboard detail view
   4. Salary figures from all platforms are normalized to annual USD so "$175000", "USD 224,400.00 per year", and "150000-180000 CAD" are directly comparable
   5. Delta detection persists across runs -- the system remembers which jobs it has seen before using the SQLite database
