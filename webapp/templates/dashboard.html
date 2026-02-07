@@ -96,22 +96,29 @@
             {% for job in jobs %}
             <tr class="job-row" onclick="window.location='/jobs/{{ job.dedup_key | urlencode }}'">
                 <td class="px-4 py-3">
-                    {% if job.score %}
-                    <span class="score-{{ job.score }}">{{ job.score }}</span>
-                    {% else %}
-                    <span class="text-gray-300">—</span>
+                    <div class="flex items-center gap-1">
+                        {% if job.score %}
+                        <span class="score-{{ job.score }}">{{ job.score }}</span>
+                        {% else %}
+                        <span class="text-gray-300">--</span>
+                        {% endif %}
+                        {% if not job.viewed_at %}
+                        <span class="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-800 font-semibold">NEW</span>
+                        {% endif %}
+                    </div>
+                    {% if job.score_breakdown %}
+                    {% set bd = job.score_breakdown | parse_json %}
+                    <div class="text-xs text-gray-400 mt-0.5 whitespace-nowrap">
+                        Title +{{ bd.title }} | Tech +{{ bd.tech }} | Remote +{{ bd.remote }} | Salary +{{ bd.salary }}
+                    </div>
                     {% endif %}
                 </td>
                 <td class="px-4 py-3 font-medium text-gray-900">{{ job.company }}</td>
                 <td class="px-4 py-3 text-gray-700">{{ job.title }}</td>
                 <td class="px-4 py-3 text-gray-500 hidden md:table-cell">{{ job.location or '—' }}</td>
                 <td class="px-4 py-3 text-gray-500 hidden lg:table-cell">
-                    {% if job.salary %}
-                        {{ job.salary }}
-                    {% elif job.salary_min %}
-                        ${{ "{:,}".format(job.salary_min) }}{% if job.salary_max %} – ${{ "{:,}".format(job.salary_max) }}{% endif %}
-                    {% else %}
-                        —
+                    {% if job.salary_display %}
+                        {{ job.salary_display }}
                     {% endif %}
                 </td>
                 <td class="px-4 py-3">

@@ -15,6 +15,12 @@
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">{{ job.title }}</h1>
                     <p class="text-lg text-gray-600 mt-1">{{ job.company }}</p>
+                    {% if job.company_aliases %}
+                    {% set aliases = job.company_aliases | parse_json %}
+                    {% if aliases %}
+                    <p class="text-sm text-gray-500 mt-1">Also posted as: {{ aliases | join(', ') }}</p>
+                    {% endif %}
+                    {% endif %}
                     {% if job.location %}
                     <p class="text-sm text-gray-500 mt-1">{{ job.location }}</p>
                     {% endif %}
@@ -24,13 +30,19 @@
                 {% endif %}
             </div>
 
+            {% if job.score_breakdown %}
+            {% set bd = job.score_breakdown | parse_json %}
+            <div class="text-sm text-gray-500 mt-2">
+                Title +{{ bd.title }} |
+                Tech +{{ bd.tech }}{% if bd.tech_matched %} ({{ bd.tech_matched[:5] | join(', ') }}){% endif %} |
+                Remote +{{ bd.remote }} |
+                Salary +{{ bd.salary }} = {{ bd.total }}
+            </div>
+            {% endif %}
+
             <div class="flex flex-wrap items-center gap-3 mt-4">
-                {% if job.salary %}
-                <span class="text-sm bg-green-50 text-green-700 px-3 py-1 rounded-full">{{ job.salary }}</span>
-                {% elif job.salary_min %}
-                <span class="text-sm bg-green-50 text-green-700 px-3 py-1 rounded-full">
-                    ${{ "{:,}".format(job.salary_min) }}{% if job.salary_max %} – ${{ "{:,}".format(job.salary_max) }}{% endif %}
-                </span>
+                {% if job.salary_display %}
+                <span class="text-sm bg-green-50 text-green-700 px-3 py-1 rounded-full">{{ job.salary_display }}</span>
                 {% endif %}
 
                 <span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">{{ job.platform }}</span>
@@ -127,6 +139,12 @@
         <div class="bg-white rounded-lg shadow-sm border p-6 text-xs text-gray-400">
             <p>ID: {{ job.id }}</p>
             <p>Dedup key: {{ job.dedup_key }}</p>
+            {% if job.first_seen_at %}
+            <p>First seen: {{ job.first_seen_at }}</p>
+            {% endif %}
+            {% if job.last_seen_at %}
+            <p>Last seen: {{ job.last_seen_at }}</p>
+            {% endif %}
             <p>Added: {{ job.created_at }}</p>
             <p>Updated: {{ job.updated_at }}</p>
         </div>
