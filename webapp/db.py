@@ -20,7 +20,7 @@ else:
 # Schema
 # ---------------------------------------------------------------------------
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS jobs (
@@ -128,6 +128,21 @@ MIGRATIONS: dict[int, list[str]] = {
         # Migrate old status values to new vocabulary
         "UPDATE jobs SET status = 'saved' WHERE status = 'approved'",
         "UPDATE jobs SET status = 'withdrawn' WHERE status = 'skipped'",
+    ],
+    6: [
+        # Resume/cover letter version tracking
+        """CREATE TABLE IF NOT EXISTS resume_versions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_dedup_key TEXT NOT NULL,
+            resume_type TEXT NOT NULL,
+            file_path TEXT NOT NULL,
+            original_resume_path TEXT NOT NULL,
+            model_used TEXT NOT NULL,
+            prompt_hash TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (job_dedup_key) REFERENCES jobs(dedup_key)
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_resume_versions_job ON resume_versions(job_dedup_key)",
     ],
 }
 
