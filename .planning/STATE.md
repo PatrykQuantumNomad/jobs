@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 6 In Progress - Dashboard Analytics (Plan 01 complete)
+**Current focus:** Phase 6 Complete - Dashboard Analytics. Ready for Phase 7.
 
 ## Current Position
 
-Phase: 6 of 8 (Dashboard Analytics)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-07 -- Completed 06-01-PLAN.md (analytics engine)
+Phase: 6 of 8 (Dashboard Analytics) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-02-07 -- Completed 06-02-PLAN.md (kanban board)
 
-Progress: [##################░░░░░░░░░░░░] 18/30 (~60%)
+Progress: [###################░░░░░░░░░░░] 19/30 (~63%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
+- Total plans completed: 19
 - Average duration: 4.1 min
-- Total execution time: 73 min
+- Total execution time: 77 min
 
 **By Phase:**
 
@@ -32,10 +32,10 @@ Progress: [##################░░░░░░░░░░░░] 18/30 (~60%)
 | 03-discovery-engine | 3/3 | 15 min | 5.0 min |
 | 04-scheduled-automation | 2/2 | 8 min | 4.0 min |
 | 05-dashboard-core | 4/4 | 12 min | 3.0 min |
-| 06-dashboard-analytics | 1/2 | 4 min | 4.0 min |
+| 06-dashboard-analytics | 2/2 | 8 min | 4.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-02 (3 min), 05-03 (3 min), 05-04 (3 min), 06-01 (4 min)
+- Last 5 plans: 05-03 (3 min), 05-04 (3 min), 06-01 (4 min), 06-02 (4 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -104,6 +104,11 @@ Recent decisions affecting current work:
 - [06-01]: createOrUpdateChart() helper with Chart.getChart() destroy guard for safe refresh
 - [06-01]: Replaced placeholder /stats endpoint with proper /analytics and /api/analytics
 - [06-01]: stats_cards.html partial reusable by analytics and future kanban page
+- [06-02]: SortableJS 1.15.6 via CDN with forceFallback:true for consistent cross-browser drag behavior
+- [06-02]: Optimistic column count updates with DOM rollback on POST failure
+- [06-02]: KANBAN_STATUSES excludes discovered and scored (user-managed pipeline only)
+- [06-02]: HX-Trigger: statsChanged from POST /jobs/{key}/status triggers stats refresh
+- [06-02]: Jinja2 namespace() pattern for cross-loop variable mutation in empty state check
 
 ### Pending Todos
 
@@ -117,5 +122,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 6, Plan 01 complete. Ready for Plan 02 (Kanban board).
-Resume file: .planning/phases/06-dashboard-analytics/06-02-PLAN.md
+Stopped at: Phase 6 complete. Ready for Phase 7 (AI Resume & Cover Letter).
+Resume file: .planning/ROADMAP.md (Phase 7 planning)
