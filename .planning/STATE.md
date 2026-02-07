@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 5 COMPLETE - Dashboard Core. Ready for Phase 6 (Dashboard Analytics)
+**Current focus:** Phase 6 In Progress - Dashboard Analytics (Plan 01 complete)
 
 ## Current Position
 
-Phase: 5 of 8 (Dashboard Core) — COMPLETE
-Plan: 4 of 4 in current phase
-Status: Phase complete, verified
-Last activity: 2026-02-07 -- Phase 5 verified. All 5 DASH requirements satisfied.
+Phase: 6 of 8 (Dashboard Analytics)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-07 -- Completed 06-01-PLAN.md (analytics engine)
 
-Progress: [################░░░░░░░░░░░░░░] 17/30 (~57%)
+Progress: [##################░░░░░░░░░░░░] 18/30 (~60%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: 4.1 min
-- Total execution time: 69 min
+- Total execution time: 73 min
 
 **By Phase:**
 
@@ -32,10 +32,11 @@ Progress: [################░░░░░░░░░░░░░░] 17/30 (~5
 | 03-discovery-engine | 3/3 | 15 min | 5.0 min |
 | 04-scheduled-automation | 2/2 | 8 min | 4.0 min |
 | 05-dashboard-core | 4/4 | 12 min | 3.0 min |
+| 06-dashboard-analytics | 1/2 | 4 min | 4.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-01 (3 min), 05-02 (3 min), 05-03 (3 min), 05-04 (3 min)
-- Trend: stable/improving
+- Last 5 plans: 05-02 (3 min), 05-03 (3 min), 05-04 (3 min), 06-01 (4 min)
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -98,6 +99,11 @@ Recent decisions affecting current work:
 - [05-04]: hx-include merges #bulk-form checkboxes with filter selects outside the form
 - [05-04]: Export links use Jinja2 urlencode filter to preserve active filter state in URL params
 - [05-04]: bulk_status dropdown in bulk-bar div outside the form, included via hx-include selector
+- [06-01]: Inline JSON pattern for chart data (no extra API round-trip on initial load)
+- [06-01]: Chart.js CDN loaded synchronously before initialization script
+- [06-01]: createOrUpdateChart() helper with Chart.getChart() destroy guard for safe refresh
+- [06-01]: Replaced placeholder /stats endpoint with proper /analytics and /api/analytics
+- [06-01]: stats_cards.html partial reusable by analytics and future kanban page
 
 ### Pending Todos
 
@@ -111,5 +117,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 5 complete. All 4 plans executed. Ready for Phase 6 (Dashboard Analytics)
-Resume file: .planning/phases/06-dashboard-analytics/ (phase planning needed)
+Stopped at: Phase 6, Plan 01 complete. Ready for Plan 02 (Kanban board).
+Resume file: .planning/phases/06-dashboard-analytics/06-02-PLAN.md
