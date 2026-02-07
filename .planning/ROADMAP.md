@@ -13,7 +13,7 @@ JobFlow has a working discovery-to-scoring pipeline with a web dashboard. This r
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Config Externalization** - Single YAML config replaces hardcoded Python settings
-- [ ] **Phase 2: Platform Architecture** - Pluggable platform registry with auto-discovery
+- [x] **Phase 2: Platform Architecture** - Pluggable platform registry with auto-discovery
 - [ ] **Phase 3: Discovery Engine** - Fuzzy dedup, score breakdowns, salary normalization, new job detection
 - [ ] **Phase 4: Scheduled Automation** - Unattended pipeline runs via cron/launchd
 - [ ] **Phase 5: Dashboard Core** - Search, extended status workflow, bulk actions, export, activity log
@@ -168,7 +168,7 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Config Externalization | 3/3 | Complete | 2026-02-07 |
-| 2. Platform Architecture | 0/2 | Not started | - |
+| 2. Platform Architecture | 2/2 | Complete | 2026-02-07 |
 | 3. Discovery Engine | 0/4 | Not started | - |
 | 4. Scheduled Automation | 0/2 | Not started | - |
 | 5. Dashboard Core | 0/5 | Not started | - |
