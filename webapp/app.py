@@ -20,7 +20,11 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.filters["parse_json"] = lambda s: json.loads(s) if isinstance(s, str) and s else (s if s else {})
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
-STATUSES = ["discovered", "scored", "approved", "applied", "rejected", "skipped"]
+STATUSES = [
+    "discovered", "scored", "saved", "applied",
+    "phone_screen", "technical", "final_interview",
+    "offer", "rejected", "withdrawn", "ghosted",
+]
 
 
 @app.get("/", response_class=HTMLResponse)
