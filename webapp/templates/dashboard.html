@@ -25,6 +25,17 @@
 <!-- Filters -->
 <div class="bg-white rounded-lg shadow-sm border p-4 mb-6">
     <form method="get" action="/" class="flex flex-wrap items-center gap-4">
+        <div class="w-full mb-3">
+            <label class="text-xs text-gray-500 block mb-1">Search</label>
+            <input type="search" name="q" placeholder="Search jobs by title, company, or description..."
+                   value="{{ filters.q or '' }}"
+                   hx-get="/search"
+                   hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
+                   hx-target="#job-table-body"
+                   hx-swap="innerHTML"
+                   hx-include="[name='score'],[name='platform'],[name='status'],[name='sort'],[name='dir']"
+                   class="border rounded px-3 py-1.5 text-sm w-full">
+        </div>
         <div>
             <label class="text-xs text-gray-500 block mb-1">Min Score</label>
             <select name="score" class="border rounded px-3 py-1.5 text-sm">
@@ -92,50 +103,8 @@
                 <th class="px-4 py-3 text-left font-medium text-gray-600">Status</th>
             </tr>
         </thead>
-        <tbody class="divide-y">
-            {% for job in jobs %}
-            <tr class="job-row" onclick="window.location='/jobs/{{ job.dedup_key | urlencode }}'">
-                <td class="px-4 py-3">
-                    <div class="flex items-center gap-1">
-                        {% if job.score %}
-                        <span class="score-{{ job.score }}">{{ job.score }}</span>
-                        {% else %}
-                        <span class="text-gray-300">--</span>
-                        {% endif %}
-                        {% if not job.viewed_at %}
-                        <span class="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-800 font-semibold">NEW</span>
-                        {% endif %}
-                    </div>
-                    {% if job.score_breakdown %}
-                    {% set bd = job.score_breakdown | parse_json %}
-                    <div class="text-xs text-gray-400 mt-0.5 whitespace-nowrap">
-                        Title +{{ bd.title }} | Tech +{{ bd.tech }} | Remote +{{ bd.remote }} | Salary +{{ bd.salary }}
-                    </div>
-                    {% endif %}
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900">{{ job.company }}</td>
-                <td class="px-4 py-3 text-gray-700">{{ job.title }}</td>
-                <td class="px-4 py-3 text-gray-500 hidden md:table-cell">{{ job.location or '—' }}</td>
-                <td class="px-4 py-3 text-gray-500 hidden lg:table-cell">
-                    {% if job.salary_display %}
-                        {{ job.salary_display }}
-                    {% endif %}
-                </td>
-                <td class="px-4 py-3">
-                    <span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">{{ job.platform }}</span>
-                </td>
-                <td class="px-4 py-3">
-                    <span class="status-badge status-{{ job.status }}">{{ job.status }}</span>
-                </td>
-            </tr>
-            {% endfor %}
-            {% if not jobs %}
-            <tr>
-                <td colspan="7" class="px-4 py-12 text-center text-gray-400">
-                    No jobs found. Click "Import Pipeline Results" to load data.
-                </td>
-            </tr>
-            {% endif %}
+        <tbody id="job-table-body" class="divide-y">
+            {% include "partials/job_rows.html" %}
         </tbody>
     </table>
 </div>
