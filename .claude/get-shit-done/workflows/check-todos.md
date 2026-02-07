@@ -1,118 +1,182 @@
 <purpose>
-List pending todos, allow selection, load context, and route to action.
-
-Enables reviewing captured ideas and deciding what to work on next.
+List all pending todos, allow selection, load full context for the selected todo, and route to appropriate action.
 </purpose>
+
+<required_reading>
+Read all files referenced by the invoking prompt's execution_context before starting.
+</required_reading>
 
 <process>
 
-## Step 1: Check Existence
-
+<step name="check_exist">
 ```bash
-TODO_COUNT=$(ls .planning/todos/pending/*.md 2>/dev/null | wc -l | tr -d ' ')
+TODO_COUNT=$(node ./.claude/get-shit-done/bin/gsd-tools.js list-todos --raw)
+echo "Pending todos: $TODO_COUNT"
 ```
 
-If 0:
+If count is 0:
 ```
 No pending todos.
 
 Todos are captured during work sessions with /gsd:add-todo.
 
+---
+
 Would you like to:
+
 1. Continue with current phase (/gsd:progress)
 2. Add a todo now (/gsd:add-todo)
 ```
+
 Exit.
+</step>
 
-## Step 2: Parse Filter
-
+<step name="parse_filter">
 Check for area filter in arguments:
 - `/gsd:check-todos` → show all
-- `/gsd:check-todos api` → filter to area:api
+- `/gsd:check-todos api` → filter to area:api only
+</step>
 
-## Step 3: List Todos
-
+<step name="list_todos">
 ```bash
-for file in .planning/todos/pending/*.md; do
-  created=$(grep "^created:" "$file" | cut -d' ' -f2)
-  title=$(grep "^title:" "$file" | cut -d':' -f2- | xargs)
-  area=$(grep "^area:" "$file" | cut -d' ' -f2)
-  echo "$created|$title|$area|$file"
-done | sort
+# Get todos JSON
+node ./.claude/get-shit-done/bin/gsd-tools.js list-todos [area]
 ```
 
-Display:
+Parse JSON output and display as numbered list:
+
 ```
 Pending Todos:
 
 1. Add auth token refresh (api, 2d ago)
 2. Fix modal z-index issue (ui, 1d ago)
-3. Refactor database pool (database, 5h ago)
+3. Refactor database connection pool (database, 5h ago)
 
-Reply with a number, or `q` to exit
+---
+
+Reply with a number to view details, or:
+- `/gsd:check-todos [area]` to filter by area
+- `q` to exit
 ```
 
-## Step 4: Handle Selection
+Format age as relative time from created timestamp.
+</step>
 
-Wait for number. If invalid, reprompt.
+<step name="handle_selection">
+Wait for user to reply with a number.
 
-## Step 5: Load Context
+If valid: load selected todo, proceed.
+If invalid: "Invalid selection. Reply with a number (1-[N]) or `q` to exit."
+</step>
 
-Read todo file. Display:
+<step name="load_context">
+Read the todo file completely. Display:
+
 ```
 ## [title]
 
 **Area:** [area]
-**Created:** [date]
-**Files:** [list]
+**Created:** [date] ([relative time] ago)
+**Files:** [list or "None"]
 
 ### Problem
-[content]
+[problem section content]
 
 ### Solution
-[content]
+[solution section content]
 ```
 
-If files listed, summarize each.
+If `files` field has entries, read and briefly summarize each.
+</step>
 
-## Step 6: Check Roadmap
+<step name="check_roadmap">
+```bash
+node ./.claude/get-shit-done/bin/gsd-tools.js verify-path-exists .planning/ROADMAP.md --raw
+```
 
-If todo's area matches an upcoming phase, note for action options.
+If roadmap exists:
+1. Check if todo's area matches an upcoming phase
+2. Check if todo's files overlap with a phase's scope
+3. Note any match for action options
+</step>
 
-## Step 7: Offer Actions
+<step name="offer_actions">
+**If todo maps to a roadmap phase:**
 
-**If matches roadmap phase:**
-- "Work on it now"
-- "Add to phase plan"
-- "Brainstorm approach"
-- "Put it back"
+Use AskUserQuestion:
+- header: "Action"
+- question: "This todo relates to Phase [N]: [name]. What would you like to do?"
+- options:
+  - "Work on it now" — move to done, start working
+  - "Add to phase plan" — include when planning Phase [N]
+  - "Brainstorm approach" — think through before deciding
+  - "Put it back" — return to list
 
-**If no match:**
-- "Work on it now"
-- "Create a phase"
-- "Brainstorm approach"
-- "Put it back"
+**If no roadmap match:**
 
-## Step 8: Execute Action
+Use AskUserQuestion:
+- header: "Action"
+- question: "What would you like to do with this todo?"
+- options:
+  - "Work on it now" — move to done, start working
+  - "Create a phase" — /gsd:add-phase with this scope
+  - "Brainstorm approach" — think through before deciding
+  - "Put it back" — return to list
+</step>
 
+<step name="execute_action">
 **Work on it now:**
 ```bash
-mv ".planning/todos/pending/[file]" ".planning/todos/done/"
+mv ".planning/todos/pending/[filename]" ".planning/todos/done/"
 ```
-Update STATE.md. Begin work.
+Update STATE.md todo count. Present problem/solution context. Begin work or ask how to proceed.
 
-**Add to phase plan / Create a phase / Brainstorm:** Keep in pending, route appropriately.
+**Add to phase plan:**
+Note todo reference in phase planning notes. Keep in pending. Return to list or exit.
 
-**Put it back:** Return to list.
+**Create a phase:**
+Display: `/gsd:add-phase [description from todo]`
+Keep in pending. User runs command in fresh context.
 
-## Step 9: Commit
+**Brainstorm approach:**
+Keep in pending. Start discussion about problem and approaches.
 
-@./.claude/get-shit-done/references/git-planning-commit.md
+**Put it back:**
+Return to list_todos step.
+</step>
 
-If todo moved:
+<step name="update_state">
+After any action that changes todo count:
+
 ```bash
-git add .planning/todos/done/[file]
-git commit -m "docs: start work on todo - [title]"
+node ./.claude/get-shit-done/bin/gsd-tools.js list-todos --raw
 ```
+
+Update STATE.md "### Pending Todos" section if exists.
+</step>
+
+<step name="git_commit">
+If todo was moved to done/, commit the change:
+
+```bash
+git rm --cached .planning/todos/pending/[filename] 2>/dev/null || true
+node ./.claude/get-shit-done/bin/gsd-tools.js commit "docs: start work on todo - [title]" --files .planning/todos/done/[filename] .planning/STATE.md
+```
+
+Tool respects `commit_docs` config and gitignore automatically.
+
+Confirm: "Committed: docs: start work on todo - [title]"
+</step>
 
 </process>
+
+<success_criteria>
+- [ ] All pending todos listed with title, area, age
+- [ ] Area filter applied if specified
+- [ ] Selected todo's full context loaded
+- [ ] Roadmap context checked for phase match
+- [ ] Appropriate actions offered
+- [ ] Selected action executed
+- [ ] STATE.md updated if todo count changed
+- [ ] Changes committed to git (if todo moved to done/)
+</success_criteria>
