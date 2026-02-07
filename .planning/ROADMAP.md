@@ -27,17 +27,17 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Goal**: User configures their entire profile, search queries, scoring weights, timing, and platform toggles in a single YAML file instead of editing Python source code
 **Depends on**: Nothing (first phase)
 **Requirements**: CFG-01
+**Plans:** 3 plans
 **Success Criteria** (what must be TRUE):
   1. User edits a single `config.yaml` file with their name, contact info, skills, search queries, scoring weights, and platform settings -- no Python files touched
   2. Pipeline loads all settings from YAML with pydantic-settings validation and clear error messages for missing or invalid fields
   3. Existing pipeline behavior is unchanged -- same search results, same scoring, same dashboard -- just configured from YAML instead of hardcoded values
   4. A documented `config.example.yaml` exists with every field annotated so a new user can fill it in
-**Plans**: TBD
 
 Plans:
-- [ ] 01-01: AppSettings model and YAML loader
-- [ ] 01-02: Config migration and example file
-- [ ] 01-03: Pipeline integration and validation
+- [ ] 01-01-PLAN.md -- AppSettings model, YAML loader, config files, and dependency setup
+- [ ] 01-02-PLAN.md -- Pipeline consumer migration (orchestrator, scorer, form_filler) and --validate flag
+- [ ] 01-03-PLAN.md -- Platform module migration (base, indeed, dice, remoteok)
 
 ### Phase 2: Platform Architecture
 **Goal**: Adding a new job board requires creating one file that implements a protocol -- no changes to the orchestrator, config, or scoring pipeline
