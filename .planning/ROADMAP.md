@@ -12,7 +12,7 @@ JobFlow has a working discovery-to-scoring pipeline with a web dashboard. This r
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Config Externalization** - Single YAML config replaces hardcoded Python settings
+- [x] **Phase 1: Config Externalization** - Single YAML config replaces hardcoded Python settings
 - [ ] **Phase 2: Platform Architecture** - Pluggable platform registry with auto-discovery
 - [ ] **Phase 3: Discovery Engine** - Fuzzy dedup, score breakdowns, salary normalization, new job detection
 - [ ] **Phase 4: Scheduled Automation** - Unattended pipeline runs via cron/launchd
@@ -35,9 +35,9 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. A documented `config.example.yaml` exists with every field annotated so a new user can fill it in
 
 Plans:
-- [ ] 01-01-PLAN.md -- AppSettings model, YAML loader, config files, and dependency setup
-- [ ] 01-02-PLAN.md -- Pipeline consumer migration (orchestrator, scorer, form_filler) and --validate flag
-- [ ] 01-03-PLAN.md -- Platform module migration (base, indeed, dice, remoteok)
+- [x] 01-01-PLAN.md -- AppSettings model, YAML loader, config files, and dependency setup
+- [x] 01-02-PLAN.md -- Pipeline consumer migration (orchestrator, scorer, form_filler) and --validate flag
+- [x] 01-03-PLAN.md -- Platform module migration (base, indeed, dice, remoteok)
 
 ### Phase 2: Platform Architecture
 **Goal**: Adding a new job board requires creating one file that implements a protocol -- no changes to the orchestrator, config, or scoring pipeline
@@ -168,7 +168,7 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Config Externalization | 0/3 | Not started | - |
+| 1. Config Externalization | 3/3 | Complete | 2026-02-07 |
 | 2. Platform Architecture | 0/3 | Not started | - |
 | 3. Discovery Engine | 0/4 | Not started | - |
 | 4. Scheduled Automation | 0/2 | Not started | - |

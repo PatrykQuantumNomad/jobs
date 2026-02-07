@@ -91,7 +91,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CFG-01 | Phase 1: Config Externalization | Pending |
+| CFG-01 | Phase 1: Config Externalization | Complete |
 | CFG-02 | Phase 4: Scheduled Automation | Pending |
 | CFG-03 | Phase 3: Discovery Engine | Pending |
 | CFG-04 | Phase 8: One-Click Apply | Pending |
