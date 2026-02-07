@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 5 in progress - Dashboard Core (activity timeline done, 1 plan remaining)
+**Current focus:** Phase 5 COMPLETE - Dashboard Core. Ready for Phase 6 (Dashboard Analytics)
 
 ## Current Position
 
 Phase: 5 of 8 (Dashboard Core)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-02-07 -- Completed 05-03-PLAN.md (activity timeline UI, human-readable status labels)
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-02-07 -- Completed 05-04-PLAN.md (bulk status actions, CSV/JSON export)
 
-Progress: [#############░░░░░░░░░░░░░░░░░] 13/30 (~43%)
+Progress: [##############░░░░░░░░░░░░░░░░] 14/30 (~47%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
-- Average duration: 4.4 min
-- Total execution time: 57 min
+- Total plans completed: 14
+- Average duration: 4.3 min
+- Total execution time: 60 min
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [#############░░░░░░░░░░░░░░░░░] 13/
 | 02-platform-architecture | 2/2 | 9 min | 4.5 min |
 | 03-discovery-engine | 3/3 | 15 min | 5.0 min |
 | 04-scheduled-automation | 2/2 | 8 min | 4.0 min |
-| 05-dashboard-core | 3/4 | 9 min | 3.0 min |
+| 05-dashboard-core | 4/4 | 12 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-02 (4 min), 05-01 (3 min), 05-02 (3 min), 05-03 (3 min)
+- Last 5 plans: 05-01 (3 min), 05-02 (3 min), 05-03 (3 min), 05-04 (3 min)
 - Trend: stable/improving
 
 *Updated after each plan completion*
@@ -94,6 +94,10 @@ Recent decisions affecting current work:
 - [05-03]: Log "discovered" activity in upsert_job() for new jobs (not just migration backfill)
 - [05-03]: Human-readable status labels via Jinja2 replace/title filters (no server-side mapping dict)
 - [05-03]: Activity timeline placed between Notes and Metadata in sidebar
+- [05-04]: Annotated[list[str], Form()] for repeated form fields (FastAPI multi-checkbox pattern)
+- [05-04]: hx-include merges #bulk-form checkboxes with filter selects outside the form
+- [05-04]: Export links use Jinja2 urlencode filter to preserve active filter state in URL params
+- [05-04]: bulk_status dropdown in bulk-bar div outside the form, included via hx-include selector
 
 ### Pending Todos
 
@@ -107,5 +111,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 5, Plan 3 complete. Ready for Plan 4 (remaining dashboard features)
-Resume file: .planning/phases/05-dashboard-core/05-04-PLAN.md
+Stopped at: Phase 5 complete. All 4 plans executed. Ready for Phase 6 (Dashboard Analytics)
+Resume file: .planning/phases/06-dashboard-analytics/ (phase planning needed)
