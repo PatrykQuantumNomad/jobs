@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Platform Architecture** - Pluggable platform registry with auto-discovery
 - [x] **Phase 3: Discovery Engine** - Fuzzy dedup, score breakdowns, salary normalization, new job detection
 - [x] **Phase 4: Scheduled Automation** - Unattended pipeline runs via cron/launchd
-- [ ] **Phase 5: Dashboard Core** - Search, extended status workflow, bulk actions, export, activity log
+- [x] **Phase 5: Dashboard Core** - Search, extended status workflow, bulk actions, export, activity log
 - [ ] **Phase 6: Dashboard Analytics** - Stats, metrics, and kanban board view
 - [ ] **Phase 7: AI Resume & Cover Letter** - LLM-powered resume tailoring and cover letter generation
 - [ ] **Phase 8: One-Click Apply** - Apply modes and dashboard-triggered application submission
@@ -99,9 +99,9 @@ Plans:
 
 Plans:
 - [x] 05-01-PLAN.md -- Schema migration (FTS5, activity_log, status vocabulary), JobStatus enum expansion, CSS classes
-- [ ] 05-02-PLAN.md -- Text search with FTS5 backend, htmx active search, partial template extraction
-- [ ] 05-03-PLAN.md -- Activity timeline on job detail page, status dropdown with 9 user-facing statuses
-- [ ] 05-04-PLAN.md -- Bulk status actions (checkboxes, select-all, bulk bar), CSV/JSON export
+- [x] 05-02-PLAN.md -- Text search with FTS5 backend, htmx active search, partial template extraction
+- [x] 05-03-PLAN.md -- Activity timeline on job detail page, status dropdown with 9 user-facing statuses
+- [x] 05-04-PLAN.md -- Bulk status actions (checkboxes, select-all, bulk bar), CSV/JSON export
 
 ### Phase 6: Dashboard Analytics
 **Goal**: Users can visualize their job search progress with metrics and manage their pipeline through an intuitive kanban board
@@ -169,7 +169,7 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 | 2. Platform Architecture | 2/2 | Complete | 2026-02-07 |
 | 3. Discovery Engine | 3/3 | Complete | 2026-02-07 |
 | 4. Scheduled Automation | 2/2 | Complete | 2026-02-07 |
-| 5. Dashboard Core | 1/4 | In progress | - |
+| 5. Dashboard Core | 4/4 | Complete | 2026-02-07 |
 | 6. Dashboard Analytics | 0/3 | Not started | - |
 | 7. AI Resume & Cover Letter | 0/5 | Not started | - |
 | 8. One-Click Apply | 0/5 | Not started | - |
