@@ -531,6 +531,127 @@ def get_stats() -> dict:
     }
 
 
+def get_enhanced_stats() -> dict:
+    """Return analytics data for the analytics dashboard.
+
+    Returns dict with keys: total, jobs_per_day, by_platform, response_rate,
+    time_in_stage, status_funnel.
+    """
+    with get_conn() as conn:
+        # -- Total --
+        total = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+
+        # -- Jobs per day (last 30 days) --
+        jobs_per_day_rows = conn.execute(
+            """SELECT strftime('%Y-%m-%d', created_at) AS date,
+                      COUNT(*) AS count
+               FROM jobs
+               WHERE created_at >= date('now', '-30 days')
+               GROUP BY date
+               ORDER BY date"""
+        ).fetchall()
+        jobs_per_day = [{"date": row["date"], "count": row["count"]}
+                        for row in jobs_per_day_rows]
+
+        # -- By platform --
+        by_platform_rows = conn.execute(
+            """SELECT platform AS name,
+                      COUNT(*) AS total,
+                      SUM(CASE WHEN score >= 4 THEN 1 ELSE 0 END) AS high_quality,
+                      ROUND(AVG(score), 1) AS avg_score,
+                      SUM(CASE WHEN status IN (
+                          'applied','phone_screen','technical',
+                          'final_interview','offer'
+                      ) THEN 1 ELSE 0 END) AS actioned
+               FROM jobs
+               GROUP BY platform"""
+        ).fetchall()
+        by_platform = [
+            {
+                "name": row["name"],
+                "total": row["total"],
+                "high_quality": row["high_quality"] or 0,
+                "avg_score": row["avg_score"] or 0.0,
+                "actioned": row["actioned"] or 0,
+            }
+            for row in by_platform_rows
+        ]
+
+        # -- Response rate --
+        total_applied = conn.execute(
+            """SELECT COUNT(*) FROM jobs
+               WHERE status NOT IN ('discovered','scored','saved')"""
+        ).fetchone()[0]
+        responded = conn.execute(
+            """SELECT COUNT(*) FROM jobs
+               WHERE status IN ('phone_screen','technical','final_interview','offer')"""
+        ).fetchone()[0]
+        rate_pct = round((responded / total_applied) * 100, 1) if total_applied > 0 else 0.0
+        response_rate = {
+            "total_applied": total_applied,
+            "responded": responded,
+            "rate_pct": rate_pct,
+        }
+
+        # -- Time in stage (using LAG window function over activity_log) --
+        time_in_stage_rows = conn.execute(
+            """WITH transitions AS (
+                SELECT dedup_key,
+                       new_value AS stage,
+                       created_at,
+                       LAG(created_at) OVER (
+                           PARTITION BY dedup_key ORDER BY created_at
+                       ) AS prev_at
+                FROM activity_log
+                WHERE event_type = 'status_change'
+            )
+            SELECT stage,
+                   ROUND(AVG(julianday(created_at) - julianday(prev_at)), 1) AS avg_days,
+                   COUNT(*) AS transitions
+            FROM transitions
+            WHERE prev_at IS NOT NULL
+              AND julianday(created_at) - julianday(prev_at) > 0
+            GROUP BY stage"""
+        ).fetchall()
+        time_in_stage = [
+            {
+                "stage": row["stage"],
+                "avg_days": row["avg_days"] or 0.0,
+                "transitions": row["transitions"],
+            }
+            for row in time_in_stage_rows
+        ]
+
+        # -- Status funnel (ordered by pipeline progression) --
+        status_order = {
+            "discovered": 1, "scored": 2, "saved": 3, "applied": 4,
+            "phone_screen": 5, "technical": 6, "final_interview": 7,
+            "offer": 8, "rejected": 9, "withdrawn": 10, "ghosted": 11,
+        }
+        funnel_rows = conn.execute(
+            "SELECT status, COUNT(*) AS count FROM jobs GROUP BY status"
+        ).fetchall()
+        funnel_data = [
+            {
+                "status": row["status"],
+                "count": row["count"],
+                "pct": round((row["count"] / total) * 100, 1) if total > 0 else 0.0,
+            }
+            for row in funnel_rows
+        ]
+        # Sort by pipeline progression
+        funnel_data.sort(key=lambda x: status_order.get(x["status"], 99))
+
+    return {
+        "total": total,
+        "jobs_per_day": jobs_per_day,
+        "by_platform": by_platform,
+        "response_rate": response_rate,
+        "time_in_stage": time_in_stage,
+        "status_funnel": funnel_data,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Run history
 # ---------------------------------------------------------------------------

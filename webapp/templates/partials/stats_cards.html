@@ -1,0 +1,32 @@
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow-sm p-4 border">
+        <div class="text-sm text-gray-500">Total Jobs</div>
+        <div class="text-2xl font-bold">{{ stats.total }}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-4 border">
+        <div class="text-sm text-gray-500">Applied</div>
+        <div class="text-2xl font-bold text-purple-600">{{ stats.by_status.get('applied', 0) if stats.by_status is defined else 0 }}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-4 border">
+        <div class="text-sm text-gray-500">Response Rate</div>
+        <div class="text-2xl font-bold text-green-600">
+            {% if enhanced_stats is defined and enhanced_stats.response_rate.total_applied > 0 %}
+                {{ enhanced_stats.response_rate.rate_pct }}%
+            {% else %}
+                N/A
+            {% endif %}
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-4 border">
+        <div class="text-sm text-gray-500">High Quality (4+)</div>
+        <div class="text-2xl font-bold text-blue-600">
+            {% if enhanced_stats is defined and enhanced_stats.by_platform %}
+                {{ enhanced_stats.by_platform | sum(attribute='high_quality') }}
+            {% elif stats.by_score is defined %}
+                {{ stats.by_score.get(4, 0) + stats.by_score.get(5, 0) }}
+            {% else %}
+                0
+            {% endif %}
+        </div>
+    </div>
+</div>

@@ -39,6 +39,8 @@
         <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             <a href="/" class="text-xl font-bold text-gray-900">Job Tracker</a>
             <div class="flex items-center gap-4">
+                <a href="/analytics" class="text-sm text-gray-600 hover:text-gray-900 font-medium">Analytics</a>
+                <a href="/kanban" class="text-sm text-gray-600 hover:text-gray-900 font-medium">Kanban</a>
                 <a href="/runs" class="text-sm text-gray-600 hover:text-gray-900 font-medium">Run History</a>
                 <form method="post" action="/import">
                     <button type="submit"
@@ -53,5 +55,7 @@
     <main class="max-w-7xl mx-auto px-4 py-6">
         {% block content %}{% endblock %}
     </main>
+
+    {% block scripts %}{% endblock %}
 </body>
 </html>
