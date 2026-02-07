@@ -18,6 +18,9 @@ debug_screenshots/
 # Generated job data
 job_pipeline/*.json
 job_pipeline/*.db
+job_pipeline/*.db-shm
+job_pipeline/*.db-wal
+job_pipeline/*.db-journal
 job_pipeline/descriptions/*.md
 
 # macOS
