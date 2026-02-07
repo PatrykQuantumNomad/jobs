@@ -382,24 +382,36 @@ def backfill_score_breakdowns(scorer_fn) -> int:
 
 
 def get_jobs(
+    search: str | None = None,
     score_min: int | None = None,
     platform: str | None = None,
     status: str | None = None,
     sort_by: str = "score",
     sort_dir: str = "desc",
 ) -> list[dict]:
-    """Query jobs with optional filters."""
-    where_clauses = []
+    """Query jobs with optional filters and FTS5 search."""
+    join = ""
+    where_clauses: list[str] = []
     params: list = []
 
+    if search is not None and search.strip():
+        join = "JOIN jobs_fts ON jobs_fts.rowid = jobs.rowid"
+        where_clauses.append("jobs_fts MATCH ?")
+        term = search.strip()
+        # If user isn't using FTS5 operators, add prefix matching
+        fts_operators = ('"', "*", "AND", "OR", "NOT")
+        if not any(op in term for op in fts_operators):
+            term = " ".join(word + "*" for word in term.split())
+        params.append(term)
+
     if score_min is not None:
-        where_clauses.append("score >= ?")
+        where_clauses.append("jobs.score >= ?")
         params.append(score_min)
     if platform:
-        where_clauses.append("platform = ?")
+        where_clauses.append("jobs.platform = ?")
         params.append(platform)
     if status:
-        where_clauses.append("status = ?")
+        where_clauses.append("jobs.status = ?")
         params.append(status)
 
     where = ""
@@ -411,7 +423,7 @@ def get_jobs(
         sort_by = "score"
     direction = "DESC" if sort_dir == "desc" else "ASC"
 
-    query = f"SELECT * FROM jobs {where} ORDER BY {sort_by} {direction} NULLS LAST"
+    query = f"SELECT jobs.* FROM jobs {join} {where} ORDER BY {sort_by} {direction} NULLS LAST"
 
     with get_conn() as conn:
         rows = conn.execute(query, params).fetchall()

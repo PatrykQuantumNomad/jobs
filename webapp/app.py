@@ -30,6 +30,7 @@ STATUSES = [
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(
     request: Request,
+    q: str = Query(""),
     score: int | None = Query(None),
     platform: str | None = Query(None),
     status: str | None = Query(None),
@@ -37,6 +38,7 @@ async def dashboard(
     dir: str = Query("desc"),
 ):
     jobs = db.get_jobs(
+        search=q if q else None,
         score_min=score,
         platform=platform,
         status=status,
@@ -52,6 +54,7 @@ async def dashboard(
             "stats": stats,
             "statuses": STATUSES,
             "filters": {
+                "q": q,
                 "score": score,
                 "platform": platform,
                 "status": status,
@@ -59,6 +62,30 @@ async def dashboard(
                 "dir": dir,
             },
         },
+    )
+
+
+@app.get("/search", response_class=HTMLResponse)
+async def search_jobs(
+    request: Request,
+    q: str = Query(""),
+    score: int | None = Query(None),
+    platform: str | None = Query(None),
+    status: str | None = Query(None),
+    sort: str = Query("score"),
+    dir: str = Query("desc"),
+):
+    jobs = db.get_jobs(
+        search=q if q else None,
+        score_min=score,
+        platform=platform,
+        status=status,
+        sort_by=sort,
+        sort_dir=dir,
+    )
+    return templates.TemplateResponse(
+        "partials/job_rows.html",
+        {"request": request, "jobs": jobs, "statuses": STATUSES},
     )
 
 
