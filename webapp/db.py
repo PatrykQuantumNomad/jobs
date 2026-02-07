@@ -227,6 +227,7 @@ def upsert_job(job: dict) -> None:
         company_aliases = json.dumps(company_aliases)
 
     now = datetime.now().isoformat()
+    is_new = get_job(dedup_key) is None
 
     with get_conn() as conn:
         conn.execute(
@@ -296,6 +297,9 @@ def upsert_job(job: dict) -> None:
                 job.get("salary_currency", "USD"),
             ),
         )
+
+    if is_new:
+        log_activity(dedup_key, "discovered", new_value=job.get("platform", ""))
 
 
 def upsert_jobs(jobs: list[dict]) -> int:

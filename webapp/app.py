@@ -98,6 +98,9 @@ async def job_detail(request: Request, dedup_key: str):
     # Mark as viewed on first access (removes NEW badge on next dashboard load)
     if job.get("viewed_at") is None:
         db.mark_viewed(dedup_key)
+        db.log_activity(dedup_key, "viewed")
+
+    activity = db.get_activity_log(dedup_key)
 
     return templates.TemplateResponse(
         "job_detail.html",
@@ -105,6 +108,7 @@ async def job_detail(request: Request, dedup_key: str):
             "request": request,
             "job": job,
             "statuses": STATUSES,
+            "activity": activity,
         },
     )
 
@@ -113,8 +117,9 @@ async def job_detail(request: Request, dedup_key: str):
 async def update_status(dedup_key: str, status: str = Form(...)):
     db.update_job_status(dedup_key, status)
     job = db.get_job(dedup_key)
+    label = status.replace("_", " ").title()
     return HTMLResponse(
-        f'<span class="status-badge status-{status}">{status}</span>'
+        f'<span class="status-badge status-{status}">{label}</span>'
     )
 
 
