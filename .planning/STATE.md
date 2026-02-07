@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 3 - Discovery Engine
+**Current focus:** Phase 4 - Scheduled Automation
 
 ## Current Position
 
-Phase: 3 of 8 (Discovery Engine)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-07 -- Completed 03-03-PLAN.md (dashboard UI -- Phase 3 complete)
+Phase: 4 of 8 (Scheduled Automation)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-07 -- Completed 04-01-PLAN.md (scheduler config, unattended mode, launchd CLI)
 
-Progress: [########░░░░░░░░░░░░░░░░░░░░░░] 8/30 (~27%)
+Progress: [#########░░░░░░░░░░░░░░░░░░░░░] 9/30 (~30%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 5.0 min
-- Total execution time: 40 min
+- Total plans completed: 9
+- Average duration: 4.9 min
+- Total execution time: 44 min
 
 **By Phase:**
 
@@ -30,10 +30,11 @@ Progress: [########░░░░░░░░░░░░░░░░░░░░�
 | 01-config-externalization | 3/3 | 16 min | 5.3 min |
 | 02-platform-architecture | 2/2 | 9 min | 4.5 min |
 | 03-discovery-engine | 3/3 | 15 min | 5.0 min |
+| 04-scheduled-automation | 1/2 | 4 min | 4.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (6 min), 03-01 (6 min), 03-02 (5 min), 03-03 (4 min)
-- Trend: stable
+- Last 5 plans: 03-01 (6 min), 03-02 (5 min), 03-03 (4 min), 04-01 (4 min)
+- Trend: stable/improving
 
 *Updated after each plan completion*
 
@@ -77,6 +78,9 @@ Recent decisions affecting current work:
 - [03-03]: NEW badge in Score column (not separate column) to keep table compact
 - [03-03]: No salary placeholder for missing data -- blank cell, not "N/A" or dash
 - [03-03]: Tech keywords shown only on detail page, not dashboard cards, to avoid clutter
+- [04-01]: getattr(self, '_unattended', False) for backward-compatible unattended checks
+- [04-01]: sys.executable resolved to absolute path for venv Python in plist
+- [04-01]: launchctl bootstrap/bootout (modern API) instead of deprecated load/unload
 
 ### Pending Todos
 
@@ -90,5 +94,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 3 complete (all 3 plans). Ready for Phase 4 (Scheduled Automation)
-Resume file: .planning/ROADMAP.md (Phase 4 planning)
+Stopped at: Phase 4, Plan 1 complete. Ready for Plan 04-02 (run history table and /runs dashboard page)
+Resume file: .planning/phases/04-scheduled-automation/04-02-PLAN.md

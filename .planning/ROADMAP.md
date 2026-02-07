@@ -82,7 +82,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md -- ScheduleConfig model, --scheduled flag, input() guards, scheduler.py CLI (launchd plist management)
+- [x] 04-01-PLAN.md -- ScheduleConfig model, --scheduled flag, input() guards, scheduler.py CLI (launchd plist management)
 - [ ] 04-02-PLAN.md -- run_history table, pipeline run recording, /runs dashboard page
 
 ### Phase 5: Dashboard Core
@@ -169,7 +169,7 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 | 1. Config Externalization | 3/3 | Complete | 2026-02-07 |
 | 2. Platform Architecture | 2/2 | Complete | 2026-02-07 |
 | 3. Discovery Engine | 3/3 | Complete | 2026-02-07 |
-| 4. Scheduled Automation | 0/2 | Not started | - |
+| 4. Scheduled Automation | 1/2 | In progress | - |
 | 5. Dashboard Core | 0/5 | Not started | - |
 | 6. Dashboard Analytics | 0/3 | Not started | - |
 | 7. AI Resume & Cover Letter | 0/5 | Not started | - |
