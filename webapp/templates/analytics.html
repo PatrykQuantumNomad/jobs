@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Analytics — Job Tracker{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-gray-900">Analytics</h1>
+    <button id="refresh-btn" onclick="refreshAnalytics()"
+            class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900">
+        Refresh
+    </button>
+</div>
+
+<!-- Stats Cards -->
+<div id="analytics-stats"
+     hx-get="/api/stats-cards"
+     hx-trigger="statsChanged from:body"
+     hx-swap="innerHTML">
+    {% include "partials/stats_cards.html" %}
+</div>
+
+<!-- Platform Effectiveness Table -->
+{% if enhanced_stats.by_platform %}
+<div class="bg-white rounded-lg shadow-sm border p-4 mb-6">
+    <h2 class="text-lg font-semibold text-gray-800 mb-3">Platform Effectiveness</h2>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b">
+                <tr>
+                    <th class="px-4 py-2 text-left font-medium text-gray-600">Platform</th>
+                    <th class="px-4 py-2 text-right font-medium text-gray-600">Total</th>
+                    <th class="px-4 py-2 text-right font-medium text-gray-600">High Quality (4+)</th>
+                    <th class="px-4 py-2 text-right font-medium text-gray-600">Avg Score</th>
+                    <th class="px-4 py-2 text-right font-medium text-gray-600">Actioned</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for p in enhanced_stats.by_platform %}
+                <tr>
+                    <td class="px-4 py-2 font-medium">{{ p.name | title }}</td>
+                    <td class="px-4 py-2 text-right">{{ p.total }}</td>
+                    <td class="px-4 py-2 text-right text-blue-600 font-semibold">{{ p.high_quality }}</td>
+                    <td class="px-4 py-2 text-right">{{ p.avg_score }}</td>
+                    <td class="px-4 py-2 text-right text-purple-600">{{ p.actioned }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Charts Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Jobs Discovered Per Day -->
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Jobs Discovered Per Day</h2>
+        <div id="empty-jobs-per-day" class="text-sm text-gray-400 text-center py-8 hidden">No data yet</div>
+        <canvas id="chart-jobs-per-day" width="400" height="200"></canvas>
+    </div>
+
+    <!-- Platform Distribution -->
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Platform Distribution</h2>
+        <div id="empty-platform" class="text-sm text-gray-400 text-center py-8 hidden">No data yet</div>
+        <div class="flex justify-center">
+            <canvas id="chart-platform" width="300" height="300"></canvas>
+        </div>
+    </div>
+
+    <!-- Status Funnel -->
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Status Funnel</h2>
+        <div id="empty-funnel" class="text-sm text-gray-400 text-center py-8 hidden">No data yet</div>
+        <canvas id="chart-funnel" width="400" height="300"></canvas>
+    </div>
+
+    <!-- Time in Stage -->
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Avg Time in Stage</h2>
+        <div id="empty-time-stage" class="text-sm text-gray-400 text-center py-8 hidden">No data yet</div>
+        <canvas id="chart-time-stage" width="400" height="250"></canvas>
+    </div>
+
+    <!-- Response Rate -->
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Response Rate</h2>
+        <div class="text-center mb-2">
+            <span id="response-rate-number" class="text-4xl font-bold text-green-600">
+                {% if enhanced_stats.response_rate.total_applied > 0 %}
+                    {{ enhanced_stats.response_rate.rate_pct }}%
+                {% else %}
+                    N/A
+                {% endif %}
+            </span>
+        </div>
+        <div id="empty-response" class="text-sm text-gray-400 text-center py-4 hidden">No applications yet</div>
+        <div class="flex justify-center">
+            <canvas id="chart-response" width="200" height="200"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script>
+const analyticsData = {{ analytics_json | safe }};
+
+const STATUS_COLORS = {
+    'discovered': '#e5e7eb',
+    'scored': '#dbeafe',
+    'saved': '#d1fae5',
+    'applied': '#c4b5fd',
+    'phone_screen': '#fef3c7',
+    'technical': '#fed7aa',
+    'final_interview': '#fbcfe8',
+    'offer': '#bbf7d0',
+    'rejected': '#fee2e2',
+    'withdrawn': '#e2e8f0',
+    'ghosted': '#f3e8ff'
+};
+
+const PLATFORM_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+function createOrUpdateChart(canvasId, config) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+    return new Chart(canvas, config);
+}
+
+function formatStatus(s) {
+    return s ? s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '';
+}
+
+function renderCharts(data) {
+    // 1. Jobs Discovered Per Day (bar)
+    const jpd = data.jobs_per_day || [];
+    const emptyJpd = document.getElementById('empty-jobs-per-day');
+    const canvasJpd = document.getElementById('chart-jobs-per-day');
+    if (jpd.length === 0) {
+        if (emptyJpd) emptyJpd.classList.remove('hidden');
+        if (canvasJpd) canvasJpd.style.display = 'none';
+    } else {
+        if (emptyJpd) emptyJpd.classList.add('hidden');
+        if (canvasJpd) canvasJpd.style.display = '';
+        createOrUpdateChart('chart-jobs-per-day', {
+            type: 'bar',
+            data: {
+                labels: jpd.map(d => d.date),
+                datasets: [{
+                    label: 'Jobs Discovered',
+                    data: jpd.map(d => d.count),
+                    backgroundColor: '#3b82f6'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // 2. Platform Distribution (doughnut)
+    const bp = data.by_platform || [];
+    const emptyPlatform = document.getElementById('empty-platform');
+    const canvasPlatform = document.getElementById('chart-platform');
+    if (bp.length === 0) {
+        if (emptyPlatform) emptyPlatform.classList.remove('hidden');
+        if (canvasPlatform) canvasPlatform.style.display = 'none';
+    } else {
+        if (emptyPlatform) emptyPlatform.classList.add('hidden');
+        if (canvasPlatform) canvasPlatform.style.display = '';
+        createOrUpdateChart('chart-platform', {
+            type: 'doughnut',
+            data: {
+                labels: bp.map(p => p.name.charAt(0).toUpperCase() + p.name.slice(1)),
+                datasets: [{
+                    data: bp.map(p => p.total),
+                    backgroundColor: PLATFORM_COLORS.slice(0, bp.length)
+                }]
+            },
+            options: { responsive: true }
+        });
+    }
+
+    // 3. Status Funnel (horizontal bar)
+    const sf = data.status_funnel || [];
+    const emptyFunnel = document.getElementById('empty-funnel');
+    const canvasFunnel = document.getElementById('chart-funnel');
+    if (sf.length === 0) {
+        if (emptyFunnel) emptyFunnel.classList.remove('hidden');
+        if (canvasFunnel) canvasFunnel.style.display = 'none';
+    } else {
+        if (emptyFunnel) emptyFunnel.classList.add('hidden');
+        if (canvasFunnel) canvasFunnel.style.display = '';
+        createOrUpdateChart('chart-funnel', {
+            type: 'bar',
+            data: {
+                labels: sf.map(s => formatStatus(s.status)),
+                datasets: [{
+                    label: 'Jobs',
+                    data: sf.map(s => s.count),
+                    backgroundColor: sf.map(s => STATUS_COLORS[s.status] || '#e5e7eb'),
+                    borderColor: sf.map(s => {
+                        // Darken the fill color slightly for the border
+                        return '#9ca3af';
+                    }),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // 4. Time in Stage (horizontal bar)
+    const tis = data.time_in_stage || [];
+    const emptyTimeStage = document.getElementById('empty-time-stage');
+    const canvasTimeStage = document.getElementById('chart-time-stage');
+    if (tis.length === 0) {
+        if (emptyTimeStage) emptyTimeStage.classList.remove('hidden');
+        if (canvasTimeStage) canvasTimeStage.style.display = 'none';
+    } else {
+        if (emptyTimeStage) emptyTimeStage.classList.add('hidden');
+        if (canvasTimeStage) canvasTimeStage.style.display = '';
+        createOrUpdateChart('chart-time-stage', {
+            type: 'bar',
+            data: {
+                labels: tis.map(s => formatStatus(s.stage)),
+                datasets: [{
+                    label: 'Avg Days',
+                    data: tis.map(s => s.avg_days),
+                    backgroundColor: '#f59e0b'
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                scales: { x: { beginAtZero: true } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // 5. Response Rate (doughnut)
+    const rr = data.response_rate || {};
+    const emptyResponse = document.getElementById('empty-response');
+    const canvasResponse = document.getElementById('chart-response');
+    const rrNumber = document.getElementById('response-rate-number');
+    if (!rr.total_applied || rr.total_applied === 0) {
+        if (emptyResponse) emptyResponse.classList.remove('hidden');
+        if (canvasResponse) canvasResponse.style.display = 'none';
+        if (rrNumber) rrNumber.textContent = 'N/A';
+    } else {
+        if (emptyResponse) emptyResponse.classList.add('hidden');
+        if (canvasResponse) canvasResponse.style.display = '';
+        if (rrNumber) rrNumber.textContent = rr.rate_pct + '%';
+        const noResponse = rr.total_applied - rr.responded;
+        createOrUpdateChart('chart-response', {
+            type: 'doughnut',
+            data: {
+                labels: ['Responded', 'No Response'],
+                datasets: [{
+                    data: [rr.responded, noResponse],
+                    backgroundColor: ['#10b981', '#e5e7eb']
+                }]
+            },
+            options: { responsive: true }
+        });
+    }
+}
+
+// Initial render with inline data
+renderCharts(analyticsData);
+
+// Refresh button handler
+async function refreshAnalytics() {
+    const btn = document.getElementById('refresh-btn');
+    btn.textContent = 'Refreshing...';
+    btn.disabled = true;
+    try {
+        const resp = await fetch('/api/analytics');
+        const data = await resp.json();
+        renderCharts(data);
+    } catch (err) {
+        console.error('Failed to refresh analytics:', err);
+    } finally {
+        btn.textContent = 'Refresh';
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}

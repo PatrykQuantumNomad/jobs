@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import FastAPI, Form, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -260,19 +260,25 @@ async def run_history(request: Request):
     )
 
 
-@app.get("/stats", response_class=HTMLResponse)
-async def stats_page(request: Request):
+@app.get("/analytics", response_class=HTMLResponse)
+async def analytics_page(request: Request):
     stats = db.get_stats()
+    enhanced = db.get_enhanced_stats()
     return templates.TemplateResponse(
-        "dashboard.html",
+        "analytics.html",
         {
             "request": request,
-            "jobs": [],
             "stats": stats,
-            "statuses": STATUSES,
-            "filters": {},
+            "enhanced_stats": enhanced,
+            "analytics_json": json.dumps(enhanced),
         },
     )
+
+
+@app.get("/api/analytics")
+async def analytics_api():
+    enhanced = db.get_enhanced_stats()
+    return JSONResponse(content=enhanced)
 
 
 def main() -> None:
