@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 ## Current Position
 
 Phase: 3 of 8 (Discovery Engine)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-07 -- Completed 03-01-PLAN.md (processing modules)
+Last activity: 2026-02-07 -- Completed 03-02-PLAN.md (DB migration + orchestrator wiring)
 
-Progress: [######░░░░░░░░░░░░░░░░░░░░░░░░] 6/30 (~20%)
+Progress: [#######░░░░░░░░░░░░░░░░░░░░░░░] 7/30 (~23%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 5.2 min
-- Total execution time: 31 min
+- Total plans completed: 7
+- Average duration: 5.1 min
+- Total execution time: 36 min
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [######░░░░░░░░░░░░░░░░░░░░░
 |-------|-------|-------|----------|
 | 01-config-externalization | 3/3 | 16 min | 5.3 min |
 | 02-platform-architecture | 2/2 | 9 min | 4.5 min |
-| 03-discovery-engine | 1/3 | 6 min | 6.0 min |
+| 03-discovery-engine | 2/3 | 11 min | 5.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (5 min), 02-01 (3 min), 02-02 (6 min), 03-01 (6 min)
+- Last 5 plans: 02-01 (3 min), 02-02 (6 min), 03-01 (6 min), 03-02 (5 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -68,6 +68,11 @@ Recent decisions affecting current work:
 - [03-01]: Added " corporation" to dedup suffix list for Microsoft Corporation variant
 - [03-01]: tech_matched keywords included in ScoreBreakdown (Claude's discretion from CONTEXT.md)
 - [03-01]: Currency display: USD="$", CAD="C$", EUR="EUR", GBP="GBP" in compact format
+- [03-02]: JOBFLOW_TEST_DB=1 env var for in-memory SQLite testing
+- [03-02]: Singleton connection for in-memory DBs to share state across get_conn() calls
+- [03-02]: ON CONFLICT preserves first_seen_at, updates last_seen_at
+- [03-02]: Removed old _deduplicate entirely -- fuzzy_deduplicate is sole dedup path
+- [03-02]: backfill_score_breakdowns filters dict keys through Job.model_fields
 
 ### Pending Todos
 
@@ -81,5 +86,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 3 plan 1 complete. Ready for 03-02 (DB migration + orchestrator wiring)
-Resume file: .planning/phases/03-discovery-engine/03-02-PLAN.md
+Stopped at: Phase 3 plan 2 complete. Ready for 03-03 (dashboard UI for new columns)
+Resume file: .planning/phases/03-discovery-engine/03-03-PLAN.md
