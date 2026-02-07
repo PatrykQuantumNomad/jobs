@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Discovery Engine** - Fuzzy dedup, score breakdowns, salary normalization, new job detection
 - [x] **Phase 4: Scheduled Automation** - Unattended pipeline runs via cron/launchd
 - [x] **Phase 5: Dashboard Core** - Search, extended status workflow, bulk actions, export, activity log
-- [ ] **Phase 6: Dashboard Analytics** - Stats, metrics, and kanban board view
+- [x] **Phase 6: Dashboard Analytics** - Stats, metrics, and kanban board view
 - [ ] **Phase 7: AI Resume & Cover Letter** - LLM-powered resume tailoring and cover letter generation
 - [ ] **Phase 8: One-Click Apply** - Apply modes and dashboard-triggered application submission
 
@@ -114,8 +114,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 06-01-PLAN.md -- Analytics engine (SQLite queries, Chart.js charts, /analytics page, /api/analytics JSON endpoint)
-- [ ] 06-02-PLAN.md -- Kanban board view with SortableJS drag-and-drop, HX-Trigger stats sync
+- [x] 06-01-PLAN.md -- Analytics engine (SQLite queries, Chart.js charts, /analytics page, /api/analytics JSON endpoint)
+- [x] 06-02-PLAN.md -- Kanban board view with SortableJS drag-and-drop, HX-Trigger stats sync
 
 ### Phase 7: AI Resume & Cover Letter
 **Goal**: Users generate a tailored resume and cover letter for each application, with AI reordering real experience to match the job description -- never fabricating new claims
@@ -169,6 +169,6 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 | 3. Discovery Engine | 3/3 | Complete | 2026-02-07 |
 | 4. Scheduled Automation | 2/2 | Complete | 2026-02-07 |
 | 5. Dashboard Core | 4/4 | Complete | 2026-02-07 |
-| 6. Dashboard Analytics | 0/2 | Not started | - |
+| 6. Dashboard Analytics | 2/2 | Complete | 2026-02-07 |
 | 7. AI Resume & Cover Letter | 0/5 | Not started | - |
 | 8. One-Click Apply | 0/5 | Not started | - |
