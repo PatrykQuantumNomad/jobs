@@ -1,0 +1,115 @@
+search:
+  min_salary: 150000
+  queries:
+    - title: "senior software engineer"
+      keywords: []
+      location: ""
+      max_pages: 5
+    - title: "staff software engineer"
+      keywords: []
+    - title: "principal engineer"
+      keywords: []
+    - title: "software developer"
+      keywords: []
+    - title: "full stack engineer"
+      keywords: []
+    - title: "backend engineer"
+      keywords: []
+    - title: "devops engineer"
+      keywords: []
+    - title: "platform engineer"
+      keywords: []
+    - title: "software architect"
+      keywords: []
+    - title: "solutions architect"
+      keywords: []
+    - title: "cloud architect"
+      keywords: []
+    - title: "AI engineer"
+      keywords: []
+    - title: "machine learning engineer"
+      keywords: []
+    - title: "LLM engineer"
+      keywords: []
+    - title: "site reliability engineer"
+      keywords: []
+    - title: "cloud engineer"
+      keywords: []
+    - title: "infrastructure engineer"
+      keywords: []
+    - title: "kubernetes engineer"
+      keywords: []
+    - title: "engineering manager"
+      keywords: ["software"]
+    - title: "technical lead"
+      keywords: []
+    - title: "engineering director"
+      keywords: []
+    - title: "head of engineering"
+      keywords: []
+
+scoring:
+  target_titles:
+    - "Senior Software Engineer"
+    - "Principal Engineer"
+    - "Staff Engineer"
+    - "Platform Engineering Lead"
+    - "DevOps Lead"
+    - "Engineering Manager"
+  tech_keywords:
+    - kubernetes
+    - k8s
+    - gke
+    - eks
+    - aks
+    - terraform
+    - terragrunt
+    - helm
+    - devspace
+    - python
+    - fastapi
+    - go
+    - golang
+    - java
+    - typescript
+    - langchain
+    - langgraph
+    - langflow
+    - llm
+    - ai/ml
+    - agentic
+    - prometheus
+    - grafana
+    - observability
+    - airflow
+    - kafka
+    - postgresql
+    - redis
+    - docker
+    - gitops
+    - ci/cd
+    - cloud native
+    - microservices
+    - platform engineering
+  weights:
+    title_match: 2.0
+    tech_overlap: 2.0
+    remote: 1.0
+    salary: 1.0
+
+platforms:
+  indeed:
+    enabled: true
+  dice:
+    enabled: true
+  remoteok:
+    enabled: true
+
+timing:
+  nav_delay_min: 2.0
+  nav_delay_max: 5.0
+  form_delay_min: 1.0
+  form_delay_max: 2.0
+  page_load_timeout: 30000
+
+schedule: {}

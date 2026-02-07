@@ -79,76 +79,31 @@ class SearchQuery(BaseModel):
 
 
 class CandidateProfile(BaseModel):
-    """Candidate information for form filling and scoring."""
+    """Candidate information for form filling and scoring.
 
-    first_name: str = "Patryk"
-    last_name: str = "Golabek"
-    email: str = "pgolabek@gmail.com"
-    phone: str = "416-708-9839"
-    location: str = "Springwater, ON, Canada"
-    github: str = "https://github.com/TranslucentComputing"
-    github_personal: str = "https://github.com/PatrykQuantumNomad"
-    website: str = "https://mykubert.com"
-    youtube: str = "https://www.youtube.com/@TranslucentComputing"
-    years_experience: str = "17+"
-    current_title: str = "Co-Founder & CTO"
-    current_company: str = "Translucent Computing Inc."
-    work_authorization: str = (
-        "Authorized to work in Canada. May require sponsorship for US roles."
-    )
-    willing_to_relocate: str = "No (remote preferred)"
-    desired_salary: str = "$200,000+ USD"
+    All personal fields default to empty strings.  Actual values are populated
+    by ``AppSettings.build_candidate_profile()`` from ``.env`` and config.yaml.
+    """
+
+    first_name: str = ""
+    last_name: str = ""
+    email: str = ""
+    phone: str = ""
+    location: str = ""
+    github: str = ""
+    github_personal: str = ""
+    website: str = ""
+    youtube: str = ""
+    years_experience: str = ""
+    current_title: str = ""
+    current_company: str = ""
+    work_authorization: str = ""
+    willing_to_relocate: str = ""
+    desired_salary: str = ""
     desired_salary_usd: int = 200_000
-    start_date: str = "Available immediately / 2 weeks notice"
-    education: str = "Bachelor's degree in Computer Science"
+    start_date: str = ""
+    education: str = ""
     resume_path: str = "resumes/Patryk_Golabek_Resume_ATS.pdf"
 
-    target_titles: list[str] = Field(
-        default_factory=lambda: [
-            "Senior Software Engineer",
-            "Principal Engineer",
-            "Staff Engineer",
-            "Platform Engineering Lead",
-            "DevOps Lead",
-            "Engineering Manager",
-        ]
-    )
-
-    tech_keywords: list[str] = Field(
-        default_factory=lambda: [
-            "kubernetes",
-            "k8s",
-            "gke",
-            "eks",
-            "aks",
-            "terraform",
-            "terragrunt",
-            "helm",
-            "devspace",
-            "python",
-            "fastapi",
-            "go",
-            "golang",
-            "java",
-            "typescript",
-            "langchain",
-            "langgraph",
-            "langflow",
-            "llm",
-            "ai/ml",
-            "agentic",
-            "prometheus",
-            "grafana",
-            "observability",
-            "airflow",
-            "kafka",
-            "postgresql",
-            "redis",
-            "docker",
-            "gitops",
-            "ci/cd",
-            "cloud native",
-            "microservices",
-            "platform engineering",
-        ]
-    )
+    target_titles: list[str] = Field(default_factory=list)
+    tech_keywords: list[str] = Field(default_factory=list)

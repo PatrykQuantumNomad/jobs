@@ -1,0 +1,119 @@
+# ============================================================================
+# Job Search Automation -- Configuration File
+# ============================================================================
+#
+# Copy this file to config.yaml and customize for your job search.
+#
+#   cp config.example.yaml config.yaml
+#
+# This file contains NON-SENSITIVE operational parameters only.
+# Personal information and credentials belong in .env (see .env.example).
+#
+# Sections:
+#   search    -- Search queries, salary floor
+#   scoring   -- Target titles, tech keywords, scoring weights
+#   platforms -- Enable/disable individual job platforms
+#   timing    -- Browser automation delays and timeouts
+#   schedule  -- Scheduled run configuration (Phase 4 -- not yet implemented)
+#
+# ============================================================================
+
+# -- Search Configuration ---------------------------------------------------
+# Defines what jobs to search for across all platforms.
+search:
+  # Minimum annual salary in USD. Jobs below this threshold are filtered out
+  # during discovery. Set to 0 to disable salary filtering.
+  min_salary: 150000
+
+  # List of search queries. Each query runs on all enabled platforms (unless
+  # the optional "platforms" field restricts it to specific ones).
+  queries:
+    # title: Job title to search for (wrapped in quotes for exact phrase match)
+    # keywords: Additional terms appended to the title (optional, default: [])
+    # location: Override location for this query (optional, default: "")
+    #           Leave empty -- each platform applies its own remote filter
+    # platforms: Limit this query to specific platforms (optional, default: [])
+    #            When omitted or empty, the query runs on all enabled platforms
+    #            Valid values: "indeed", "dice", "remoteok"
+    # max_pages: Maximum result pages to scrape per platform (1-10, default: 5)
+
+    - title: "Senior Software Engineer"
+      keywords: []
+      location: ""
+      max_pages: 5
+
+    - title: "Staff Software Engineer"
+      keywords: []
+
+    - title: "Principal Engineer"
+      keywords: []
+
+    - title: "Engineering Manager"
+      keywords: ["software"]
+
+    # Example: restrict a query to specific platforms
+    # - title: "DevOps Lead"
+    #   keywords: ["Kubernetes", "cloud"]
+    #   platforms: ["indeed", "dice"]
+    #   max_pages: 3
+
+# -- Scoring Configuration --------------------------------------------------
+# Controls how discovered jobs are rated on a 1-5 scale.
+scoring:
+  # Target job titles. Exact match in a job title earns maximum title score.
+  # Case-insensitive substring matching is used.
+  target_titles:
+    - "Senior Software Engineer"
+    - "Principal Engineer"
+    - "Staff Engineer"
+    - "Platform Engineering Lead"
+    - "DevOps Lead"
+    - "Engineering Manager"
+
+  # Technology keywords to match against job descriptions and tags.
+  # More matches = higher tech overlap score.
+  # Case-insensitive. Multi-word terms (e.g. "cloud native") are supported.
+  tech_keywords:
+    - kubernetes
+    - terraform
+    - python
+    - go
+    - typescript
+    - docker
+    - ci/cd
+    - cloud native
+    # Add your own stack keywords here
+
+  # Relative weights for each scoring dimension.
+  # Higher weight = more influence on the final 1-5 score.
+  # All values must be >= 0. Typical range: 0.0 to 5.0.
+  weights:
+    title_match: 2.0    # How much job title match matters (0-10)
+    tech_overlap: 2.0   # How much tech stack overlap matters (0-10)
+    remote: 1.0         # Bonus for remote/location match (0-10)
+    salary: 1.0         # Bonus for meeting salary target (0-10)
+
+# -- Platform Configuration -------------------------------------------------
+# Enable or disable individual job platforms.
+platforms:
+  indeed:
+    enabled: true       # Indeed.com -- requires Google OAuth on first run
+  dice:
+    enabled: true       # Dice.com -- requires email/password in .env
+  remoteok:
+    enabled: true       # RemoteOK.com -- public API, no auth needed
+
+# -- Timing Configuration ---------------------------------------------------
+# Controls delays between browser actions to avoid detection.
+# All delay values are in seconds. Timeout values are in milliseconds.
+timing:
+  nav_delay_min: 2.0          # Minimum delay between page navigations (seconds)
+  nav_delay_max: 5.0          # Maximum delay between page navigations (seconds)
+  form_delay_min: 1.0         # Minimum delay between form interactions (seconds)
+  form_delay_max: 2.0         # Maximum delay between form interactions (seconds)
+  page_load_timeout: 30000    # Max time to wait for page load (milliseconds)
+
+# -- Schedule Configuration -------------------------------------------------
+# Placeholder for Phase 4 scheduled/recurring runs.
+# Currently unused. Will support cron-like scheduling in a future release.
+schedule: {}
