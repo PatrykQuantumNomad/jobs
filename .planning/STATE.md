@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 5 in progress - Dashboard Core (schema foundation done, search next)
+**Current focus:** Phase 5 in progress - Dashboard Core (search done, bulk actions next)
 
 ## Current Position
 
 Phase: 5 of 8 (Dashboard Core)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-07 -- Completed 05-01-PLAN.md (schema migration v5, FTS5, activity_log, status vocabulary)
+Last activity: 2026-02-07 -- Completed 05-02-PLAN.md (FTS5 search UI, partial template, /search endpoint)
 
-Progress: [###########░░░░░░░░░░░░░░░░░░░] 11/30 (~37%)
+Progress: [############░░░░░░░░░░░░░░░░░░] 12/30 (~40%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 4.6 min
-- Total execution time: 51 min
+- Total plans completed: 12
+- Average duration: 4.5 min
+- Total execution time: 54 min
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [###########░░░░░░░░░░░░░░░░░░░]
 | 02-platform-architecture | 2/2 | 9 min | 4.5 min |
 | 03-discovery-engine | 3/3 | 15 min | 5.0 min |
 | 04-scheduled-automation | 2/2 | 8 min | 4.0 min |
-| 05-dashboard-core | 1/4 | 3 min | 3.0 min |
+| 05-dashboard-core | 2/4 | 6 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-03 (4 min), 04-01 (4 min), 04-02 (4 min), 05-01 (3 min)
+- Last 5 plans: 04-01 (4 min), 04-02 (4 min), 05-01 (3 min), 05-02 (3 min)
 - Trend: stable/improving
 
 *Updated after each plan completion*
@@ -88,6 +88,9 @@ Recent decisions affecting current work:
 - [05-01]: FTS5 content-sync table with triggers (not standalone) to avoid double-storage
 - [05-01]: Activity log uses dedup_key foreign reference (not JOIN-enforced) for simplicity
 - [05-01]: Status migration: approved -> saved, skipped -> withdrawn (semantic alignment)
+- [05-02]: FTS5 prefix matching: auto-append * to each word when no FTS5 operators detected
+- [05-02]: Partial template for table rows enables reuse by search, bulk actions (05-03), and filtering (05-04)
+- [05-02]: hx-include captures active filter state so search respects score/platform/status filters
 
 ### Pending Todos
 
@@ -101,5 +104,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 5, Plan 1 complete. Ready for Plan 2 (FTS5 search UI)
-Resume file: .planning/phases/05-dashboard-core/05-02-PLAN.md
+Stopped at: Phase 5, Plan 2 complete. Ready for Plan 3 (bulk status updates)
+Resume file: .planning/phases/05-dashboard-core/05-03-PLAN.md
