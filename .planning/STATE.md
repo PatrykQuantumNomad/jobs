@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 ## Current Position
 
 Phase: 3 of 8 (Discovery Engine)
-Plan: 0 of 4 in current phase
-Status: Ready to plan
-Last activity: 2026-02-07 -- Phase 2 complete (2/2 plans, verified 4/4 must-haves)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-07 -- Completed 03-01-PLAN.md (processing modules)
 
-Progress: [#####░░░░░░░░░░░░░░░░░░░░░░░░░] 5/30 (~17%)
+Progress: [######░░░░░░░░░░░░░░░░░░░░░░░░] 6/30 (~20%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 5.0 min
-- Total execution time: 25 min
+- Total plans completed: 6
+- Average duration: 5.2 min
+- Total execution time: 31 min
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [#####░░░░░░░░░░░░░░░░░░░░░�
 |-------|-------|-------|----------|
 | 01-config-externalization | 3/3 | 16 min | 5.3 min |
 | 02-platform-architecture | 2/2 | 9 min | 4.5 min |
+| 03-discovery-engine | 1/3 | 6 min | 6.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (5 min), 01-03 (5 min), 02-01 (3 min), 02-02 (6 min)
+- Last 5 plans: 01-03 (5 min), 02-01 (3 min), 02-02 (6 min), 03-01 (6 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -63,6 +64,10 @@ Recent decisions affecting current work:
 - [02-02]: Big-bang migration -- all three adapters migrated together for atomic consistency
 - [02-02]: RemoteOK async-to-sync conversion eliminates asyncio from orchestrator entirely
 - [02-02]: No --platforms choices constraint -- registry validates at runtime via KeyError
+- [03-01]: ScoreBreakdown uses stdlib dataclass (not Pydantic) -- lightweight internal struct
+- [03-01]: Added " corporation" to dedup suffix list for Microsoft Corporation variant
+- [03-01]: tech_matched keywords included in ScoreBreakdown (Claude's discretion from CONTEXT.md)
+- [03-01]: Currency display: USD="$", CAD="C$", EUR="EUR", GBP="GBP" in compact format
 
 ### Pending Todos
 
@@ -76,5 +81,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Phase 2 verified and complete. Ready for Phase 3 (Discovery Engine)
-Resume file: None
+Stopped at: Phase 3 plan 1 complete. Ready for 03-02 (DB migration + orchestrator wiring)
+Resume file: .planning/phases/03-discovery-engine/03-02-PLAN.md
