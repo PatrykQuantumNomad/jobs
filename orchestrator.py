@@ -1,8 +1,7 @@
-"""Main job search pipeline — coordinates search, scoring, and application."""
+"""Main job search pipeline -- coordinates search, scoring, and application."""
 
 from __future__ import annotations
 
-import asyncio
 import json
 import sys
 from datetime import datetime
@@ -15,6 +14,8 @@ from config import (
     get_settings,
 )
 from models import Job, JobStatus
+from platforms import get_all_platforms, get_browser_context, close_browser
+from platforms.registry import get_platform, PlatformInfo
 from scorer import JobScorer
 
 
@@ -31,11 +32,15 @@ class Orchestrator:
         self.headless = headless
         self._failed_logins: set[str] = set()
 
-    # -- Full pipeline -------------------------------------------------------
+    # -- Full pipeline ---------------------------------------------------------
 
     def run(self, platforms: list[str] | None = None) -> None:
         if platforms is None:
             platforms = self.settings.enabled_platforms()
+
+        # Validate all requested platforms are registered
+        for name in platforms:
+            get_platform(name)  # Raises KeyError if not registered
 
         print("=" * 60)
         print("  JOB SEARCH AUTOMATION PIPELINE")
@@ -49,7 +54,7 @@ class Orchestrator:
 
         self._print_summary()
 
-    # -- Phase 0: environment validation -------------------------------------
+    # -- Phase 0: environment validation ---------------------------------------
 
     def phase_0_setup(self) -> None:
         print("\n[Phase 0] Environment Setup")
@@ -63,9 +68,9 @@ class Orchestrator:
             sys.exit(1)
 
         print("  Credentials:")
-        for p in ("indeed", "dice", "remoteok"):
-            ok = self.settings.validate_platform_credentials(p)
-            print(f"    {p:10s} {'OK' if ok else 'MISSING'}")
+        for name in get_all_platforms():
+            ok = self.settings.validate_platform_credentials(name)
+            print(f"    {name:10s} {'OK' if ok else 'MISSING'}")
 
         ensure_directories()
 
@@ -75,103 +80,86 @@ class Orchestrator:
 
         print("  Setup complete.")
 
-    # -- Phase 1: login ------------------------------------------------------
+    # -- Phase 1: login --------------------------------------------------------
 
     def phase_1_login(self, platforms: list[str]) -> None:
         print("\n[Phase 1] Platform Login")
         print("-" * 60)
 
-        if "indeed" in platforms and self.settings.validate_platform_credentials("indeed"):
-            self._login_platform("indeed")
+        for name in platforms:
+            info = get_platform(name)
+            if info.platform_type == "api":
+                print(f"  {info.name}: no login required")
+                continue
+            if not self.settings.validate_platform_credentials(name):
+                print(f"  {info.name}: credentials missing, skipping")
+                self._failed_logins.add(name)
+                continue
+            self._login_platform(name, info)
 
-        if "dice" in platforms and self.settings.validate_platform_credentials("dice"):
-            self._login_platform("dice")
-
-        if "remoteok" in platforms:
-            print("  RemoteOK: no login required")
-
-    def _login_platform(self, name: str) -> None:
-        from platforms.stealth import close_browser, get_browser_context
-
+    def _login_platform(self, name: str, info: PlatformInfo) -> None:
         pw, ctx = None, None
         try:
             pw, ctx = get_browser_context(name, headless=self.headless)
-
-            if name == "indeed":
-                from platforms.indeed import IndeedPlatform
-                IndeedPlatform(ctx).login()
-            elif name == "dice":
-                from platforms.dice import DicePlatform
-                DicePlatform(ctx).login()
+            platform = info.cls()
+            platform.init(ctx)
+            with platform:
+                platform.login()
         except Exception as exc:
-            print(f"  {name}: login failed -- {exc}")
-            print(f"  Skipping {name} for this run.")
+            print(f"  {info.name}: login failed -- {exc}")
+            print(f"  Skipping {info.name} for this run.")
             self._failed_logins.add(name)
         finally:
             if pw and ctx:
                 close_browser(pw, ctx)
 
-    # -- Phase 2: search -----------------------------------------------------
+    # -- Phase 2: search -------------------------------------------------------
 
     def phase_2_search(self, platforms: list[str]) -> None:
         print("\n[Phase 2] Job Search")
         print("-" * 60)
 
-        for name in ("indeed", "dice"):
-            if name not in platforms:
-                continue
+        for name in platforms:
             if name in self._failed_logins:
-                print(f"  Skipping {name} (login failed)")
+                info = get_platform(name)
+                print(f"  Skipping {info.name} (login failed)")
                 continue
-            if not self.settings.validate_platform_credentials(name):
+            info = get_platform(name)
+            if info.platform_type == "browser" and not self.settings.validate_platform_credentials(name):
                 continue
-            jobs = self._search_browser_platform(name)
+            jobs = self._search_platform(name, info)
             self._save_raw(name, jobs)
 
-        if "remoteok" in platforms:
-            jobs = asyncio.run(self._search_remoteok())
-            self._save_raw("remoteok", jobs)
-
-    def _search_browser_platform(self, name: str) -> list[Job]:
-        from platforms.stealth import close_browser, get_browser_context
-
+    def _search_platform(self, name: str, info: PlatformInfo) -> list[Job]:
         queries = self.settings.get_search_queries(platform=name)
         all_jobs: list[Job] = []
 
-        pw, ctx = get_browser_context(name, headless=self.headless)
+        platform = info.cls()
 
-        if name == "indeed":
-            from platforms.indeed import IndeedPlatform
-            platform = IndeedPlatform(ctx)
+        if info.platform_type == "browser":
+            pw, ctx = get_browser_context(name, headless=self.headless)
+            platform.init(ctx)
         else:
-            from platforms.dice import DicePlatform
-            platform = DicePlatform(ctx)
+            platform.init()
+            pw, ctx = None, None
 
-        for q in queries:
-            try:
-                found = platform.search(q)
-                for job in found:
-                    job = platform.get_job_details(job)
-                    all_jobs.append(job)
-            except RuntimeError as exc:
-                print(f"  {name}: error on '{q.query}' -- {exc}")
-                continue
+        with platform:
+            for q in queries:
+                try:
+                    found = platform.search(q)
+                    if info.platform_type == "browser":
+                        for job in found:
+                            job = platform.get_job_details(job)
+                            all_jobs.append(job)
+                    else:
+                        all_jobs.extend(found)
+                except Exception as exc:
+                    print(f"  {info.name}: error on '{q.query}' -- {exc}")
+                    continue
 
-        close_browser(pw, ctx)
-        return all_jobs
+        if info.platform_type == "browser" and pw and ctx:
+            close_browser(pw, ctx)
 
-    async def _search_remoteok(self) -> list[Job]:
-        from platforms.remoteok import RemoteOKPlatform
-
-        platform = RemoteOKPlatform()
-        queries = self.settings.get_search_queries(platform="remoteok")
-        all_jobs: list[Job] = []
-
-        for q in queries:
-            jobs = await platform.search(q)
-            all_jobs.extend(jobs)
-
-        await platform.close()
         return all_jobs
 
     def _save_raw(self, platform: str, jobs: list[Job]) -> None:
@@ -180,7 +168,7 @@ class Orchestrator:
         path.write_text(json.dumps(data, indent=2, default=str))
         print(f"  Saved {len(jobs)} raw jobs -> {path}")
 
-    # -- Phase 3: score & deduplicate ----------------------------------------
+    # -- Phase 3: score & deduplicate ------------------------------------------
 
     def phase_3_score(self) -> None:
         print("\n[Phase 3] Scoring & Deduplication")
@@ -205,7 +193,7 @@ class Orchestrator:
 
     def _load_raw_results(self) -> list[Job]:
         jobs: list[Job] = []
-        for name in ("indeed", "dice", "remoteok"):
+        for name in get_all_platforms():
             path = JOB_PIPELINE_DIR / f"raw_{name}.json"
             if not path.exists():
                 continue
@@ -298,7 +286,7 @@ class Orchestrator:
         path.write_text("".join(lines))
         print(f"  Tracker updated -> {path}")
 
-    # -- Phase 4: apply (human-in-the-loop) ----------------------------------
+    # -- Phase 4: apply (human-in-the-loop) ------------------------------------
 
     def phase_4_apply(self) -> None:
         print("\n[Phase 4] Application (Human-in-the-Loop)")
@@ -336,27 +324,26 @@ class Orchestrator:
             self._apply_to(job)
 
     def _apply_to(self, job: Job) -> None:
-        from platforms.stealth import close_browser, get_browser_context
-
         print(f"\n  Applying: {job.company} -- {job.title}")
-        resume = PROJECT_ROOT / self.settings.candidate_resume_path
 
-        if job.platform == "remoteok":
-            print(f"  External application required: {job.apply_url or job.url}")
+        info = get_platform(job.platform)
+
+        if info.platform_type == "api":
+            platform = info.cls()
+            platform.init()
+            with platform:
+                platform.apply(job)
             return
 
-        headless = False  # visible for human oversight
-        pw, ctx = get_browser_context(job.platform, headless=headless)
+        # Browser platform -- visible mode for human oversight
+        resume = PROJECT_ROOT / self.settings.candidate_resume_path
+        pw, ctx = get_browser_context(job.platform, headless=False)
 
         try:
-            if job.platform == "indeed":
-                from platforms.indeed import IndeedPlatform
-                success = IndeedPlatform(ctx).apply(job, resume)
-            elif job.platform == "dice":
-                from platforms.dice import DicePlatform
-                success = DicePlatform(ctx).apply(job, resume)
-            else:
-                success = False
+            platform = info.cls()
+            platform.init(ctx)
+            with platform:
+                success = platform.apply(job, resume)
 
             if success:
                 job.status = JobStatus.APPLIED
@@ -372,7 +359,7 @@ class Orchestrator:
         # Re-save tracker with updated status
         self._write_tracker(self.discovered_jobs)
 
-    # -- Summary -------------------------------------------------------------
+    # -- Summary ---------------------------------------------------------------
 
     def _print_summary(self) -> None:
         total = len(self.discovered_jobs)
@@ -390,7 +377,7 @@ class Orchestrator:
         print("=" * 60)
 
 
-# -- Helpers -----------------------------------------------------------------
+# -- Helpers -------------------------------------------------------------------
 
 
 def _sanitize(text: str) -> str:
@@ -399,7 +386,7 @@ def _sanitize(text: str) -> str:
     return safe.strip().replace(" ", "_")[:60]
 
 
-# -- CLI entry point ---------------------------------------------------------
+# -- CLI entry point -----------------------------------------------------------
 
 
 def main() -> None:
@@ -411,7 +398,6 @@ def main() -> None:
     parser.add_argument(
         "--platforms",
         nargs="+",
-        choices=["indeed", "dice", "remoteok"],
         default=None,
         help="Platforms to search (default: all enabled in config.yaml)",
     )
