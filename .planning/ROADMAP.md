@@ -111,12 +111,11 @@ Plans:
   1. Dashboard shows aggregate stats: jobs discovered per day/week, application response rate, average time-in-stage, and per-platform effectiveness
   2. User can switch to a kanban board view where jobs appear as cards in columns by status, and can drag-and-drop jobs between columns to change status
   3. Stats update in real time as jobs move through the pipeline -- no page refresh needed
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 06-01: Analytics engine and stats API
-- [ ] 06-02: Stats dashboard page
-- [ ] 06-03: Kanban board view with drag-and-drop
+- [ ] 06-01-PLAN.md -- Analytics engine (SQLite queries, Chart.js charts, /analytics page, /api/analytics JSON endpoint)
+- [ ] 06-02-PLAN.md -- Kanban board view with SortableJS drag-and-drop, HX-Trigger stats sync
 
 ### Phase 7: AI Resume & Cover Letter
 **Goal**: Users generate a tailored resume and cover letter for each application, with AI reordering real experience to match the job description -- never fabricating new claims
@@ -170,6 +169,6 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 | 3. Discovery Engine | 3/3 | Complete | 2026-02-07 |
 | 4. Scheduled Automation | 2/2 | Complete | 2026-02-07 |
 | 5. Dashboard Core | 4/4 | Complete | 2026-02-07 |
-| 6. Dashboard Analytics | 0/3 | Not started | - |
+| 6. Dashboard Analytics | 0/2 | Not started | - |
 | 7. AI Resume & Cover Letter | 0/5 | Not started | - |
 | 8. One-Click Apply | 0/5 | Not started | - |
