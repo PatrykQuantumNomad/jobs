@@ -17,7 +17,7 @@ app = FastAPI(title="Job Tracker")
 
 BASE_DIR = Path(__file__).parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-templates.env.filters["parse_json"] = lambda s: json.loads(s) if isinstance(s, str) else s
+templates.env.filters["parse_json"] = lambda s: json.loads(s) if isinstance(s, str) and s else (s if s else {})
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 STATUSES = ["discovered", "scored", "approved", "applied", "rejected", "skipped"]
@@ -63,6 +63,11 @@ async def job_detail(request: Request, dedup_key: str):
     job = db.get_job(dedup_key)
     if not job:
         return HTMLResponse("<h1>Job not found</h1>", status_code=404)
+
+    # Mark as viewed on first access (removes NEW badge on next dashboard load)
+    if job.get("viewed_at") is None:
+        db.mark_viewed(dedup_key)
+
     return templates.TemplateResponse(
         "job_detail.html",
         {
