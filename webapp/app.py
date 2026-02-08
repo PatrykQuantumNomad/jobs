@@ -18,7 +18,6 @@ from fastapi.responses import (
     RedirectResponse,
     StreamingResponse,
 )
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from webapp import db
@@ -34,8 +33,6 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.filters["parse_json"] = lambda s: (
     json.loads(s) if isinstance(s, str) and s else (s or {})
 )
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
-
 STATUSES = [
     "discovered",
     "scored",
