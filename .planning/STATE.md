@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 13 -- Config Integration Tests (v1.1 Test Web App)
+**Current focus:** Phase 14 -- CI Pipeline (v1.1 Test Web App)
 
 ## Current Position
 
-Phase: 13 of 15 (Config Integration Tests) -- COMPLETE
+Phase: 14 of 15 (CI Pipeline) -- COMPLETE
 Plan: 1 of 1 in current phase
-Status: Phase 13 complete
-Last activity: 2026-02-08 -- Completed 13-01-PLAN.md (config integration tests). Phase 13 complete.
+Status: Phase 14 complete
+Last activity: 2026-02-08 -- Completed 14-01-PLAN.md (GitHub Actions CI workflow). Phase 14 complete.
 
-Progress: [####################################] 92% (36/39 total plans -- 24 v1.0 + 12 v1.1 complete, 3 v1.1 TBD)
+Progress: [#####################################] 95% (37/39 total plans -- 24 v1.0 + 13 v1.1 complete, 2 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ Progress: [####################################] 92% (36/39 total plans -- 24 v1
 | 11-database-integration-tests | 2/2 | 8 min | 4.0 min |
 | 12-web-api-integration-tests | 3/3 | 15 min | 5.0 min |
 | 13-config-integration-tests | 1/1 | 4 min | 4.0 min |
+| 14-ci-pipeline | 1/1 | 2 min | 2.0 min |
 
 ## Accumulated Context
 
@@ -124,13 +125,18 @@ From 13-01:
 - Underscore delimiter limitation documented as test (no env_nested_delimiter configured)
 - 34 new tests (9 loading + 14 validation + 4 defaults + 7 env overrides), 417 total suite
 
+From 14-01:
+- Coverage threshold in pyproject.toml (fail_under=80), not as CLI flag -- single source of truth
+- astral-sh/setup-uv@v7 handles Python install from .python-version -- no setup-python needed
+- Playwright browsers NOT cached (restore time equals download time per Playwright docs)
+- E2E job uses continue-on-error: true + || true for exit code 5 (no tests yet)
+
 ### Pending Todos
 
 None.
 
 ### Blockers/Concerns
 
-- Python 3.14 compatibility in CI: verify `actions/setup-python@v5` supports it
 - SSE endpoint testing: TestClient + EventSourceResponse interaction needs careful design
 
 ### Quick Tasks Completed
@@ -142,5 +148,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 13-01-PLAN.md (config integration tests). Phase 13 complete. Ready for Phase 14.
-Resume file: .planning/phases/13-config-integration-tests/
+Stopped at: Completed 14-01-PLAN.md (GitHub Actions CI workflow). Phase 14 complete. Ready for Phase 15.
+Resume file: .planning/phases/14-ci-pipeline/

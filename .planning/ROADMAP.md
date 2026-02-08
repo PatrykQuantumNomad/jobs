@@ -32,7 +32,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 11: Database Integration Tests** - SQLite CRUD, FTS5, migrations -- completed 2026-02-08
 - [x] **Phase 12: Web & API Integration Tests** - FastAPI routes, RemoteOK mocking, platform registry -- completed 2026-02-08
 - [x] **Phase 13: Config Integration Tests** - YAML loading, validation, env overrides -- completed 2026-02-08
-- [ ] **Phase 14: CI Pipeline** - GitHub Actions workflow, coverage gates, linting
+- [x] **Phase 14: CI Pipeline** - GitHub Actions workflow, coverage gates, linting -- completed 2026-02-08
 - [ ] **Phase 15: E2E Tests** - Playwright browser tests for critical dashboard flows
 
 ## Phase Details
@@ -130,7 +130,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 14-01-PLAN.md -- GitHub Actions CI workflow (test-lint + e2e jobs) and coverage threshold (CI-01, CI-02, CI-03, CI-04, CI-05)
+- [x] 14-01-PLAN.md -- GitHub Actions CI workflow (test-lint + e2e jobs) and coverage threshold (CI-01, CI-02, CI-03, CI-04, CI-05)
 
 ### Phase 15: E2E Tests
 **Goal**: Critical dashboard user flows are verified end-to-end in a real browser, confirming that the full stack (FastAPI + SQLite + Jinja2 + htmx + JS) works together
@@ -169,5 +169,5 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
 | 11. Database Integration Tests | v1.1 | 2/2 | Complete | 2026-02-08 |
 | 12. Web & API Integration Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
 | 13. Config Integration Tests | v1.1 | 1/1 | Complete | 2026-02-08 |
-| 14. CI Pipeline | v1.1 | 0/1 | Not started | - |
+| 14. CI Pipeline | v1.1 | 1/1 | Complete | 2026-02-08 |
 | 15. E2E Tests | v1.1 | 0/2 | Not started | - |
