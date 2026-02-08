@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 8 - One-Click Apply. Wave 2 complete, continue with 08-03.
+**Current focus:** Phase 8 - One-Click Apply. Wave 3 complete, continue with 08-04.
 
 ## Current Position
 
 Phase: 8 of 8 (One-Click Apply)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-08 -- Completed 08-02-PLAN.md (apply engine core)
+Last activity: 2026-02-08 -- Completed 08-03-PLAN.md (dashboard SSE integration)
 
-Progress: [#########################░░░░░] 25/30 (~83%)
+Progress: [##########################░░░░] 26/30 (~87%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25
-- Average duration: 4.2 min
-- Total execution time: 106 min
+- Total plans completed: 26
+- Average duration: 4.3 min
+- Total execution time: 111 min
 
 **By Phase:**
 
@@ -34,10 +34,10 @@ Progress: [#########################░░░░░] 25/30 (~83%)
 | 05-dashboard-core | 4/4 | 12 min | 3.0 min |
 | 06-dashboard-analytics | 2/2 | 8 min | 4.0 min |
 | 07-ai-resume-cover-letter | 4/4 | 22 min | 5.5 min |
-| 08-one-click-apply | 2/4 | 7 min | 3.5 min |
+| 08-one-click-apply | 3/4 | 12 min | 4.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 07-03 (4 min), 07-04 (8 min), 08-01 (3 min), 08-02 (4 min)
+- Last 5 plans: 07-04 (8 min), 08-01 (3 min), 08-02 (4 min), 08-03 (5 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -137,6 +137,11 @@ Recent decisions affecting current work:
 - [08-02]: Resume resolution checks resume_versions table for tailored version before default ATS resume
 - [08-02]: ATS iframe detection scans page.frames for 5 known ATS domains
 - [08-02]: wait_for_confirmation uses getattr pattern for backward-compatible _dashboard_mode and _confirmation_event
+- [08-03]: Lazy-init ApplyEngine singleton with same pattern as resume_ai imports
+- [08-03]: Server-side Jinja2 rendering of SSE events (not raw JSON) for htmx swap compatibility
+- [08-03]: asyncio.Queue per session stored in engine._sessions for SSE endpoint access
+- [08-03]: 15-second SSE timeout with ping keepalive to prevent connection drop
+- [08-03]: Omitted truncate filter for apply_url display (simpler static text instead)
 
 ### Pending Todos
 
@@ -150,5 +155,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Phase 8, Plan 2 complete. Apply engine core ready. Continue with 08-03.
-Resume file: .planning/phases/08-one-click-apply/08-03-PLAN.md
+Stopped at: Phase 8, Plan 3 complete. Dashboard SSE integration ready. Continue with 08-04.
+Resume file: .planning/phases/08-one-click-apply/08-04-PLAN.md
