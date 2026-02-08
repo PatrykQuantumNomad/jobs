@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 7 complete. Ready for Phase 8 - One-Click Apply.
+**Current focus:** Phase 8 - One-Click Apply. Wave 1 in progress.
 
 ## Current Position
 
-Phase: 7 of 8 (AI Resume & Cover Letter) -- COMPLETE
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-02-07 -- Completed 07-04-PLAN.md (dashboard integration)
+Phase: 8 of 8 (One-Click Apply)
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-08 -- Completed 08-01-PLAN.md (apply engine foundation)
 
-Progress: [#######################░░░░░░░] 23/30 (~77%)
+Progress: [########################░░░░░░] 24/30 (~80%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23
+- Total plans completed: 24
 - Average duration: 4.3 min
-- Total execution time: 99 min
+- Total execution time: 102 min
 
 **By Phase:**
 
@@ -34,9 +34,10 @@ Progress: [#######################░░░░░░░] 23/30 (~77%)
 | 05-dashboard-core | 4/4 | 12 min | 3.0 min |
 | 06-dashboard-analytics | 2/2 | 8 min | 4.0 min |
 | 07-ai-resume-cover-letter | 4/4 | 22 min | 5.5 min |
+| 08-one-click-apply | 1/4 | 3 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 07-01 (4 min), 07-02 (6 min), 07-03 (4 min), 07-04 (8 min)
+- Last 5 plans: 07-02 (6 min), 07-03 (4 min), 07-04 (8 min), 08-01 (3 min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -128,6 +129,9 @@ Recent decisions affecting current work:
 - [07-04]: AI endpoints registered before catch-all /jobs/{path} GET route (FastAPI path ordering)
 - [07-04]: asyncio.to_thread for all LLM calls (non-blocking event loop)
 - [07-04]: Post-generation validate_no_fabrication() runs before returning diff view
+- [08-01]: Lazy import of webapp.db in dedup.py to avoid circular dependencies at package level
+- [08-01]: Applied statuses set includes post-application pipeline stages (phone_screen, technical, etc.)
+- [08-01]: ApplyEvent.fields_filled uses dict[str, str] for flexible form field tracking
 
 ### Pending Todos
 
@@ -140,6 +144,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-07
-Stopped at: Phase 7 COMPLETE. All 4 plans executed. Ready for Phase 8 planning.
-Resume file: .planning/ROADMAP.md (Phase 8: One-Click Apply)
+Last session: 2026-02-08
+Stopped at: Phase 8, Plan 1 complete. Apply engine foundation ready. Continue with 08-02.
+Resume file: .planning/phases/08-one-click-apply/08-02-PLAN.md
