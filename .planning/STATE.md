@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 14 -- CI Pipeline (v1.1 Test Web App)
+**Current focus:** Phase 15 -- E2E Tests (v1.1 Test Web App)
 
 ## Current Position
 
-Phase: 14 of 15 (CI Pipeline) -- COMPLETE
-Plan: 1 of 1 in current phase
-Status: Phase 14 complete
-Last activity: 2026-02-08 -- Completed 14-01-PLAN.md (GitHub Actions CI workflow). Phase 14 complete.
+Phase: 15 of 15 (E2E Tests) -- IN PROGRESS
+Plan: 2 of 2 in current phase
+Status: Plan 15-01 complete, plan 15-02 pending
+Last activity: 2026-02-08 -- Completed 15-01-PLAN.md (E2E infrastructure + dashboard/filtering/status tests). 6 Playwright tests passing.
 
-Progress: [#####################################] 95% (37/39 total plans -- 24 v1.0 + 13 v1.1 complete, 2 v1.1 TBD)
+Progress: [######################################] 97% (38/39 total plans -- 24 v1.0 + 14 v1.1 complete, 1 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [#####################################] 95% (37/39 total plans -- 24 v
 | 12-web-api-integration-tests | 3/3 | 15 min | 5.0 min |
 | 13-config-integration-tests | 1/1 | 4 min | 4.0 min |
 | 14-ci-pipeline | 1/1 | 2 min | 2.0 min |
+| 15-e2e-tests | 1/2 | 11 min | 11.0 min |
 
 ## Accumulated Context
 
@@ -131,6 +132,13 @@ From 14-01:
 - Playwright browsers NOT cached (restore time equals download time per Playwright docs)
 - E2E job uses continue-on-error: true + || true for exit code 5 (no tests yet)
 
+From 15-01:
+- Live server fixture on port 8765 via uvicorn in daemon thread (session-scoped)
+- seeded_db fixture creates 10 jobs: 9 scored (3 per platform) + 1 saved
+- Fixed score parameter type from int|None to str|None with _parse_score helper (all 5 filter endpoints)
+- E2E tests require `-p no:socket -o addopts=` to override pytest-socket blocking
+- Use page.expect_response() context manager for htmx POST waiting (not wait_for_response)
+
 ### Pending Todos
 
 None.
@@ -148,5 +156,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 14-01-PLAN.md (GitHub Actions CI workflow). Phase 14 complete. Ready for Phase 15.
-Resume file: .planning/phases/14-ci-pipeline/
+Stopped at: Completed 15-01-PLAN.md (E2E infrastructure + dashboard/filtering/status tests). 6 Playwright tests passing. Ready for 15-02.
+Resume file: .planning/phases/15-e2e-tests/

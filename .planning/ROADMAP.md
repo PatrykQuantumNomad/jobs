@@ -145,7 +145,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 15-01-PLAN.md -- E2E infrastructure (pytest-playwright, live server fixture, seeded DB) + dashboard load, filtering, and status change tests (E2E-01, E2E-02, E2E-03)
+- [x] 15-01-PLAN.md -- E2E infrastructure (pytest-playwright, live server fixture, seeded DB) + dashboard load, filtering, and status change tests (E2E-01, E2E-02, E2E-03)
 - [ ] 15-02-PLAN.md -- Kanban drag-and-drop, CSV/JSON export download tests, and CI E2E command fix (E2E-04, E2E-05)
 
 ## Progress
@@ -170,4 +170,4 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
 | 12. Web & API Integration Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
 | 13. Config Integration Tests | v1.1 | 1/1 | Complete | 2026-02-08 |
 | 14. CI Pipeline | v1.1 | 1/1 | Complete | 2026-02-08 |
-| 15. E2E Tests | v1.1 | 0/2 | Not started | - |
+| 15. E2E Tests | v1.1 | 1/2 | In Progress | - |
