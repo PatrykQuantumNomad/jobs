@@ -47,11 +47,11 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   3. Tests using the database fixture operate on an in-memory SQLite instance, never touching `job_pipeline/jobs.db`
   4. Any test that accidentally calls the Anthropic API or makes a real HTTP request fails immediately with a clear error
   5. Job factory fixture produces valid `Job` and `JobRecord` instances that pass Pydantic validation
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 09-01: TBD
-- [ ] 09-02: TBD
+- [ ] 09-01-PLAN.md — Dependencies, pytest/coverage config, test directory structure, test config YAML
+- [ ] 09-02-PLAN.md — Root conftest with isolation fixtures, factories, sub-directory conftest files, smoke tests
 
 ### Phase 10: Unit Tests
 **Goal**: All pure logic modules (models, scoring, salary, dedup, anti-fabrication, delta detection) have passing tests that verify correctness without any I/O
