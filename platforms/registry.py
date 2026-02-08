@@ -73,8 +73,15 @@ def _validate_against_protocol(cls: type, protocol: type) -> None:
 
         # Signature compatibility check: impl must not require MORE params
         try:
-            proto_sig = inspect.signature(getattr(protocol, method_name))
-            impl_sig = inspect.signature(getattr(cls, method_name))
+            # Use FORWARDREF to avoid resolving TYPE_CHECKING-only annotations
+            # (e.g., BrowserContext) which would cause NameError in Python 3.14+.
+            _ann_fmt = getattr(inspect, "Format", None)
+            _sig_kwargs: dict = {}
+            if _ann_fmt is not None:
+                _sig_kwargs["annotation_format"] = _ann_fmt.FORWARDREF
+
+            proto_sig = inspect.signature(getattr(protocol, method_name), **_sig_kwargs)
+            impl_sig = inspect.signature(getattr(cls, method_name), **_sig_kwargs)
 
             # Count required parameters (no default) excluding 'self'
             proto_required = sum(
@@ -97,8 +104,9 @@ def _validate_against_protocol(cls: type, protocol: type) -> None:
                     f"{method_name} (requires {impl_required} params, "
                     f"protocol allows {proto_required})"
                 )
-        except ValueError, TypeError:
-            # Some builtins/descriptors are not introspectable -- skip check
+        except (ValueError, TypeError, NameError):
+            # Some builtins/descriptors are not introspectable -- skip check.
+            # NameError can occur if annotations reference unresolvable names.
             pass
 
     if missing:
