@@ -4,229 +4,178 @@
 
 ## Pattern Overview
 
-**Overall:** Multi-stage job discovery pipeline with human-in-the-loop checkpoints
+**Overall:** Pluggable adapter pipeline with event-driven orchestration
 
 **Key Characteristics:**
-- **Modular platform layer** — Independent, isolated platform implementations (Indeed, Dice, RemoteOK)
-- **Five-phase execution** — Setup → Login → Search → Score → Apply (controlled by central orchestrator)
-- **Human-in-the-loop design** — Mandatory human approval before application submission, CAPTCHA/verification detection
-- **Deduplication engine** — Cross-platform job matching using normalized keys before scoring
-- **Async-ready** — RemoteOK uses async/await; browser platforms are synchronous
+- Five-phase orchestrated pipeline (setup → login → search → score → apply)
+- Protocol-based platform adapters registered via decorator at import time
+- Dual-track execution: synchronous Playwright automation with async web dashboard
+- Event-driven apply engine bridging sync thread to async SSE streams
+- LLM-powered resume tailoring integrated into web UI
 
 ## Layers
 
-**Browser Automation Layer:**
-- Purpose: Orchestrate Playwright stealth sessions for Indeed and Dice
-- Location: `platforms/stealth.py`, `platforms/base.py`
-- Contains: `get_browser_context()`, persistent context factory, stealth patches, abstract `BasePlatform`
-- Depends on: Playwright, playwright-stealth 2.0.1
-- Used by: Indeed/Dice platform implementations, orchestrator
+**Orchestration Layer:**
+- Purpose: Coordinates end-to-end pipeline execution across platforms
+- Location: `orchestrator.py`
+- Contains: Phase sequencing, platform dispatch, result aggregation, human-in-the-loop prompts
+- Depends on: platforms registry, scorer, config, webapp.db
+- Used by: CLI entry point (`main()`), scheduler
 
-**Platform Adapters:**
-- Purpose: Platform-specific scraping, search, and apply logic
-- Location: `platforms/indeed.py`, `platforms/dice.py`, `platforms/remoteok.py`
-- Contains: Login flow, search execution, job extraction, apply form handling
-- Depends on: `BasePlatform`, config, models, stealth utilities
-- Used by: Orchestrator
+**Platform Adapter Layer:**
+- Purpose: Abstracts job board specifics behind uniform Protocol interfaces
+- Location: `platforms/`
+- Contains: BrowserPlatform and APIPlatform implementations (Indeed, Dice, RemoteOK)
+- Depends on: models (Job, SearchQuery), config (credentials, timing)
+- Used by: orchestrator (via registry lookup)
 
-**Scoring Engine:**
-- Purpose: Rate jobs 1-5 against candidate profile using weighted criteria
+**Scoring Layer:**
+- Purpose: Rates jobs 1-5 against candidate profile with explainable breakdowns
 - Location: `scorer.py`
-- Contains: `JobScorer` class with title, tech, location, and salary scoring
-- Depends on: Models, config (candidate profile)
-- Used by: Orchestrator phase 3
+- Contains: Multi-factor scoring (title, tech, remote, salary) with configurable weights
+- Depends on: models (Job, CandidateProfile), config (ScoringWeights)
+- Used by: orchestrator phase 3, webapp.db (backfill operation)
 
-**Data Models:**
-- Purpose: Pydantic v2 schemas for Job, SearchQuery, CandidateProfile
+**Web Dashboard Layer:**
+- Purpose: Provides human-facing UI for job tracking and apply automation
+- Location: `webapp/app.py`, `webapp/db.py`
+- Contains: FastAPI routes, htmx partials, SQLite persistence, SSE endpoints
+- Depends on: apply_engine, resume_ai, models
+- Used by: Human operator via browser
+
+**Apply Engine Layer:**
+- Purpose: Orchestrates multi-step apply flows with real-time progress streaming
+- Location: `apply_engine/engine.py`
+- Contains: Background thread executor, SSE event emission, human-confirmation gates
+- Depends on: platforms registry, form_filler, dedup logic
+- Used by: webapp (POST /jobs/{key}/apply endpoints)
+
+**Resume AI Layer:**
+- Purpose: LLM-powered resume tailoring and cover letter generation
+- Location: `resume_ai/`
+- Contains: Anthropic structured outputs, PDF rendering, anti-fabrication validation
+- Depends on: anthropic SDK, pypdf, reportlab
+- Used by: webapp (POST /jobs/{key}/tailor-resume)
+
+**Configuration Layer:**
+- Purpose: Loads operational params (YAML) and secrets (.env) with validation
+- Location: `config.py`
+- Contains: Pydantic settings models, platform credential validation, directory constants
+- Depends on: pydantic-settings, models
+- Used by: All layers (orchestrator, platforms, scorer, webapp)
+
+**Data Models Layer:**
+- Purpose: Domain models with validation and serialization
 - Location: `models.py`
-- Contains: Enums (JobStatus), validators, deduplication logic
+- Contains: Job, SearchQuery, CandidateProfile, JobStatus enum
 - Depends on: Pydantic v2
 - Used by: All layers
 
-**Configuration & Secrets:**
-- Purpose: Centralized environment loading, platform settings, search queries
-- Location: `config.py`
-- Contains: Credential loading (from .env), directory paths, timing parameters, search query list
-- Depends on: python-dotenv
-- Used by: All layers
-
-**Form Filling Heuristics:**
-- Purpose: Generic field matching and form population for application forms
-- Location: `form_filler.py`
-- Contains: Keyword-based field identification, value mapping from candidate profile
-- Depends on: Config, models
-- Used by: Platform apply methods
-
-**Web Dashboard:**
-- Purpose: SQLite-backed job tracker with filtering, sorting, status updates
-- Location: `webapp/app.py`, `webapp/db.py`
-- Contains: FastAPI routes, Jinja2 templates, SQLite schema
-- Depends on: FastAPI, Jinja2, htmx
-- Used by: Manual post-pipeline job management
-
-**Orchestrator (Entry Point):**
-- Purpose: Coordinate all five phases, manage state, produce output
-- Location: `orchestrator.py`
-- Contains: `Orchestrator` class with phase methods, deduplication, raw/scored result I/O
-- Depends on: All other layers
-- Used by: CLI main()
-
 ## Data Flow
 
-**Phase 0 - Setup:**
+**Discovery Flow (CLI):**
 
-1. Validate Python version (3.11+)
-2. Check `.env` exists with required credentials
-3. Validate platform-specific secrets (Indeed: session-based, Dice: email+password)
-4. Create output directories: `browser_sessions/`, `job_pipeline/`, `debug_screenshots/`, `resumes/`
+1. User runs `python orchestrator.py --platforms indeed remoteok`
+2. Orchestrator.phase_0_setup validates credentials, creates directories
+3. Orchestrator.phase_1_login: registry.get_platform("indeed") → IndeedPlatform instance → login() → session cached in `browser_sessions/indeed/`
+4. Orchestrator.phase_2_search: platform.search(query) → list[Job] → saved to `job_pipeline/raw_indeed.json`
+5. Orchestrator.phase_3_score: dedup.fuzzy_deduplicate(all_jobs) → scorer.score_batch_with_breakdown() → webapp.db.upsert_job() → `job_pipeline/discovered_jobs.json` + `jobs.db`
+6. Orchestrator.phase_4_apply: filter score >= 4 → human approval prompt → platform.apply(job, resume_path)
 
-**Phase 1 - Login:**
+**Dashboard Flow (Web):**
 
-1. Get persistent browser context per platform (from `stealth.py`)
-2. Indeed: Check for existing session; if missing, open login URL and wait for manual Google OAuth (up to 15s)
-3. Dice: Two-step login (email → Continue → password → Sign In)
-4. RemoteOK: Skip (no auth required)
-5. Close browser on success or failure, cache session for future runs
+1. User visits `http://127.0.0.1:8000`
+2. GET / → webapp.db.get_jobs() → SELECT from SQLite → Jinja2 template → HTML + htmx
+3. User clicks "Apply" → POST /jobs/{key}/apply → ApplyEngine.apply() starts background thread
+4. Background thread: Playwright opens browser → fills form → emits ApplyEvent("FORM_FILLED") → queue.put()
+5. SSE stream: GET /jobs/{key}/apply/stream → event_generator yields HTML partials → htmx swaps into DOM
+6. User clicks "Confirm" → POST /jobs/{key}/apply/confirm → threading.Event.set() → background thread resumes → submit button clicked
 
-**Phase 2 - Search:**
+**Resume Tailoring Flow:**
 
-1. Load search queries from `Config.DEFAULT_SEARCH_QUERIES` (20 queries)
-2. For each query:
-   - Build platform-specific search URL with remote filter + recency filter
-   - Extract job cards from results using CSS selectors
-   - Fetch full job description from detail page
-   - Store as `Job` object
-3. Save raw results to `job_pipeline/raw_{platform}.json`
-
-**Phase 3 - Score & Deduplicate:**
-
-1. Load all `raw_{platform}.json` files → 600+ raw jobs
-2. Deduplicate by normalized key (company + title): ~100 unique jobs
-3. For each unique job, run `JobScorer.score_job()`:
-   - Title match (0-2 points): exact target titles vs. keywords
-   - Tech overlap (0-2 points): count keyword matches in description + tags
-   - Location match (0-1 point): remote/Ontario/Canada
-   - Salary match (0-1 point): salary >= $200K USD
-   - Map 6-point raw score to 1-5 scale
-4. Filter to score 3+ only (~20 jobs)
-5. Save to `job_pipeline/discovered_jobs.json`
-6. Write markdown tracker: `job_pipeline/tracker.md`
-7. Generate individual job description files: `job_pipeline/descriptions/{company}_{title}.md`
-
-**Phase 4 - Apply (Human-in-the-Loop):**
-
-1. Display all score 4-5 jobs to human with:
-   - Score, company, title, salary, location, platform, URL
-   - Prompt for comma-separated indices to apply to
-2. For each selected job:
-   - If RemoteOK: print external URL (no automation)
-   - If Indeed/Dice:
-     - Open browser to job detail page
-     - Auto-fill application form using `FormFiller`
-     - Display form fields to human for review
-     - Wait for explicit "submit" confirmation
-     - Submit and mark job status as APPLIED
-3. Update tracker with new statuses
+1. User clicks "Tailor Resume" on job detail page
+2. POST /jobs/{key}/tailor-resume → resume_ai.extractor.extract_resume_text(pdf_path)
+3. LLM call: tailor_resume(resume_text, job_description) → TailoredResume (Pydantic model from Anthropic structured outputs)
+4. resume_ai.diff.generate_resume_diff_html() → unified diff with HTML formatting
+5. resume_ai.renderer.render_resume_pdf() → reportlab generates PDF → `resumes/tailored/{company}_{date}.pdf`
+6. resume_ai.tracker.save_resume_version() → INSERT into resume_versions table
+7. Partial response: `partials/resume_diff.html` → htmx swaps into #resume-output
 
 **State Management:**
-
-- `Orchestrator.discovered_jobs`: In-memory list of scoring jobs (score 3+)
-- `Orchestrator._failed_logins`: Track platforms that failed login
-- File-based: Raw JSON per-platform, deduplicated JSON, tracker markdown, descriptions
-- SQLite (optional): `job_pipeline/jobs.db` for web dashboard persistence
+- Pipeline state: Transient in Orchestrator instance (discovered_jobs list)
+- Job persistence: SQLite (`job_pipeline/jobs.db`) + JSON snapshots
+- Browser sessions: Playwright persistent contexts in `browser_sessions/{platform}/`
+- Apply sessions: In-memory dict `ApplyEngine._sessions` keyed by dedup_key
+- Configuration: Lazy singleton `get_settings()` caches AppSettings instance
 
 ## Key Abstractions
 
-**Platform Interface (`BasePlatform`):**
-- Purpose: Enforce contract for all scrapers
-- Examples: `IndeedPlatform`, `DicePlatform`, `RemoteOKPlatform`
-- Pattern: Abstract methods (login, is_logged_in, search, get_job_details, apply) with shared utilities (human_delay, screenshot, wait_for_human, element_exists)
-- Key invariant: All apply methods MUST pause for human confirmation before final submit
+**Platform Protocol:**
+- Purpose: Contract for pluggable job board adapters
+- Examples: `platforms/protocols.py` (BrowserPlatform, APIPlatform)
+- Pattern: runtime_checkable Protocol with init/login/search/get_job_details/apply methods
+
+**Registry Decorator:**
+- Purpose: Auto-discovery and fail-fast validation of platform implementations
+- Examples: `@register_platform("indeed", platform_type="browser", capabilities=["easy_apply"])`
+- Pattern: Decorator validates class against Protocol at import time, stores in `_REGISTRY` dict
 
 **Job Model:**
-- Purpose: Unified representation across platforms
-- Example fields: id, platform, title, company, url, salary_min/max, description, tags, score, status, applied_date
-- Dedup key: Normalized company + title (case-insensitive, stripped of legal suffixes)
+- Purpose: Normalized job listing across platforms
+- Examples: `models.py` Job (id, platform, title, company, salary_min/max, score, status)
+- Pattern: Pydantic v2 BaseModel with field validators and custom serialization
 
-**SearchQuery Model:**
-- Purpose: Encapsulate search parameters
-- Fields: query string, platform, location (auto-set for RemoteOK only), max_pages
-- Platform-specific URL building: Each platform's `search()` method translates this into platform-specific URL params
+**ScoreBreakdown:**
+- Purpose: Explainable scoring with per-factor attribution
+- Examples: `scorer.py` ScoreBreakdown dataclass (title_points, tech_points, tech_matched list)
+- Pattern: Dataclass with to_dict() for SQLite JSON storage, display methods for UI
 
-**Stealth Context Factory:**
-- Purpose: Abstract Playwright stealth setup
-- Returns: (Playwright instance, BrowserContext) tuple
-- Anti-detection: System Chrome (not bundled Chromium), disabled automation flag, playwright-stealth hooks
-- Persistence: Separate session dirs per platform (`browser_sessions/{platform}/`)
+**ApplyEvent:**
+- Purpose: Typed progress events for SSE streaming
+- Examples: `apply_engine/events.py` ApplyEvent (type: ApplyEventType enum, message, metadata)
+- Pattern: Pydantic model serialized to dict for SSE data field
 
 ## Entry Points
 
-**CLI (Orchestrator):**
-- Location: `orchestrator.py`, `main()` function
-- Triggers: `python orchestrator.py [--platforms indeed dice remoteok] [--headed]`
-- Responsibilities:
-  - Parse command-line arguments (--platforms, --headed)
-  - Instantiate `Orchestrator`
-  - Call `run()` to execute all five phases
-  - Print summary
+**CLI Pipeline:**
+- Location: `orchestrator.py` main()
+- Triggers: `python orchestrator.py [--platforms X Y] [--headed] [--scheduled]`
+- Responsibilities: Argparse setup, Orchestrator instantiation, run() invocation
 
 **Web Dashboard:**
-- Location: `webapp/app.py`
+- Location: `webapp/app.py` main()
 - Triggers: `python -m webapp.app` or `uvicorn webapp.app:app`
-- Responsibilities:
-  - Serve dashboard at http://localhost:8000
-  - Load jobs from `job_pipeline/discovered_jobs.json` into SQLite
-  - Render filtering/sorting UI with Jinja2 + htmx
-  - Allow manual status updates and notes
+- Responsibilities: FastAPI app startup, route registration, template loading
+
+**Scheduler (Cron):**
+- Location: `scheduler.py` main()
+- Triggers: `python scheduler.py` (runs as daemon)
+- Responsibilities: APScheduler setup, daily job at config.schedule.hour:minute
+
+**Platform Auto-Discovery:**
+- Location: `platforms/__init__.py` _auto_discover()
+- Triggers: Import of platforms module
+- Responsibilities: pkgutil.iter_modules → importlib.import_module → @register_platform executes
 
 ## Error Handling
 
-**Strategy:** Fail-open with human notification at critical points
+**Strategy:** Fail-fast for configuration errors, graceful degradation for runtime errors
 
 **Patterns:**
-
-1. **CAPTCHA/Cloudflare Detection:**
-   - Indeed: Detected by checking for "Please solve this challenge" text or Cloudflare timeout
-   - Action: Take screenshot, call `wait_for_human()`, pause orchestrator
-   - Recovery: Human solves challenge, resumes execution
-
-2. **Login Failure:**
-   - Detected: `is_logged_in()` returns False after attempting login
-   - Action: Print error message, add platform to `_failed_logins` set
-   - Recovery: Skip platform for search phase; orchestrator continues with remaining platforms
-
-3. **Selector Timeout:**
-   - When element not found on page (stale selectors)
-   - Action: Take screenshot, log error with selector name
-   - Recovery: Retry with next job; log to `debug_screenshots/` for manual inspection
-
-4. **Form Filling Failure:**
-   - When field not recognized or fill fails
-   - Action: Continue to next field (non-blocking)
-   - Result: Summary displayed to human before submit
-
-5. **Application Submission Failure:**
-   - When form submit times out or server error
-   - Action: Print error, mark job status as not applied, continue
-   - Recovery: Manual retry available via web dashboard
+- Config validation: Pydantic ValidationError at settings load → sys.exit(1)
+- Platform login failure: Add to `_failed_logins` set → skip platform for run → log to `_run_errors`
+- Search query error: Catch exception per query → continue to next query → append to `_run_errors`
+- Apply flow error: Emit ApplyEvent(type=ERROR) → display in UI → do not mark as applied
+- Resume tailoring error: Catch exception → return HTML error partial → do not save version
+- Screenshot on failure: Save to `debug_screenshots/{platform}_{timestamp}.png` for post-mortem
 
 ## Cross-Cutting Concerns
 
-**Logging:** Uses `print()` statements with structured prefixes ("  {platform}: ...", "  {step}: ..."). No file logging configured; console output only.
+**Logging:** Python logging module (logger = logging.getLogger(__name__)), console output via print() for user-facing messages
 
-**Validation:**
-- Pydantic v2 field validators (e.g., `salary_max >= salary_min`)
-- Platform credential checks before each phase
-- Directory existence verification
+**Validation:** Pydantic v2 field validators (e.g., salary_max >= salary_min), @field_validator decorators, Protocol validation at registration time
 
-**Authentication:**
-- Indeed: Session-based (Google OAuth), cached in `browser_sessions/indeed/`
-- Dice: Email + password, cached in `browser_sessions/dice/`
-- RemoteOK: No authentication required
-
-**Rate Limiting:** Randomized delays between page navigations (2-5 seconds) and form interactions (1-2 seconds). Configured in `Config.NAV_DELAY_MIN/MAX`, `Config.FORM_DELAY_MIN/MAX`.
-
-**Stealth:** Applied at context creation via `playwright_stealth.Stealth().apply_stealth_sync(page)`. Hooks all new pages created during session.
+**Authentication:** Platform-specific (Indeed: Google OAuth session cache, Dice: email+password form, RemoteOK: public API no auth)
 
 ---
 

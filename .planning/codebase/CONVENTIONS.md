@@ -5,306 +5,283 @@
 ## Naming Patterns
 
 **Files:**
-- Module names: snake_case (e.g., `form_filler.py`, `orchestrator.py`)
-- Selector files: `{platform}_selectors.py` (e.g., `indeed_selectors.py`, `dice_selectors.py`)
-- Class/factory functions in dedicated files: `{name}.py` contains one primary class or utilities
-- Web files: `app.py` for FastAPI application, `db.py` for database layer
+- Snake_case for Python modules: `orchestrator.py`, `form_filler.py`, `dedup.py`
+- Platform-specific suffix for selectors: `indeed_selectors.py`, `dice_selectors.py`
+- Test files: Not currently present (no tests found in codebase)
 
 **Functions:**
-- Private/internal methods: `_name()` with single leading underscore (e.g., `_identify()`, `_title_score()`)
-- Public methods: no underscore prefix (e.g., `login()`, `search()`, `score_job()`)
-- Utility helper methods: prefixed with `_` to indicate internal use
-- Handler methods follow pattern: `{action}_{object}` (e.g., `screenshot()`, `element_exists()`, `wait_for_human()`)
+- Snake_case for all functions: `get_settings()`, `fuzzy_deduplicate()`, `parse_salary()`
+- Private functions prefixed with underscore: `_sanitize()`, `_prefer()`, `_normalize_company()`
+- Private methods prefixed with underscore: `_extract_card()`, `_compute()`, `_title_score()`
 
 **Variables:**
-- Local variables: snake_case (e.g., `seen_ids`, `base_url`, `posted_date`)
-- Constants: UPPER_CASE (e.g., `NAV_DELAY_MIN`, `RESUME_ATS_PATH`)
-- Instance variables: snake_case without leading underscore (e.g., `self.platform_name`, `self.page`, `self.context`)
-- Temporary loop variables: single letter or descriptive (e.g., `for page_idx in range(...)`, `for card in cards`, `for job in jobs`)
-
-**Types:**
-- Type hints required: use PEP 484 syntax with `from __future__ import annotations` at top of file
-- Union types: `str | None` (Python 3.10+ style), not `Optional[str]`
-- Collection types: `list[str]`, `dict[str, str]`, `set[str]` (not `List[str]`, `Dict[str, str]`)
-- Literal types: `Literal["indeed", "dice", "remoteok"]` for constrained strings
-- TYPE_CHECKING guard: used for importing types that cause circular dependencies (see `base.py`)
+- Snake_case for local variables: `job_id`, `salary_text`, `min_val`
+- UPPER_CASE for module-level constants: `HOURLY_MULTIPLIER`, `FUZZY_COMPANY_THRESHOLD`, `_REGISTRY`
+- Descriptive names preferred over abbreviations: `dedup_key` over `dk`, `platform_name` over `pname`
 
 **Classes:**
-- Names: PascalCase (e.g., `BasePlatform`, `JobScorer`, `DicePlatform`)
-- Abstract classes: `Base` prefix (e.g., `BasePlatform`)
-- Platform-specific: `{Platform}Platform` (e.g., `IndeedPlatform`, `DicePlatform`)
-- Data models: simple noun names (e.g., `Job`, `SearchQuery`, `CandidateProfile`)
-- Enum classes: singular noun (e.g., `JobStatus`)
+- PascalCase for all classes: `JobScorer`, `Orchestrator`, `BrowserPlatformMixin`
+- Dataclasses for data containers: `ScoreBreakdown`, `NormalizedSalary`, `PlatformInfo`
+- Pydantic models for validated data: `Job`, `SearchQuery`, `CandidateProfile`, `AppSettings`
+- Protocol suffix for protocol definitions: `BrowserPlatform`, `APIPlatform`
 
-**Enums:**
-- Values: snake_case strings (e.g., `JobStatus.DISCOVERED`, `JobStatus.SCORED`)
-- Define as `class JobStatus(str, Enum)` to inherit from both str and Enum for JSON serialization
+**Types:**
+- Use `type[ClassName]` for class references (modern Python 3.11+ syntax)
+- Prefer `str | None` over `Optional[str]` (PEP 604 union syntax)
+- `list[Job]` over `List[Job]` (built-in generics, no typing import needed)
 
 ## Code Style
 
 **Formatting:**
-- Line length: 100 characters (see `pyproject.toml` `line-length = 100`)
-- Indentation: 4 spaces (Python default)
-- String formatting: f-strings preferred (e.g., `f"{url}?q={query}"`)
-- Multi-line strings: triple quotes for docstrings and long text blocks
+- Tool: Ruff (configured in `pyproject.toml`)
+- Line length: 100 characters (see `[tool.ruff] line_length = 100`)
+- Commands:
+  - `uv run ruff format .` - Auto-format all files
+  - `uv run ruff check .` - Lint without fixing
+  - `uv run ruff check --fix .` - Lint and auto-fix
 
 **Linting:**
-- Tool: ruff (configured in `pyproject.toml`)
-- Select rules: `["E", "F", "I", "UP", "B", "SIM"]` (errors, warnings, imports, upgrades, bugbear, simplify)
+- Tool: Ruff
+- Rules enabled: `["E", "F", "I", "UP", "B", "SIM"]`
+  - E: pycodestyle errors
+  - F: pyflakes
+  - I: isort (import sorting)
+  - UP: pyupgrade (modern Python syntax)
+  - B: flake8-bugbear
+  - SIM: flake8-simplify
 - Target: Python 3.11+
-- Run: `ruff check` (implied by pyproject.toml config)
-
-**Imports:**
-- Order: stdlib → third-party → local
-- Organization: alphabetically within each group
-- Example from `scorer.py`:
-  ```python
-  from __future__ import annotations
-
-  from config import Config
-  from models import CandidateProfile, Job, JobStatus
-  ```
 
 **Docstrings:**
-- Module level: Triple-quoted docstring at top (e.g., `"""Job scoring engine — rates jobs 1-5 against candidate profile."""`)
-- Class level: Docstring immediately after class definition (e.g., `class JobScorer:\n    """Score jobs 1-5 per the CLAUDE.md rubric."""`)
-- Method level: Docstring for complex methods with Args/Returns blocks
-- Format: single line for simple descriptions; multi-line for detailed explanations with sections
-- Example from `form_filler.py`:
-  ```python
-  def fill_form(self, page: Page, resume_path: Path | None = None) -> dict[str, str]:
-      """Scan and fill form fields on *page*.
-
-      Returns:
-          dict mapping field description → value that was filled.
-      """
-  ```
+- Module docstrings: Required at top of every file, triple-quoted, describes purpose
+- Class docstrings: Brief description of responsibility
+- Function docstrings: For public functions, RST-style with parameter descriptions
+- Private functions: May omit docstring if self-explanatory
 
 ## Import Organization
 
 **Order:**
-1. `from __future__ import annotations` (first line after module docstring)
-2. Standard library imports (`import json`, `from pathlib import Path`)
-3. Third-party imports (`from playwright.sync_api import ...`, `from pydantic import ...`)
-4. Local imports (`from config import Config`, `from models import Job`)
+1. Future imports: `from __future__ import annotations`
+2. Standard library: `import json`, `import sys`, `from pathlib import Path`
+3. Third-party: `from playwright.sync_api import BrowserContext`, `from pydantic import BaseModel`
+4. Local application: `from config import get_settings`, `from models import Job`
 
-**Path Aliases:**
-- No import aliases configured; use full module paths
-- Relative imports: not used; all imports are absolute (`from config import`, not `from . import`)
+**Patterns:**
+- Always use absolute imports, never relative: `from models import Job` not `from .models import Job`
+- Group imports by category with blank lines between groups
+- Use `if TYPE_CHECKING:` for type-only imports to avoid circular dependencies
 
-**TYPE_CHECKING Guard:**
-- Used to avoid circular imports for type hints
-- Example from `base.py`:
-  ```python
-  from typing import TYPE_CHECKING
+**Example from `platforms/indeed.py`:**
+```python
+from __future__ import annotations
 
-  if TYPE_CHECKING:
-      from playwright.sync_api import BrowserContext, Page
-      from models import Job, SearchQuery
-  ```
+import re
+from pathlib import Path
+from urllib.parse import urlencode
+
+from playwright.sync_api import BrowserContext
+from playwright.sync_api import TimeoutError as PwTimeout
+
+from config import PROJECT_ROOT, get_settings
+from models import Job, SearchQuery
+from platforms.mixins import BrowserPlatformMixin
+from platforms.registry import register_platform
+```
+
+**Circular Dependency Resolution:**
+- Use Protocol classes for interfaces: `platforms/protocols.py` defines contracts
+- `TYPE_CHECKING` guards for type hints: See `platforms/mixins.py` lines 31-32
+- Import chain ordering enforced: models → protocols → registry → platform implementations
 
 ## Error Handling
 
 **Patterns:**
+- Catch-and-log for non-critical platform errors (per-query failures should not stop pipeline)
+- Raise for critical setup failures (missing credentials, invalid config)
+- Use domain-specific exceptions when helpful: `RuntimeError` for auth failures, `KeyError` for registry misses
 
-1. **Playwright timeout errors:**
-   - Import as: `from playwright.sync_api import TimeoutError as PwTimeout`
-   - Catch specifically: `except PwTimeout as exc:`
-   - Pattern: capture screenshot, log message, raise with context
-   - Example from `dice.py`:
-     ```python
-     except PwTimeout as exc:
-         self.screenshot("login_timeout")
-         raise RuntimeError(f"Dice login timeout: {exc}") from exc
-     ```
+**Examples from `orchestrator.py`:**
+```python
+# Non-critical: log and continue
+try:
+    found = platform.search(q)
+except Exception as exc:
+    print(f"  {info.name}: error on '{q.query}' -- {exc}")
+    self._run_errors.append(f"{info.name}: error on '{q.query}' -- {exc}")
+    continue
 
-2. **HTTP errors (httpx):**
-   - Catch both HTTPError and ValueError
-   - Example from `remoteok.py`:
-     ```python
-     except (httpx.HTTPError, ValueError) as exc:
-         print(f"  RemoteOK API error: {exc}")
-         return []
-     ```
+# Critical: fail fast
+if not (PROJECT_ROOT / ".env").exists():
+    print("  ERROR: .env not found -- copy .env.example and fill in credentials")
+    sys.exit(1)
+```
 
-3. **Validation failures (Pydantic):**
-   - Use `@field_validator` decorator for model-level validation
-   - Example from `models.py`:
-     ```python
-     @field_validator("salary_max")
-     @classmethod
-     def salary_max_gte_min(cls, v: int | None, info) -> int | None:
-         if v is not None and info.data.get("salary_min") is not None:
-             if v < info.data["salary_min"]:
-                 raise ValueError("salary_max must be >= salary_min")
-         return v
-     ```
+**Browser automation:**
+- Screenshot on unexpected page state: `self.screenshot(f"captcha_{context}")`
+- Detect challenges and raise with clear instructions
+- Use `try/except PwTimeout` for optional elements: See `platforms/indeed.py` lines 163-171
 
-4. **Generic exception handling:**
-   - Use `except Exception:` only for non-fatal operations (e.g., screenshot on error, element existence checks)
-   - Example from `base.py`:
-     ```python
-     def element_exists(self, selector: str, timeout: int = 5000) -> bool:
-         try:
-             self.page.wait_for_selector(selector, timeout=timeout)
-             return True
-         except Exception:
-             return False
-     ```
-
-5. **Resource cleanup:**
-   - Use try/finally or context managers
-   - Example from `stealth.py`:
-     ```python
-     def close_browser(pw: Playwright, context: BrowserContext) -> None:
-         try:
-             context.close()
-         except Exception:
-             pass
-         try:
-             pw.stop()
-         except Exception:
-             pass
-     ```
+**Registry validation:**
+- Fail at import time, not runtime: `@register_platform` decorator validates Protocol compliance
+- Missing methods cause `TypeError` immediately when module loads
+- Clear error messages listing missing members: See `platforms/registry.py` lines 104-108
 
 ## Logging
 
-**Framework:** `print()` for all logging (no logging module configured)
+**Framework:** Print statements (no structured logging framework)
 
 **Patterns:**
-- Use print statements with formatted output for status messages
-- Indent levels using spaces for hierarchy (e.g., `print(f"    page {page_num}:...")`)
-- Human-readable separators: `"=" * 60` for section breaks, `"-" * 60` for subsections
-- Example from `orchestrator.py`:
-  ```python
-  print("=" * 60)
-  print("  JOB SEARCH AUTOMATION PIPELINE")
-  print("=" * 60)
-  print("\n[Phase 0] Environment Setup")
-  print("-" * 60)
-  ```
+- Phase headers with horizontal rules: `print("=" * 60)`
+- Indented output for nested operations: `print(f"  {message}")`
+- Status indicators: `print(f"  Indeed: {len(jobs)} unique jobs for '{query.query}'")`
+- Error prefix: `print(f"  ERROR: {message}")`
+- Warning prefix: `print(f"  WARNING: {message}")`
 
-**When to log:**
-- Phase transitions (setup, login, search, score, apply)
-- Search result counts (e.g., `print(f"  Dice: searching '{query.query}' …")`)
-- Login success/failure states
-- Job card extraction counts (e.g., `print(f"    page {page_num}: {len(cards)} cards")`)
-- Error messages before raising exceptions
-- Human-interactive checkpoints with formatted instructions
+**Examples:**
+```python
+print("\n[Phase 2] Job Search")
+print("-" * 60)
+print(f"  Indeed: searching '{query.query}' ...")
+print(f"    page {page_idx + 1}: {len(cards)} cards, {new_on_page} new")
+```
 
 ## Comments
 
 **When to Comment:**
-- Complex regex patterns or selector logic (e.g., `INDEED_SEARCH_PARAMS` includes explanation of opaque vs. stable parameters)
-- Non-obvious heuristics (e.g., form field keyword matching in `form_filler.py`)
-- Platform-specific quirks and known issues
-- Example from `indeed_selectors.py`:
+- Complex business logic: Scoring thresholds, deduplication algorithms
+- Anti-pattern workarounds: See `platforms/indeed.py` line 286 "Skip sponsored/promoted cards"
+- API quirks: See `salary.py` line 173 "RemoteOK quirk: salary_max = 0 when salary_min > 0"
+- Selector stability notes: DOM structure assumptions that may break
+
+**Style:**
+- Inline comments at end of line for brief explanations
+- Block comments above code for multi-line explanations
+- Section separators with 70-character dashed lines:
   ```python
-  # If the remote filter stops working, re-capture the sc value by clicking
-  # the Remote pill in the browser and copying the sc= param from the URL.
+  # ---------------------------------------------------------------------------
+  # Public API
+  # ---------------------------------------------------------------------------
   ```
 
-**Avoid:**
-- Comments stating the obvious (e.g., `# increment counter` on `i += 1`)
-- Redundant comments that repeat what code says
-- Out-of-date comments (keep aligned with code changes)
-
-**Docstring style:**
-- Use `"""` for module, class, and method docstrings
-- Multi-line docstrings have summary line, blank line, then details
-- Include Args/Returns sections for complex functions
-- Example from `form_filler.py`:
-  ```python
-  def fill_form(self, page: Page, resume_path: Path | None = None) -> dict[str, str]:
-      """Scan and fill form fields on *page*.
-
-      Returns:
-          dict mapping field description → value that was filled.
-      """
-  ```
+**What NOT to comment:**
+- Self-documenting code: Don't comment `i += 1  # increment i`
+- Obvious operations: Method names should describe intent
 
 ## Function Design
 
 **Size:**
-- Prefer methods under 50 lines
-- Abstract complex operations into `_private()` helpers (e.g., `_identify()`, `_value_for()`, `_parse()`)
-- Example: `form_filler.py` `fill_form()` is ~50 lines; extraction logic delegates to `_identify()` and `_value_for()`
+- Public functions: 10-50 lines typical
+- Private helpers: Under 30 lines preferred
+- Orchestrator phases: 20-80 lines (phase methods encapsulate workflow)
 
 **Parameters:**
-- Avoid more than 4 parameters; use `| None` for optional params
-- Use keyword arguments for optional config
-- Example from `stealth.py`:
-  ```python
-  def get_browser_context(
-      platform: str,
-      headless: bool = True,
-      viewport: dict | None = None,
-  ) -> tuple[Playwright, BrowserContext]:
-  ```
+- Use keyword-only args for config: `def __init__(self, *, headless: bool = True)`
+- Type hints required for all parameters and return values
+- Optional parameters use `| None = None` pattern, not `Optional[T]`
+- Path parameters: Use `pathlib.Path`, not strings
 
 **Return Values:**
-- Return single value or tuple for multiple returns
-- Prefer explicit types over `Any`
-- Return `None` implicitly; use `-> None` for no return value
-- Return collections (list, dict, set) when aggregating results
-- Example from `scorer.py`:
-  ```python
-  def score_batch(self, jobs: list[Job]) -> list[Job]:
-      """Score all jobs in-place, sort descending."""
-  ```
+- Explicit return types in all function signatures
+- Use tuple unpacking for multi-value returns: `score, breakdown = self._compute(job)`
+- Return `None` for side-effect functions: `def ensure_directories() -> None:`
+- Boolean for success/failure: `def login(self) -> bool:`
 
-**Method structure (platform classes):**
-- Abstract methods first (interface contract)
-- Public methods next (main API)
-- Private/helper methods last (implementation details)
-- Use section markers: `# ── Section Name ──────`
-- Example from `base.py`:
-  ```python
-  # ── Abstract methods ─────────────────────────────────────────────────
-  @abstractmethod
-  def login(self) -> bool: ...
+**Example patterns:**
+```python
+# Good: clear signature, typed, keyword-only for config
+def parse_salary(
+    text: str | None,
+    default_currency: str = "USD",
+) -> NormalizedSalary:
+    ...
 
-  # ── Utility methods ──────────────────────────────────────────────────
-  def human_delay(self, delay_type: str = "nav") -> None: ...
-  ```
+# Good: multi-value return with destructuring
+def _tech_score_with_keywords(self, job: Job) -> tuple[int, list[str]]:
+    ...
+
+# Good: side-effect function returns None
+def ensure_directories() -> None:
+    ...
+```
 
 ## Module Design
 
 **Exports:**
-- Import what you use; no `from module import *`
-- Explicit is better than implicit
-- Platform modules export single primary class (e.g., `IndeedPlatform`, `DicePlatform`)
-- Config module exports `Config` class and loads all environment variables on import
-- Models module exports enum + data classes
+- No `__all__` declarations (implicit public API via naming)
+- Public API: Functions/classes without leading underscore
+- Private helpers: Leading underscore indicates internal use
+
+**Module-level state:**
+- Lazy singletons pattern: `_settings: AppSettings | None = None` in `config.py`
+- Global registries: `_REGISTRY: dict[str, PlatformInfo] = {}` in `platforms/registry.py`
+- Reset functions for testing: `reset_settings()` in `config.py`
 
 **Barrel Files:**
-- `platforms/__init__.py` is empty (minimal imports)
-- `webapp/__init__.py` is empty
-- Import directly from submodules (e.g., `from platforms.indeed import IndeedPlatform`)
+- `platforms/__init__.py` exports: `get_all_platforms()`, `get_browser_context()`, `close_browser()`
+- Simplifies imports for consumers: `from platforms import get_platform`
+- No re-exports of internal implementation details
 
-**Module-level code:**
-- Configuration loaded at import time (e.g., `Config.ensure_directories()` at end of `config.py`)
-- Singleton instances created at module level (e.g., `_stealth = Stealth()` in `stealth.py`)
-- Lazy loading of platform classes in orchestrator to avoid unnecessary browser setup
+## Type Annotations
 
-## Config & Constants
+**Coverage:**
+- All function signatures include parameter and return types
+- Class attributes typed: `platform_name: str`, `page: Page`
+- Use `from __future__ import annotations` at top of every file (enables forward references)
 
-**Location:** `config.py` with `Config` class
-- All environment variables loaded once via `load_dotenv()`
-- Platform credentials: `Config.DICE_EMAIL`, `Config.INDEED_EMAIL`
-- Directories: `Config.PROJECT_ROOT`, `Config.BROWSER_SESSIONS_DIR`, etc.
-- Timing: `Config.NAV_DELAY_MIN`, `Config.NAV_DELAY_MAX`, etc.
-- Candidate profile: `Config.CANDIDATE` (CandidateProfile instance)
+**Modern syntax (Python 3.11+):**
+- Union types: `str | None` not `Optional[str]`
+- Built-in generics: `list[Job]` not `List[Job]`
+- Type aliases: `type[ClassName]` for class references
 
-**Selector isolation:**
-- Platform selectors live in `{platform}_selectors.py`
-- Never hardcode selectors in platform classes
-- Example: `indeed_selectors.py` contains `INDEED_SELECTORS`, `INDEED_URLS`, `INDEED_SEARCH_PARAMS`
+**Pydantic validators:**
+- Use `@field_validator` decorator (Pydantic v2 syntax)
+- Access sibling fields via `info.data.get()` pattern
+- Return validated value from validator, raise `ValueError` on failure
 
-**Secrets:**
-- Never commit `.env` files
-- Load via `python-dotenv` with `load_dotenv()`
-- Access as `os.getenv("VAR_NAME")` with None fallback
+## Pydantic Conventions
+
+**Model definition:**
+- Use `BaseModel` for domain objects: `Job`, `SearchQuery`, `CandidateProfile`
+- Use `BaseSettings` for configuration: `AppSettings` loads from YAML + .env
+- Enums for status fields: `class JobStatus(str, Enum):`
+
+**Serialization:**
+- Use `model_dump(mode="json")` for JSON output (handles dates, enums)
+- Use `Field(default_factory=list)` for mutable defaults, never `[]`
+- Use enum members in code: `JobStatus.SCORED` not string `"scored"`
+
+**Validation:**
+- Field validators use `@field_validator` decorator with `@classmethod`
+- Custom settings sources: Override `settings_customise_sources` for YAML loading
+- See `config.py` lines 192-213 for settings source customization
+
+## Browser Automation
+
+**Stealth configuration:**
+- Always use system Chrome: `channel="chrome"` in launch args
+- Disable automation flags: `--disable-blink-features=AutomationControlled`
+- Apply playwright-stealth via new API: `Stealth().apply_stealth_sync(page)`
+
+**Delays:**
+- Navigation: 2-5 seconds randomized via `self.human_delay("nav")`
+- Form interaction: 1-2 seconds via `self.human_delay("form")`
+- Read from config: `get_settings().timing.nav_delay_min`
+
+**Element detection:**
+- Non-throwing check: `self.element_exists(selector, timeout=5000)`
+- Explicit waits: `self.page.wait_for_selector(selector, timeout=10_000)`
+- Multiple selector fallback: Try list of selectors in order (See `platforms/indeed.py` lines 157-171)
+
+## Configuration
+
+**YAML + .env split:**
+- Operational config in `config.yaml`: search queries, scoring weights, timing
+- Secrets in `.env`: credentials, personal profile data
+- Never commit `.env`, always provide `.env.example`
+
+**Loading pattern:**
+- Singleton via `get_settings()`: Lazy load, cache instance
+- Reset for testing: `reset_settings()` clears singleton
+- Validation on load: Pydantic validates all fields at instantiation
 
 ---
 

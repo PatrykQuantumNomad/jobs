@@ -4,296 +4,213 @@
 
 ## Tech Debt
 
-**DOM Selector Fragility (High Impact):**
-- Issue: Indeed and Dice selectors are hardcoded strings that break frequently as platforms redesign their UIs. Current selectors marked "verified 2026-02-06" but have historical pattern of 2-4 week lifespan before breakage.
-- Files: `platforms/indeed_selectors.py`, `platforms/dice_selectors.py`, `platforms/indeed.py`, `platforms/dice.py`
-- Impact: Search phase fails silently (0 jobs extracted), apply flow clicks wrong elements, description parsing skipped. Human discovers only after running full pipeline.
-- Fix approach:
-  - Implement automated selector validation (check selectors exist on page before using)
-  - Add fallback selector chains (primary, secondary, tertiary)
-  - Implement visual regression testing with headless screenshots
-  - Create observer pattern to detect DOM changes and alert when selectors fail
+**Indeed selector brittleness:**
+- Issue: DOM selectors are isolated in `platforms/indeed_selectors.py` but change frequently. ~50% of job cards return bogus `data-jk` values causing 404s. Multiple fallback description selectors required.
+- Files: `platforms/indeed.py`, `platforms/indeed_selectors.py`
+- Impact: Search yields drop when Indeed changes DOM structure. Failed detail fetches waste time and produce incomplete job data.
+- Fix approach: Implement selector versioning with automatic fallback chains. Add monitoring to detect when primary selectors fail rate exceeds threshold (>30%).
 
-**Salary Parsing Edge Cases (Medium Impact):**
-- Issue: Multiple salary parsing implementations with inconsistent logic. `_parse_salary()` in `platforms/indeed.py` handles hourly/monthly conversion differently than `platforms/dice.py` version. Salary text formats vary widely (USD vs $, commas vs dots in thousands separators, single values vs ranges).
-- Files: `platforms/indeed.py` (lines 308-338), `platforms/dice.py` (lines 272-293), `scorer.py` (line 96)
-- Impact: Salary scores calculated incorrectly (jobs above $200K may be marked as below threshold). Score 4-5 jobs lost in filtering.
-- Fix approach:
-  - Consolidate salary parsing to single module `salary_parser.py` with comprehensive test cases
-  - Add validation that salary_max >= salary_min (partially exists in `models.py` but not in parsing)
-  - Handle edge cases: no salary, only minimum, only maximum, hourly rates, international formats
+**Dice selector migration lag:**
+- Issue: Platform migrated from legacy `dhi-search-card` and `[data-cy=...]` selectors to React `data-testid` attributes. Current code works but no validation layer.
+- Files: `platforms/dice.py`, `platforms/dice_selectors.py`
+- Impact: Next Dice redesign will break extraction silently. No test coverage for selector resilience.
+- Fix approach: Add integration tests that verify selector existence on live pages. Implement selector health checks in orchestrator pre-flight.
 
-**Insufficient Error Recovery in Browser Automation (Medium Impact):**
-- Issue: When browser automation fails (timeout, stale element, selector mismatch), orchestrator logs error and skips platform. No retry logic, no incremental state saving. If Indeed search times out on page 5 of 10, all 5 pages are lost.
-- Files: `orchestrator.py` (lines 124-150), `platforms/indeed.py` (lines 73-109), `platforms/dice.py` (lines 78-106)
-- Impact: Large result set lost (potentially 50+ jobs per failed search). Manual re-run required.
-- Fix approach:
-  - Save intermediate results after each page/query (write to raw_{platform}_{query}.json)
-  - Implement exponential backoff retry on timeout (3 retries, 5/15/30 second delays)
-  - Add circuit breaker to skip platform after 3 consecutive failures
+**Silent error swallowing:**
+- Issue: 106 try/except blocks across 14 files, many with bare `except Exception: pass` or `except: continue` that suppress errors without logging.
+- Files: `form_filler.py` (lines 134, 190), `apply_engine/engine.py` (lines 129, 149, 213, 304, 354, 461, 468, 503), `platforms/indeed.py` (line 243), `platforms/stealth.py` (lines 67, 71), `platforms/mixins.py` (line 103)
+- Impact: Failures in form filling, browser context cleanup, and element detection go unreported. Debugging requires adding print statements manually.
+- Fix approach: Replace bare except with specific exception types. Log all caught exceptions at DEBUG level minimum. Add structured logging with context (platform, job_id).
 
-**Inconsistent Job ID Generation (Low Impact):**
-- Issue: Indeed uses `data-jk`, Dice uses `data-job-guid`, RemoteOK uses `id`. Job.id field defaults to empty string. ~20% of extracted jobs have empty ID, making tracking/replay difficult.
-- Files: `models.py` (line 24, default ""), `platforms/indeed.py` (line 290), `platforms/dice.py` (no ID set), `platforms/remoteok.py` (line 110)
-- Impact: Hard to identify duplicate jobs across reruns, ID-based lookups fail, tracking database can't match reruns to originals.
-- Fix approach:
-  - Make ID generation consistent: Job(id=platform+dedup_key) when platform-specific ID unavailable
-  - Add unique constraint in webapp/db.py on (platform, dedup_key) pair instead of relying on ID
+**Mixed logging strategy:**
+- Issue: Codebase uses both `print()` statements (125+ occurrences) and Python logging (only in `apply_engine/engine.py`). No centralized log configuration.
+- Files: All platform modules, `orchestrator.py`, `scorer.py`, `form_filler.py`
+- Impact: No log levels, no file output, no timestamps on most messages. Scheduled runs produce unstructured stdout only.
+- Fix approach: Migrate all print() to logging. Add config for log levels (DEBUG for dev, INFO for prod). Write logs to `job_pipeline/runs/{timestamp}.log`.
 
-**Resource Cleanup on Exception (Low Impact):**
-- Issue: Browser contexts and HTTP clients may not close if exception occurs mid-pipeline. `stealth.py` close_browser() catches exceptions silently. RemoteOK async context manager in `remoteok.py` close() may be skipped if orchestrator crashes before awaiting.
-- Files: `platforms/stealth.py` (lines 62-71), `orchestrator.py` (lines 82-101, 149), `platforms/remoteok.py` (line 70)
-- Impact: Orphaned browser processes consume memory/ports. Async client left open (socket leak).
-- Fix approach:
-  - Use context managers (with statement) for all browser/client lifecycles
-  - Add finally blocks or async context manager protocol to remoteok.py
-  - Add atexit handler to clean up browser_sessions on unexpected exit
-
----
+**Credential exposure risk:**
+- Issue: `.env` file exists in repo root with real credentials. `.env.example` template exists but no validation that `.env` is gitignored.
+- Files: `.env` (contains `DICE_PASSWORD`), `config.py`
+- Impact: Accidental `git add .env` would commit credentials to public repo. No runtime check that credentials aren't hardcoded.
+- Fix approach: Add pre-commit hook to reject commits containing `.env`. Add startup validation that credentials come from environment only, not hardcoded strings.
 
 ## Known Bugs
 
-**Indeed 404 Detection Incomplete (Medium Severity):**
-- Symptoms: ~50% of Indeed job cards have bogus tracking IDs (`fedcba9876543210` pattern). Clicking these produces 404 pages. Current code detects by page title "Not Found | Indeed" but misses some variations.
-- Files: `platforms/indeed.py` (lines 122-126)
-- Trigger: Run full Indeed search, observe final job_pipeline/raw_indeed.json includes 0-description jobs from 404 pages
-- Workaround: Filter raw JSON manually post-pipeline, remove jobs with description length < 50 chars
-- Fix: Tighten 404 detection: check for 404 in URL, check if description section element is empty, validate job_id format before visiting
+**Indeed sponsored card false positives:**
+- Symptoms: Sponsored cards with fake job IDs (`fedcba9876543210` pattern) pass through extraction, produce 404 on detail fetch
+- Files: `platforms/indeed.py` (line 234 `_is_sponsored()`, line 287)
+- Trigger: Any Indeed search returns mix of organic + sponsored cards
+- Workaround: 404 detection in `get_job_details()` (line 151) skips these jobs but wastes a page navigation per fake ID
+- Fix approach: Improve sponsored detection heuristic. Check for `data-jk` format patterns (real IDs are 16-char hex, fake are sequential). Add URL validation before navigation.
 
-**Dice "Easy Apply" Detection Unreliable (Low Severity):**
-- Symptoms: Some Easy Apply jobs missing from filtered results. Text "Easy Apply" appears in card inner text, but nearby elements changed position.
-- Files: `platforms/dice.py` (line 210, `has_easy = "Easy Apply" in card_text`)
-- Trigger: Run Dice search, compare Easy Apply toggle count in UI vs extracted easy_apply=True count in raw_dice.json
-- Workaround: None — jobs without easy_apply flag still apply-able, just not filtered by dashboard
-- Fix: Verify selector `[data-testid='easy-apply-badge']` or similar exists; extract programmatically instead of text search
+**RemoteOK salary filtering inconsistency:**
+- Symptoms: Some jobs have `salary_min > 0` but `salary_max = 0`, causing filter logic to fail
+- Files: `platforms/remoteok.py` (line 71)
+- Trigger: RemoteOK API returns partial salary data for certain posts
+- Workaround: Current code uses `salary_max or None` but filter only checks `salary_max` (line 71)
+- Fix approach: Use `max(salary_min, salary_max)` for threshold check. Add validation that at least one salary field is nonzero before filtering.
 
-**Form Filler Field Matching False Positives (Low Severity):**
-- Symptoms: Textareas labeled "Job description" get filled with candidate's desired salary. Generic keywords like "location" match location fields AND location filters in search forms.
-- Files: `form_filler.py` (lines 109-138)
-- Trigger: Custom application forms with unusual label text (e.g., "Where will you be working?" matches "location")
-- Workaround: Skip form filling, fill manually for edge cases
-- Fix: Add context-aware matching (e.g., if form action contains "apply" or `/application`, match fields; if form action is search, skip)
-
----
+**Dashboard in-memory DB mode breaks resume tracking:**
+- Symptoms: When `JOBFLOW_TEST_DB=1` is set, resume versions table exists but isn't persisted between requests
+- Files: `webapp/db.py` (lines 12-17, 133-146)
+- Trigger: Running tests with in-memory DB, then querying resume versions
+- Workaround: Singleton `_memory_conn` shares state within process but loses data on restart
+- Fix approach: Use separate test fixtures with proper teardown. Don't rely on env var for DB mode selection.
 
 ## Security Considerations
 
-**Credentials in Memory (Medium Risk):**
-- Risk: Config.DICE_EMAIL and Config.DICE_PASSWORD loaded at module import time and held in memory for entire pipeline. If process dumps or debugger attaches, credentials visible in .env memory region.
-- Files: `config.py` (lines 29-32), `platforms/dice.py` (lines 48, 57)
-- Current mitigation: .env is gitignored, credentials never logged, platform raises RuntimeError if missing
-- Recommendations:
-  - Load credentials lazily (only at login time) and clear from memory after successful auth
-  - Implement credential caching in browser context (don't store in Python memory)
-  - Add warning in README against running pipeline in containers/shared environments
+**Browser session persistence:**
+- Risk: Persistent browser contexts in `browser_sessions/` store cookies, localStorage, and credentials indefinitely
+- Files: `platforms/stealth.py` (line 31), `platforms/indeed.py`, `platforms/dice.py`
+- Current mitigation: Directory is gitignored. Sessions are not encrypted at rest.
+- Recommendations: Add session encryption using keyring or encrypted volumes. Implement session expiration (30-day TTL). Clear sessions after N failed logins.
 
-**Unvalidated Form Filling (Low Risk):**
-- Risk: `form_filler.py` fills any field matching keywords without validating field type, size, or format constraints. Could cause validation errors on submit (e.g., phone field expects 10 digits, script fills "416-708-9839").
-- Files: `form_filler.py` (lines 52-105)
-- Current mitigation: Human-in-the-loop always confirms before final submit
-- Recommendations:
-  - Add form validation: parse field constraints (pattern, maxlength, required), pre-validate values
-  - Log filled values before human confirmation step
+**Resume file path injection:**
+- Risk: `resume_path` parameter in apply flow comes from database query, could be manipulated if DB is compromised
+- Files: `apply_engine/engine.py` (line 485 `_get_resume_path()`), `form_filler.py` (line 84)
+- Current mitigation: Paths are validated with `Path.exists()` before use
+- Recommendations: Whitelist allowed resume directories (`resumes/`, `resumes/tailored/`). Reject absolute paths outside project root. Add path traversal checks.
 
-**Screenshot Storage Path Traversal Prevention (Low Risk):**
-- Risk: `orchestrator.py` _sanitize() function truncates filenames but doesn't prevent directory traversal. Edge case: company name "../../etc" could escape debug_screenshots/
-- Files: `orchestrator.py` (lines 385-387, sanitize function), `platforms/base.py` (line 68, screenshot method)
-- Current mitigation: sanitize function removes most special chars
-- Recommendations:
-  - Use UUID or counter for screenshot names instead of sanitized user input
-  - Validate sanitized paths with `Path.resolve().is_relative_to(DEBUG_SCREENSHOTS_DIR)`
+**ATS iframe form fill blind trust:**
+- Risk: `form_filler.py` detects ATS iframes but doesn't validate origins before filling forms
+- Files: `form_filler.py` (lines 140-165 `_detect_ats_iframe()`)
+- Current mitigation: Keyword matching on known ATS domains (greenhouse.io, lever.co, ashbyhq.com)
+- Recommendations: Whitelist exact domains with TLS certificate validation. Reject iframes from unexpected origins. Add user confirmation before filling external forms.
 
----
+**Screenshot path injection:**
+- Risk: Screenshot filenames use unsanitized job IDs and platform names
+- Files: `platforms/mixins.py` (line 68), `apply_engine/engine.py` (line 449)
+- Current mitigation: `datetime.now().strftime()` adds timestamp suffix
+- Recommendations: Sanitize `platform_name` and `job.id` with regex `[^a-zA-Z0-9_-]`. Limit filename length to 255 chars.
 
 ## Performance Bottlenecks
 
-**Sequential Page Navigation in Search (High Impact on Runtime):**
-- Problem: Indeed and Dice searches load pages sequentially (for loop over max_pages), waiting for page load and selector visibility before proceeding. With 5-page searches × 10 queries × 2 platforms = 100 pages at 2-5s delay = 200-500s per run.
-- Files: `platforms/indeed.py` (lines 79-106), `platforms/dice.py` (lines 83-103)
-- Cause: Browser automation requires serial navigation; can't parallelize due to shared page object
-- Improvement path:
-  - Batch queries: run Indeed and Dice searches in parallel threads (orchestrator.py already does this for RemoteOK)
-  - Pre-fetch next page while processing current page (load page 2 while extracting page 1)
-  - Reduce page load timeout from 30s to 15s with fallback
+**Synchronous job detail fetching:**
+- Problem: Each job detail page is fetched sequentially with 2-5s delay between requests
+- Files: `platforms/indeed.py` (line 139 `get_job_details()`), `orchestrator.py`
+- Cause: Playwright Page is not thread-safe, delays are anti-bot mitigation
+- Improvement path: Use multiple browser contexts in parallel (one per platform). Fetch details for 5 jobs concurrently per context with shared rate limiter.
 
-**RemoteOK Single API Call (Low Impact on Runtime):**
-- Problem: RemoteOK searches return ~95 jobs max, regardless of query. Current code re-fetches API for each of 10 search queries, wasting bandwidth.
-- Files: `platforms/remoteok.py` (line 33, single API call per query loop iteration)
-- Cause: API schema doesn't support filters; all jobs returned every time
-- Improvement path:
-  - Cache API response (expires after 1 hour) to avoid re-fetching
-  - Run single API call outside query loop, filter results by all queries
-  - Add ETag/If-Modified-Since to avoid re-parsing unchanged response
+**SQLite write lock contention:**
+- Problem: Dashboard and orchestrator both write to `job_pipeline/jobs.db`, causing BUSY errors under concurrent access
+- Files: `webapp/db.py` (line 164 `PRAGMA busy_timeout = 5000`)
+- Cause: WAL mode helps but long-running transactions (apply flows) block reads
+- Improvement path: Increase busy timeout to 30s for apply flows. Use separate read-only connections for dashboard queries. Consider PostgreSQL for production.
 
-**Score Calculation Walks Full Text (Low Impact):**
-- Problem: `scorer.py` _tech_score() concatenates full description + tags (~5KB average) per job, searches for 34 keywords (in/substring operations, O(n*m)). With 500+ jobs, this is slow.
-- Files: `scorer.py` (lines 74-82)
-- Cause: Full-text search instead of indexed/normalized keywords
-- Improvement path:
-  - Index job description at parse time: split into tokens, lowercase, deduplicate
-  - Pre-compile keyword regex pattern
-  - Use set intersection instead of substring search
+**Full-page screenshots on every failure:**
+- Problem: `screenshot(full_page=True)` on large job description pages takes 3-5s, blocks apply flow
+- Files: `platforms/mixins.py` (line 71), `apply_engine/engine.py` (line 451)
+- Cause: Full-page rendering for 10+ page descriptions
+- Improvement path: Use viewport screenshots only unless explicitly requested. Compress PNGs with pngquant. Implement async screenshot queue.
 
----
+**FTS5 rebuild on schema migration:**
+- Problem: `INSERT INTO jobs_fts(jobs_fts) VALUES('rebuild')` scans entire jobs table on every migration run
+- Files: `webapp/db.py` (line 109)
+- Cause: Migration 4 rebuilds FTS index, runs even when already migrated (idempotency check missing)
+- Improvement path: Add migration tracking table to skip already-applied migrations. Use incremental FTS updates via triggers only.
 
 ## Fragile Areas
 
-**Indeed Sponsored Card Detection (Fragile):**
-- Files: `platforms/indeed.py` (lines 202-213)
-- Why fragile: Sponsored label detection uses "sponsored" string search in card.inner_text(). Indeed sometimes uses "Ad", "Promoted", or no visible label. If Indeed removes label entirely, sponsored cards pollute results.
-- Safe modification:
-  - Check sponsor attribute: some DOM elements may have `[data-sponsored]` or similar
-  - Validate job_id format before visiting (real IDs are hex-like, fake IDs follow patterns)
-  - Cross-reference with company reputation (sponsored posts often from unknown companies)
-- Test coverage: No unit tests for sponsored detection, only discovered by observation during manual runs
+**Playwright stealth configuration:**
+- Files: `platforms/stealth.py` (lines 42-57)
+- Why fragile: Relies on `playwright-stealth` 2.0.1 API (`apply_stealth_sync`) which changed between v1 and v2. Google OAuth detection bypasses stealth on Indeed.
+- Safe modification: Always test against live Indeed first. Use `channel="chrome"` (system Chrome) not bundled Chromium. Verify OAuth still works after stealth changes.
+- Test coverage: No automated tests for stealth effectiveness. Manual verification required.
 
-**Selector Waterfalls in Job Details (Fragile):**
-- Files: `platforms/indeed.py` (lines 128-143 — four fallback selectors for description)
-- Why fragile: Multiple selector fallbacks indicate author knew Indeed changes selectors. If all four fail, no description is extracted and job scores lower. Hard to debug which selector worked vs failed.
-- Safe modification:
-  - Log which selector matched for each job (e.g., "job X: matched selector 2")
-  - Alert if description empty (screenshot + human review)
-- Test coverage: No test for selector fallback logic; would break silently if all fail
+**Indeed login flow:**
+- Files: `platforms/indeed.py` (lines 54-93)
+- Why fragile: Human-in-the-loop manual Google OAuth. Session expiry detection via DOM selector `logged_in_indicator` which changes.
+- Safe modification: Test session expiry by deleting `browser_sessions/indeed/`. Add timeout to input prompt (currently blocks forever). Screenshot before raising login failure.
+- Test coverage: No test for session restoration. Scheduled mode `_unattended` flag blocks on expired session (intentional, but undocumented).
 
-**Form Filling Keyword Matching (Fragile):**
-- Files: `form_filler.py` (lines 18-40, _FIELD_KEYWORDS dict)
-- Why fragile: Substring matching with generic keywords. Form with label "What is your current location?" matches "location" → fills with "Springwater, ON, Canada" even if it's a search filter.
-- Safe modification:
-  - Add form context checks (form action, button labels)
-  - Maintain blocklist of common false-positive labels (e.g., "Location filter", "Job location preferences")
-  - Use fuzzy matching (difflib) instead of substring to catch variations
-- Test coverage: No test cases for form filling edge cases
+**Job deduplication key generation:**
+- Files: `dedup.py` (lines 20-40), `apply_engine/dedup.py` (line 23)
+- Why fragile: `dedup_key` is lowercase normalized `title||company`. Typos in company name create duplicate entries. No edit distance matching.
+- Safe modification: Always regenerate keys when changing normalization. Migrate existing keys in database with UPDATE statement.
+- Test coverage: Unit tests exist for `make_dedup_key()` but not for fuzzy matching edge cases.
 
-**Browser Session Persistence Assumption (Fragile):**
-- Files: `platforms/stealth.py` (line 31 — assumes browser_sessions/ directory persists), `orchestrator.py` (line 87 — creates persistent context)
-- Why fragile: Indeed session cached in browser_sessions/indeed/ expires after ~7 days. Script assumes session always valid. If expired, login step silently returns False (line 40-42 in indeed.py) and search is skipped without error.
-- Safe modification:
-  - Check session validity before search (load Indeed home page, verify logged_in indicator present)
-  - If session expired, prompt human to re-login (don't skip silently)
-  - Document session expiration in README
-- Test coverage: No test for expired session handling
-
----
+**Database migration version tracking:**
+- Files: `webapp/db.py` (lines 178-198 `migrate_db()`)
+- Why fragile: `PRAGMA user_version` is the only migration state. Rolling back requires manual SQL. `duplicate column name` errors are silently ignored (line 190).
+- Safe modification: Never decrement `SCHEMA_VERSION`. Add forward-only migrations. Test migrations on copy of production DB first.
+- Test coverage: No automated migration tests. Manual verification required.
 
 ## Scaling Limits
 
-**SQLite Database Scaling (Medium Concern):**
-- Current capacity: ~10K jobs (tested with RemoteOK + Indeed + Dice over 2 weeks)
-- Limit: SQLite WAL (write-ahead logging) works to ~100K jobs before lock contention. Dashboard query times >5s with >50K jobs.
-- Scaling path:
-  - Migrate to PostgreSQL if job history grows beyond 6 months
-  - Add indexes on (platform, created_at, status) for common queries
-  - Implement job archival (move jobs older than 90 days to archive table)
+**Single-threaded orchestrator:**
+- Current capacity: 3 platforms × 10 queries × 5 pages = ~150 jobs/run, takes 30-45 minutes
+- Limit: One platform at a time, sequential page navigation
+- Scaling path: Spawn platform workers in parallel threads. Share deduplication cache. Aggregate results at end. Limit: Playwright contexts are CPU-bound (4-6 contexts max on 8-core machine).
 
-**Browser Session Directory Bloat (Low Concern):**
-- Current capacity: Each platform session (indeed/, dice/, remoteok/) ~50-200MB after 2 weeks of runs
-- Limit: browser_sessions/ exceeds 1GB after 6 weeks, slow to copy/backup
-- Scaling path:
-  - Add cleanup script to remove browser_sessions older than 30 days
-  - Document in README: `rm -rf browser_sessions/*/` to reset sessions
-  - Consider ephemeral sessions (don't persist) for non-auth platforms
+**SQLite jobs table:**
+- Current capacity: ~10K jobs tested, performs well
+- Limit: FTS5 index size grows linearly with description text. ~100K jobs = 500MB+ database, query latency increases.
+- Scaling path: Archive old jobs (applied, rejected, withdrawn) to separate table. Implement periodic vacuum. Migrate to PostgreSQL at 50K+ active jobs.
 
-**API Rate Limiting (Low Concern for Current Setup):**
-- RemoteOK: No documented rate limit, returns same ~95 jobs per request
-- Indeed: High anti-bot (uses stealth), likely rate-limited by IP/session after 100+ queries
-- Dice: Low anti-bot, likely rate-limited after 1000+ requests
-- Current capacity: ~30 search queries per run (10 queries × 3 platforms) is safe
-- Scaling path: If expanding to 100+ queries, implement request queuing, per-platform rate limit tracking
-
----
+**Resume tailoring storage:**
+- Current capacity: Tailored resumes stored as PDFs in `resumes/tailored/{company}_{timestamp}.pdf`
+- Limit: Filesystem inode limits (~100K files on ext4). No cleanup of old versions.
+- Scaling path: Store resume content in DB (BLOB or compressed TEXT). Keep only latest 3 versions per job. Implement LRU cleanup.
 
 ## Dependencies at Risk
 
-**playwright-stealth Version Lock (Medium Risk):**
-- Risk: Project pins playwright-stealth==2.0.1 (per CLAUDE.md). API changed from v1 (stealth_sync) to v2 (Stealth().apply_stealth_sync). If stealth 2.1+ changes API again, automation breaks. Upstream development stalled (last release 2024-06).
-- Impact: Can't upgrade Playwright without stealth breaking
-- Migration plan:
-  - Monitor playwright-stealth releases; prepare conditional code for v3 API
-  - Document stealth API in code (why v2.0.1 required, what changed from v1)
-  - Consider custom stealth implementation if upstream abandons library
+**playwright-stealth 2.0.1:**
+- Risk: Not actively maintained (last update 2024-09). API changed drastically between v1 and v2.
+- Impact: Future Playwright upgrades may break stealth compatibility. Google/Cloudflare detection bypass could stop working.
+- Migration plan: Fork playwright-stealth and maintain internally. Evaluate alternatives (undetected-playwright, pyppeteer-stealth). Consider moving to residential proxies + real Chrome profiles.
 
-**Pydantic v2 Field Validator Edge Case (Low Risk):**
-- Risk: `models.py` salary_max validator (lines 49-55) accesses info.data.get("salary_min") which may not exist if salary_max is validated first. Validator ordering not guaranteed in Pydantic v2.
-- Impact: ValidationError if salary_max passed without salary_min, catching this in production
-- Migration plan:
-  - Add explicit check: `if "salary_min" not in info.data: return v`
-  - Add unit test: `Job(salary_max=200000)` should not raise
+**httpx for RemoteOK:**
+- Risk: None (stable library)
+- Impact: None
+- Migration plan: N/A
 
-**httpx Async Client Timeout Configuration (Low Risk):**
-- Risk: `platforms/remoteok.py` (line 25) sets global timeout=30.0s. If API slow, entire pipeline stalls. If timeout too low, transient network issues cause retry loop.
-- Impact: RemoteOK search fails silently (returns empty list, line 38)
-- Mitigation in place: Try/except on HTTP errors
-- Recommendation: Make timeout configurable (Config.REMOTEOK_TIMEOUT), add per-request timeout override
-
----
+**Pydantic v2:**
+- Risk: None (stable library, but project uses v2 features like `model_dump(mode="json")`)
+- Impact: Downgrading to Pydantic v1 would break serialization code
+- Migration plan: Pin `pydantic>=2.0` in requirements. Avoid v3 beta until stable release.
 
 ## Missing Critical Features
 
-**No Job Deduplication Across Reruns (Medium Concern):**
-- Problem: Running pipeline twice discovers same jobs. discovered_jobs.json contains duplicates from run 1 and run 2. webapp/db.py upsert keeps both via dedup_key collision, but JSON file grows unbounded.
-- Blocks: Can't track application history (did I already apply to this job? when?)
-- Fix: Implement job history dedup:
-  - Before scoring, check if job exists in job_pipeline/jobs.db
-  - Merge with existing record (keep highest score, newest description)
-  - Mark as re-discovered vs new
+**Apply flow validation:**
+- Problem: No confirmation that application was actually submitted. `platform.apply()` returns boolean but doesn't verify server response.
+- Blocks: Accurate application tracking. User may think job was submitted but form failed silently.
+- Priority: High — implement post-submit verification (check for "Application submitted" text, confirmation page URL pattern).
 
-**No Partial Progress Save (Medium Concern):**
-- Problem: If pipeline crashes during Phase 2 (search), all extracted jobs lost. No recovery point.
-- Blocks: Can't resume interrupted searches
-- Fix: Save raw results incrementally per-platform per-query, not all at end
+**Selector health monitoring:**
+- Problem: No automated detection when platform selectors break. Failures only discovered when running pipeline manually.
+- Blocks: Proactive maintenance. Scheduled runs fail silently until human notices.
+- Priority: Medium — implement daily selector health check that visits platform homepage and verifies key elements exist.
 
-**No Competitor Job Filtering (Low Concern):**
-- Problem: Script applies to jobs posted by recruiters/job boards, not direct employers. No blacklist for recruiting agencies.
-- Blocks: Wasted applications on indirect hiring channels
-- Fix: Add company_type field (direct, recruiter, board) and filter in Phase 3
-
-**No Resume Tailoring Automation (Low Concern):**
-- Problem: CLAUDE.md documents resume tailoring approach but no automation implemented. Form_filler.py generic but doesn't extract job keywords to customize resume.
-- Blocks: Can't auto-tailor resumes per job in apply phase
-- Fix: Implement resume_tailor.py that parses job description, extracts keywords, regenerates resume PDF with keyword emphasis
-
----
+**Resume version diff tracking:**
+- Problem: `resume_versions` table stores paths but no diff of what changed between versions
+- Blocks: Understanding why a resume was tailored differently. Audit trail for changes.
+- Priority: Low — add `changes_summary` TEXT column with bullet points of modifications.
 
 ## Test Coverage Gaps
 
-**No Unit Tests for Salary Parsing (High Priority):**
-- What's not tested: _parse_salary() functions in indeed.py and dice.py
-- Files: `platforms/indeed.py` (lines 308-338), `platforms/dice.py` (lines 272-293)
-- Risk: Edge cases silently fail (hourly to annual conversion, missing commas, K notation)
-- Add tests for:
-  - "$150K - $200K" → (150000, 200000)
-  - "$150,000 - $200,000" → (150000, 200000)
-  - "$75/hour" → (156000, 156000) [40 hrs/wk × 52 wk]
-  - "USD 224,400.00 - 283,800.00 per year" → (224400, 283800)
-  - null/empty → (None, None)
+**Platform login flows:**
+- What's not tested: Indeed Google OAuth, Dice two-step login, session restoration
+- Files: `platforms/indeed.py` (lines 54-93), `platforms/dice.py` (lines 50-92)
+- Risk: Login changes break pipeline, only discovered on next run
+- Priority: High — add integration tests with test accounts. Mock Google OAuth for Indeed.
 
-**No Integration Tests for Scoring (Medium Priority):**
-- What's not tested: Full scoring pipeline with real jobs
-- Files: `scorer.py` (entire module)
-- Risk: Scoring rubric changes without validation
-- Add tests for:
-  - Job with "Principal Engineer" title scores 2+ on title
-  - Job with 5+ tech keywords scores 2 on tech
-  - Remote location scores 1, Springwater ON scores 1, SF scores 0
-  - Salary $225K scores 1, $150K scores 0
+**Form filling heuristics:**
+- What's not tested: Field matching logic in `form_filler.py` against real ATS pages (Greenhouse, Lever, Ashby)
+- Files: `form_filler.py` (lines 89-118)
+- Risk: Keyword changes in ATS forms cause fields to be skipped
+- Priority: Medium — capture sample ATS page HTML, test field matching offline.
 
-**No E2E Tests for Deduplication (Medium Priority):**
-- What's not tested: Cross-platform dedup logic
-- Files: `orchestrator.py` (lines 206-221)
-- Risk: Duplicates slip through (dedup_key matching is fragile with company name normalization)
-- Add test: Two jobs with same title, company "Acme Inc" vs "ACME, Inc." → deduplicated to 1
+**Database migration rollback:**
+- What's not tested: Rolling back from schema v6 to v5, handling corrupted PRAGMA user_version
+- Files: `webapp/db.py` (lines 178-198)
+- Risk: Botched migration leaves database in inconsistent state
+- Priority: Medium — add migration test suite with before/after snapshots. Test on copies of production DB.
 
-**No Selector Validation Tests (High Priority):**
-- What's not tested: Whether selectors exist on live pages
-- Files: `platforms/indeed_selectors.py`, `platforms/dice_selectors.py`
-- Risk: Selectors fail silently, discovered during full run (50+ minute wait)
-- Add: Headless browser test that loads Indeed home, Dice search page, validates each selector exists (or fails fast with clear error)
-
-**No Form Filling Edge Cases (Medium Priority):**
-- What's not tested: FormFiller behavior with ambiguous labels
-- Files: `form_filler.py`
-- Risk: Form fields filled incorrectly on custom ATS
-- Add test: Form with fields like "Preferred location" (should not match location), "Current role" (should match current_title)
+**Error handling in apply engine:**
+- What's not tested: Threading edge cases (confirmation timeout, cancel during apply, concurrent applies)
+- Files: `apply_engine/engine.py` (lines 52-105, 510-545)
+- Risk: Race conditions in event queue, semaphore deadlock, orphaned browser contexts
+- Priority: High — add concurrency tests with pytest-asyncio. Simulate timeout scenarios.
 
 ---
 

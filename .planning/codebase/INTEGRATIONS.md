@@ -4,102 +4,104 @@
 
 ## APIs & External Services
 
-**Indeed.com:**
-- Search API + Easy Apply integration
-  - SDK/Client: Playwright browser automation (stealth)
-  - Auth: Google OAuth (session-based via `secure.indeed.com/auth`)
-  - Env vars: `INDEED_EMAIL` (no password — OAuth login)
-  - Anti-bot: HIGH (Cloudflare Turnstile, fingerprinting)
-  - Entry point: `platforms/indeed.py` → `IndeedPlatform` class
-  - Human-in-loop: Required for CAPTCHA, Cloudflare challenge, email verification
+**Job Platforms:**
+- Indeed - Browser automation via Playwright (session-based Google OAuth)
+  - SDK/Client: playwright (sync API)
+  - Auth: INDEED_EMAIL (env var) - cached session in `browser_sessions/indeed/`
+  - Anti-bot: HIGH - Cloudflare Turnstile, fingerprinting, behavioral analysis
+  - Stealth: `playwright-stealth` 2.0.1 with system Chrome
 
-**Dice.com:**
-- Job search + Easy Apply integration
-  - SDK/Client: Playwright browser automation
-  - Auth: Email + password login (two-step: email → "Continue" → password → "Sign In")
-  - Env vars: `DICE_EMAIL`, `DICE_PASSWORD`
-  - Anti-bot: LOW (standard delays sufficient, no CAPTCHA reported)
-  - Entry point: `platforms/dice.py` → `DicePlatform` class
-  - Human-in-loop: Required for unusual challenges or selector failures
+- Dice - Browser automation via Playwright (email/password)
+  - SDK/Client: playwright (sync API)
+  - Auth: DICE_EMAIL, DICE_PASSWORD (env vars)
+  - Anti-bot: LOW - standard delays sufficient
 
-**RemoteOK.com:**
-- Pure HTTP API for job listings
-  - SDK/Client: `httpx.AsyncClient` (async HTTP)
-  - Auth: None required
-  - Endpoint: `GET https://remoteok.com/api`
-  - Response format: JSON array; index 0 is metadata, real jobs from index 1+
-  - Entry point: `platforms/remoteok.py` → `RemoteOKPlatform` class
-  - Data delay: 24 hours behind real-time
+- RemoteOK - Public HTTP API (no auth)
+  - SDK/Client: httpx (async client)
+  - Auth: None (User-Agent header for politeness)
+  - Endpoint: `https://remoteok.com/api`
+
+**AI/ML:**
+- Anthropic Claude - Resume tailoring via structured outputs
+  - SDK/Client: `anthropic>=0.79.0`
+  - Auth: ANTHROPIC_API_KEY (env var)
+  - Model: `claude-sonnet-4-5-20250929` (default)
+  - Usage: `resume_ai/tailor.py`, `resume_ai/cover_letter.py`
+  - API: `client.messages.parse()` for structured output
 
 ## Data Storage
 
 **Databases:**
-- SQLite at `job_pipeline/jobs.db`
-  - Connection: Direct `sqlite3.connect()` in `webapp/db.py`
-  - Client: Native Python `sqlite3` module (no ORM)
-  - Schema: Single `jobs` table with job metadata, scoring, and status fields
-  - Initialized on first app startup
+- SQLite (local)
+  - Connection: `job_pipeline/jobs.db` (auto-created)
+  - Client: sqlite3 (stdlib)
+  - Schema: `webapp/db.py` - jobs, run_history, activity_log, resume_versions, jobs_fts (FTS5)
+  - Migrations: Version-based via `PRAGMA user_version` (6 schema versions)
 
 **File Storage:**
-- Local filesystem only:
-  - `job_pipeline/` - Pipeline output (raw JSON, scored JSON, descriptions)
-  - `job_pipeline/descriptions/` - Individual job descriptions as markdown files
-  - `browser_sessions/{platform}/` - Persistent Playwright browser contexts (chromium user data dirs)
-  - `debug_screenshots/` - Screenshots on selector failures or errors
-  - `resumes/` - Resume PDFs (ATS-optimized and standard versions)
+- Local filesystem only
+  - Job descriptions: `job_pipeline/descriptions/` (markdown)
+  - Resumes: `resumes/` (PDF)
+  - Tailored resumes: `resumes/tailored/` (PDF)
+  - Screenshots: `debug_screenshots/` (PNG)
+  - Browser sessions: `browser_sessions/{platform}/` (Playwright persistent contexts)
+  - Pipeline output: `job_pipeline/*.json` (raw and scored jobs)
 
 **Caching:**
-- Browser session persistence: Playwright `launch_persistent_context()` caches cookies/session per platform in `browser_sessions/{platform}/`
-- No external cache service (Redis, Memcached, etc.)
+- Browser session persistence via Playwright `launch_persistent_context()`
+  - Indeed: `browser_sessions/indeed/`
+  - Dice: `browser_sessions/dice/`
 
 ## Authentication & Identity
 
-**Auth Providers:**
-- **Indeed:** Google OAuth (via `secure.indeed.com/auth`) — session-based, cached in persistent browser context
-- **Dice:** Native email/password login (two-step form)
-- **RemoteOK:** No authentication required
+**Auth Provider:**
+- Custom per-platform
+  - Indeed: Google OAuth (manual first-time login, session cached)
+  - Dice: Form-based email/password (two-step: email → Continue → password → Sign In)
+  - RemoteOK: None (public API)
 
 **Implementation:**
-- Credentials stored in `.env` (gitignored)
-- Loaded at startup by `config.py` via `python-dotenv`
-- Indeed: Uses browser session persistence; Google auth is browser-based, requires manual login on first run
-- Dice: Direct credential passing in login form
+- Session management: Playwright persistent contexts with stealth patches (`platforms/stealth.py`)
+- Credential storage: `.env` file (never committed)
+- Validation: `config.py::AppSettings.validate_platform_credentials(platform: str)`
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- Custom screenshot-based debugging: `screenshot()` method saves full-page PNG to `debug_screenshots/` on selector failures
-- No remote error tracking service (Sentry, DataDog, etc.)
+- None (local execution only)
 
 **Logs:**
-- Console output only (print statements in orchestrator, platform modules)
-- No structured logging framework
-- Errors surface via orchestrator exception handling and error messages
-- Human-in-loop checkpoints prompt for manual action on failures
+- Stdout/stderr only
+- Activity log: SQLite `activity_log` table (job-level events: discovered, viewed, status_change, note_added, resume_tailored)
+- Run history: SQLite `run_history` table (pipeline execution metadata)
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- Local (development only currently)
-- Python application runs locally; not containerized
+- Local execution only (not deployed)
 
 **CI Pipeline:**
-- None configured
-- No GitHub Actions, GitLab CI, or other automation
+- None
+
+**Automation:**
+- Scheduled runs via macOS launchd (`scheduler.py` generates `.plist` files)
+- Manual execution via `python orchestrator.py` or `jobs-scrape` script
 
 ## Environment Configuration
 
 **Required env vars:**
-- `INDEED_EMAIL` - Gmail address for Indeed Google OAuth (no password needed)
+- `INDEED_EMAIL` - Indeed account email (session-based Google auth)
 - `DICE_EMAIL` - Dice account email
 - `DICE_PASSWORD` - Dice account password
-
-**Optional vars:**
-- None (all other config is in `config.py`)
+- `ANTHROPIC_API_KEY` - Claude API key for resume AI features
+- Candidate profile fields: `CANDIDATE_FIRST_NAME`, `CANDIDATE_LAST_NAME`, `CANDIDATE_EMAIL`, etc. (20+ fields in `config.py`)
 
 **Secrets location:**
-- `.env` file at project root (template: `.env.example`)
-- Never committed to git (in `.gitignore`)
+- `.env` file in project root (gitignored)
+- Example: `.env.example` (committed, no real credentials)
+
+**Optional env vars:**
+- `JOBFLOW_TEST_DB=1` - Use in-memory SQLite for testing (`webapp/db.py`)
 
 ## Webhooks & Callbacks
 
@@ -107,45 +109,37 @@
 - None
 
 **Outgoing:**
-- RemoteOK: `apply_url` field in API response redirects to company's external ATS (Lever, Greenhouse, Ashby, etc.)
-- No outbound webhooks initiated by this application
+- None (all integrations are pull-based)
 
-## External Dependencies for Core Functionality
+## Browser Automation Details
 
-**Playwright Stealth:**
-- `playwright-stealth` 2.0.1+ patches Playwright pages to remove automation detection
-- Applies patches via `Stealth().apply_stealth_sync(page)` to all pages in persistent context
-- Essential for avoiding anti-bot measures on Indeed (Cloudflare) and Dice
+**Stealth Configuration:**
+- System: `platforms/stealth.py::get_browser_context()`
+- Browser: System Chrome via `channel="chrome"` (NOT Playwright's bundled Chromium)
+- Anti-detection:
+  - `--disable-blink-features=AutomationControlled`
+  - `ignore_default_args=["--enable-automation"]`
+  - `playwright-stealth` 2.0.1 API: `Stealth().apply_stealth_sync(page)`
+- User-Agent: Mozilla/5.0 Macintosh Chrome/120.0.0.0
+- Locale: en-US
+- Timezone: America/Toronto
 
-**Browser Channel:**
-- Uses `channel="chrome"` to launch system Chrome instead of Playwright's bundled Chromium
-- Reason: Google blocks OAuth (Indeed login) in automation-detected browsers; system Chrome bypasses this
+**Session Persistence:**
+- Persistent contexts: `launch_persistent_context(user_data_dir)`
+- Indeed: `browser_sessions/indeed/`
+- Dice: `browser_sessions/dice/`
+- Benefits: Cached cookies, local storage, login sessions
 
-**User Agent & Fingerprinting:**
-- Custom user agent: `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36...`
-- Locale: `en-US`, Timezone: `America/Toronto`
-- Stealth patches hide `--enable-automation` flag and `AutomationControlled` features
+## Human-in-the-Loop Checkpoints
 
-## Rate Limiting & Delays
+**Interactive Flows:**
+- CAPTCHA detection → screenshot + raise RuntimeError (`platforms/indeed.py`)
+- Email verification → screenshot + raise RuntimeError
+- Application confirmation → `wait_for_human()` prompt before submit
+- Resume upload confirmation → `wait_for_human()` prompt
 
-**Indeed/Dice (Browser):**
-- Navigation delay: 2–5 seconds (randomized)
-- Form interaction delay: 1–2 seconds (randomized)
-- Page load timeout: 30 seconds
-- Purpose: Avoid triggering anti-bot rate limits
-
-**RemoteOK (API):**
-- User-Agent header: `JobSearchBot/1.0 (pgolabek@gmail.com)`
-- No explicit rate limit observed; 95 jobs returned per API call
-- Timeout: 30 seconds per request
-
-## Resume Integration
-
-**Resume Files:**
-- `resumes/Patryk_Golabek_Resume_ATS.pdf` - Default, ATS-optimized resume
-- `resumes/Patryk_Golabek_Resume.pdf` - Standard resume
-- `resumes/tailored/` - Per-company tailored versions (not auto-generated)
-- Upload via: Form filler `fill_form()` method detects file input and calls `set_input_files()`
+**Non-interactive Mode:**
+- Scheduled runs (`_unattended=True`) skip interactive prompts, raise errors instead
 
 ---
 

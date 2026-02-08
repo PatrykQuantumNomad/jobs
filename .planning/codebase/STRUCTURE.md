@@ -6,226 +6,237 @@
 
 ```
 /Users/patrykattc/work/jobs/
-├── orchestrator.py           # Entry point — coordinates all five phases
-├── scorer.py                 # Job scoring engine (1-5 rating)
-├── models.py                 # Pydantic v2 data models (Job, SearchQuery, CandidateProfile)
-├── config.py                 # Environment loading, platform config, search queries
-├── form_filler.py            # Generic form-filling heuristics
-│
-├── platforms/                # Platform-specific implementations
-│   ├── __init__.py
-│   ├── base.py               # Abstract BasePlatform class (login, search, apply interface)
-│   ├── stealth.py            # Playwright stealth config and context factory
-│   │
-│   ├── indeed.py             # Indeed.com automation (Playwright + stealth)
-│   ├── indeed_selectors.py   # Indeed CSS selectors and URL templates
-│   │
-│   ├── dice.py               # Dice.com automation (Playwright)
-│   ├── dice_selectors.py     # Dice CSS selectors and URL templates
-│   │
-│   └── remoteok.py           # RemoteOK API client (async HTTP, no browser)
-│
-├── webapp/                   # Web dashboard for job tracking
-│   ├── __init__.py
-│   ├── app.py                # FastAPI app with routes
-│   ├── db.py                 # SQLite layer (schema, queries)
-│   ├── templates/            # Jinja2 HTML templates
-│   │   └── dashboard.html    # Main job tracker UI
-│   └── static/               # CSS, JS assets
-│
-├── job_pipeline/             # Pipeline output directory (created at runtime)
-│   ├── raw_indeed.json       # Raw jobs from Indeed (600+ jobs)
-│   ├── raw_dice.json         # Raw jobs from Dice
-│   ├── raw_remoteok.json     # Raw jobs from RemoteOK
-│   ├── discovered_jobs.json  # Deduplicated and scored (score 3+)
-│   ├── tracker.md            # Markdown summary table
-│   ├── jobs.db               # SQLite database (web dashboard)
-│   └── descriptions/         # Individual job markdown files
-│       └── {company}_{title}.md
-│
-├── browser_sessions/         # Persistent Playwright contexts (gitignored)
-│   ├── indeed/               # Indeed session directory
-│   │   └── Default/          # Playwright profile with cached cookies/auth
-│   └── dice/                 # Dice session directory
-│       └── Default/
-│
-├── debug_screenshots/        # Error/debug screenshots (created on failure)
-│   └── {platform}_{context}_{timestamp}.png
-│
-├── resumes/                  # Resume files
-│   ├── Patryk_Golabek_Resume_ATS.pdf       # ATS-optimized (default)
-│   ├── Patryk_Golabek_Resume.pdf           # Standard version
-│   └── tailored/             # Company-specific tailored versions
-│       └── Patryk_Golabek_Resume_{CompanyName}.pdf
-│
-├── .env                      # Credentials (gitignored, never committed)
-├── requirements.txt          # Python dependencies
-└── README.md                 # Usage instructions
+├── .claude/                        # GSD framework + project instructions
+│   ├── agents/                     # Agent definitions (gsd-*, job-scorer, etc.)
+│   ├── commands/gsd/               # GSD command implementations
+│   ├── get-shit-done/              # GSD framework core
+│   ├── hooks/                      # Git hooks
+│   └── CLAUDE.md                   # Project-specific instructions
+├── .planning/                      # GSD planning artifacts
+│   ├── codebase/                   # Codebase documentation (ARCHITECTURE.md, etc.)
+│   ├── milestones/                 # Milestone tracking
+│   ├── phases/                     # Phase-by-phase implementation plans
+│   └── research/                   # Research notes
+├── platforms/                      # Job board platform adapters
+│   ├── __init__.py                 # Auto-discovery + registry exports
+│   ├── protocols.py                # BrowserPlatform/APIPlatform Protocol definitions
+│   ├── registry.py                 # @register_platform decorator + validation
+│   ├── mixins.py                   # BrowserPlatformMixin (shared helpers)
+│   ├── stealth.py                  # Playwright stealth configuration
+│   ├── indeed.py                   # Indeed adapter (366 lines)
+│   ├── indeed_selectors.py         # Indeed DOM selectors
+│   ├── dice.py                     # Dice adapter
+│   ├── dice_selectors.py           # Dice DOM selectors
+│   └── remoteok.py                 # RemoteOK API adapter
+├── webapp/                         # FastAPI web dashboard
+│   ├── app.py                      # Routes + endpoints (655 lines)
+│   ├── db.py                       # SQLite database layer
+│   ├── static/                     # CSS, JS, images
+│   └── templates/                  # Jinja2 templates + htmx partials
+├── apply_engine/                   # One-click apply orchestration
+│   ├── engine.py                   # Background thread + SSE event emission (549 lines)
+│   ├── events.py                   # ApplyEvent Pydantic models
+│   ├── config.py                   # ApplyMode enum + ApplyConfig
+│   └── dedup.py                    # Already-applied deduplication
+├── resume_ai/                      # LLM-powered resume tailoring
+│   ├── tailor.py                   # Resume tailoring via Anthropic structured outputs
+│   ├── cover_letter.py             # Cover letter generation
+│   ├── extractor.py                # PDF → text extraction
+│   ├── diff.py                     # Unified diff HTML generation
+│   ├── renderer.py                 # PDF rendering (reportlab)
+│   ├── validator.py                # Anti-fabrication validation
+│   ├── tracker.py                  # Resume version tracking (SQLite)
+│   └── models.py                   # TailoredResume, CoverLetter Pydantic models
+├── browser_sessions/               # Playwright persistent contexts (gitignored)
+├── debug_screenshots/              # Error screenshots (gitignored)
+├── job_pipeline/                   # Pipeline output (gitignored)
+│   ├── jobs.db                     # SQLite database
+│   ├── raw_{platform}.json         # Raw search results per platform
+│   ├── discovered_jobs.json        # Scored + deduplicated jobs (score >= 3)
+│   ├── tracker.md                  # Markdown summary table
+│   └── descriptions/               # Full job descriptions as markdown
+├── resumes/                        # Resume PDFs
+│   ├── Patryk_Golabek_Resume_ATS.pdf
+│   ├── Patryk_Golabek_Resume.pdf
+│   └── tailored/                   # LLM-generated tailored resumes
+├── orchestrator.py                 # Main pipeline orchestrator (568 lines)
+├── scorer.py                       # Job scoring engine (225 lines)
+├── config.py                       # Settings (YAML + .env) (411 lines)
+├── models.py                       # Pydantic domain models (124 lines)
+├── dedup.py                        # Fuzzy deduplication logic
+├── salary.py                       # Salary normalization
+├── form_filler.py                  # Generic form-filling logic
+├── scheduler.py                    # APScheduler daemon
+├── config.yaml                     # Operational configuration (search queries, scoring weights)
+├── .env                            # Credentials + personal profile (gitignored)
+├── requirements.txt                # Python dependencies
+└── README.md                       # Usage documentation
 ```
 
 ## Directory Purposes
 
-**platforms/:**
-- Purpose: Platform-specific automation modules
-- Contains: Scrapers for Indeed, Dice, RemoteOK; stealth utilities; selector definitions
-- Key files: `base.py` (interface), `stealth.py` (context factory), `{platform}.py` (implementation), `{platform}_selectors.py` (CSS selectors)
+**platforms/**
+- Purpose: Pluggable adapters for job boards (Indeed, Dice, RemoteOK)
+- Contains: Protocol definitions, registry, platform implementations, DOM selectors
+- Key files: `protocols.py` (contracts), `registry.py` (decorator), `indeed.py` (366 lines)
 
-**webapp/:**
-- Purpose: FastAPI web dashboard for post-pipeline job management
-- Contains: Server routes, database layer, Jinja2 templates, static assets
-- Key files: `app.py` (routes), `db.py` (SQLite schema/queries), `templates/dashboard.html` (UI)
+**webapp/**
+- Purpose: Web dashboard for job tracking, apply automation, resume tailoring
+- Contains: FastAPI routes, SQLite database layer, Jinja2 templates, htmx partials
+- Key files: `app.py` (655 lines, all routes), `db.py` (SQLite CRUD)
 
-**job_pipeline/:**
-- Purpose: Pipeline execution outputs (auto-created)
-- Contains: Raw JSON per-platform, deduplicated/scored JSON, tracker markdown, individual job descriptions, SQLite database
-- Key files: `raw_{platform}.json` (input for phase 3), `discovered_jobs.json` (output for phase 4), `tracker.md` (human-readable summary)
+**apply_engine/**
+- Purpose: Background apply orchestration with SSE progress streaming
+- Contains: Thread-based executor, event emission, confirmation gates
+- Key files: `engine.py` (549 lines, core orchestration)
 
-**browser_sessions/:**
-- Purpose: Persistent Playwright browser profiles (gitignored)
-- Contains: Cached cookies, local storage, IndexedDB (authentication)
-- Key files: `{platform}/Default/` (Chromium user data directory)
+**resume_ai/**
+- Purpose: LLM-powered resume/cover letter generation with anti-fabrication
+- Contains: Anthropic API calls, PDF rendering, diff generation, version tracking
+- Key files: `tailor.py` (LLM prompt), `renderer.py` (reportlab)
 
-**debug_screenshots/:**
-- Purpose: Screenshots for error debugging
-- Contains: PNG images captured on selector timeouts, login failures, unexpected page states
-- Naming: `{platform}_{context}_{YYYYMMDD_HHMMSS}.png`
+**.planning/**
+- Purpose: GSD framework planning artifacts (not runtime code)
+- Contains: Milestones, phases, research notes, codebase documentation
+- Key files: `MILESTONES.md`, `ROADMAP.md`, `STATE.md`, `codebase/*.md`
 
-**resumes/:**
-- Purpose: Resume files for application uploads
-- Contains: ATS-optimized version (default), standard version, per-company tailored PDFs
-- Key files: `*_Resume_ATS.pdf` (default for all applications), `tailored/` (customized per company)
+**browser_sessions/**
+- Purpose: Persistent Playwright contexts for session caching
+- Contains: Chromium user data directories (per platform)
+- Generated: Yes (by Playwright)
+- Committed: No (gitignored)
+
+**job_pipeline/**
+- Purpose: Pipeline output (JSON, SQLite, markdown)
+- Contains: Raw results, scored jobs, SQLite database, descriptions
+- Generated: Yes (by orchestrator)
+- Committed: No (gitignored)
+
+**resumes/**
+- Purpose: Resume PDFs (original + LLM-generated tailored versions)
+- Contains: ATS resume, standard resume, tailored/ subdirectory
+- Generated: tailored/ only (by resume_ai)
+- Committed: Original resumes yes, tailored/ no (gitignored)
 
 ## Key File Locations
 
 **Entry Points:**
-- `orchestrator.py`: Main pipeline execution (`python orchestrator.py`)
+- `orchestrator.py`: CLI pipeline (`python orchestrator.py`)
 - `webapp/app.py`: Web dashboard (`python -m webapp.app`)
+- `scheduler.py`: Cron daemon (`python scheduler.py`)
 
 **Configuration:**
-- `config.py`: Environment variables, directory paths, timing, search queries
-- `.env`: Credentials (INDEED_EMAIL, DICE_EMAIL, DICE_PASSWORD) — never read directly
+- `config.yaml`: Operational params (search queries, scoring weights, platform toggles, timing)
+- `.env`: Credentials (INDEED_EMAIL, DICE_EMAIL, DICE_PASSWORD) + personal profile fields
+- `config.py`: Settings loader (Pydantic settings with YAML + .env sources)
 
 **Core Logic:**
-- `models.py`: Pydantic schemas for Job, SearchQuery, CandidateProfile
-- `scorer.py`: `JobScorer` class for 1-5 rating
-- `form_filler.py`: Generic form filling with keyword-based field identification
-- `platforms/base.py`: Abstract `BasePlatform` interface
+- `orchestrator.py`: Five-phase pipeline coordination (setup → login → search → score → apply)
+- `scorer.py`: Job scoring (1-5) with explainable breakdowns
+- `platforms/registry.py`: Platform registration + Protocol validation
+- `apply_engine/engine.py`: Background apply orchestration + SSE streaming
+- `resume_ai/tailor.py`: LLM resume tailoring
 
-**Platform-Specific:**
-- `platforms/indeed.py`: Indeed search, login, detail fetching, apply
-- `platforms/indeed_selectors.py`: CSS selectors, URL templates for Indeed
-- `platforms/dice.py`: Dice search, login, detail fetching, apply
-- `platforms/dice_selectors.py`: CSS selectors, URL templates for Dice
-- `platforms/remoteok.py`: RemoteOK API client (async HTTP)
-
-**Browser Automation:**
-- `platforms/stealth.py`: `get_browser_context()` factory, stealth patches, context cleanup
-
-**Web Dashboard:**
-- `webapp/app.py`: FastAPI routes, query string filters, status updates
-- `webapp/db.py`: SQLite schema, insert/update/query methods
-
-**Pipeline Outputs:**
-- `job_pipeline/raw_{indeed,dice,remoteok}.json`: Raw results before scoring
-- `job_pipeline/discovered_jobs.json`: Final scored results (score 3+)
-- `job_pipeline/tracker.md`: Markdown summary table for human review
-- `job_pipeline/descriptions/{company}_{title}.md`: Individual job markdown files
+**Testing:**
+- Not detected (no test files found)
 
 ## Naming Conventions
 
 **Files:**
-- Modules: `snake_case.py` (e.g., `form_filler.py`, `indeed_selectors.py`)
-- Selectors: `{platform}_selectors.py` (e.g., `indeed_selectors.py`, `dice_selectors.py`)
-- Platform implementations: `{platform}.py` (e.g., `indeed.py`, `dice.py`, `remoteok.py`)
-- Pipeline outputs: `{type}_{platform}.json` (e.g., `raw_indeed.json`, `raw_dice.json`)
-- Job descriptions: `{company}_{title}.md` (sanitized, max 60 chars)
-- Screenshots: `{platform}_{context}_{timestamp}.png` (e.g., `indeed_login_failed_20260207_143022.png`)
+- Snake_case for Python modules: `orchestrator.py`, `form_filler.py`
+- Platform selectors: `{platform}_selectors.py` (e.g., `indeed_selectors.py`)
+- Uppercase for documentation: `ARCHITECTURE.md`, `CONVENTIONS.md`
 
 **Directories:**
-- Platform-specific: `platforms/{platform}/` (not used currently; platform modules are flat)
-- Outputs: `{output_type}_{platform}/` or `{output_type}/` (e.g., `job_pipeline/descriptions/`)
-- Sessions: `browser_sessions/{platform}/` (e.g., `browser_sessions/indeed/`)
-- Tailored content: `{type}/tailored/` (e.g., `resumes/tailored/`)
+- Lowercase with underscores: `apply_engine/`, `resume_ai/`, `job_pipeline/`
+- Hidden directories with dot prefix: `.claude/`, `.planning/`
 
 **Classes:**
-- Platforms: `{PlatformName}Platform` (e.g., `IndeedPlatform`, `DicePlatform`, `RemoteOKPlatform`)
-- Services: `{Service}` (e.g., `JobScorer`, `FormFiller`)
-- Models: `{Entity}` (e.g., `Job`, `SearchQuery`, `CandidateProfile`)
-- Enums: `{Entity}Status` (e.g., `JobStatus`)
+- PascalCase: `Orchestrator`, `JobScorer`, `IndeedPlatform`, `ApplyEngine`
+- Platform classes: `{Platform}Platform` (e.g., `IndeedPlatform`)
+- Protocol suffix: `BrowserPlatform`, `APIPlatform`
 
 **Functions:**
-- Phase methods: `phase_{N}_{description}()` (e.g., `phase_0_setup()`, `phase_3_score()`)
-- Private/internal: `_description()` (leading underscore)
-- Utility: Concise, descriptive (e.g., `get_browser_context()`, `close_browser()`, `element_exists()`)
+- Snake_case: `get_settings()`, `ensure_directories()`, `tailor_resume()`
+- Private helpers with underscore prefix: `_validate_against_protocol()`, `_apply_sync()`
+
+**Variables:**
+- Snake_case: `discovered_jobs`, `dedup_key`, `resume_text`
+- Constants: UPPERCASE_WITH_UNDERSCORES in module scope (e.g., `PROJECT_ROOT`, `DEFAULT_MODEL`)
 
 ## Where to Add New Code
 
-**New Platform (e.g., LinkedIn, GitHub Jobs):**
-- Create: `platforms/{platform}.py` (inherit from `BasePlatform`)
-- Create: `platforms/{platform}_selectors.py` (selectors and URL templates)
-- Implement: `login()`, `search()`, `get_job_details()`, `apply()` methods
-- Register in: `orchestrator.py` phase methods (phase_1_login, phase_2_search, phase_4_apply)
-- Update: `config.py` to add platform credentials validation
+**New Platform Adapter:**
+- Implementation: `platforms/{platform}.py`
+- Selectors (if browser): `platforms/{platform}_selectors.py`
+- Tests: Not yet established (create `tests/platforms/test_{platform}.py`)
+- Registration: Add `@register_platform("{platform}", ...)` decorator to class
 
 **New Scoring Factor:**
-- Edit: `scorer.py` `JobScorer` class
-- Add: New `_factor_score()` method returning 0-2 points
-- Update: `score_job()` raw points calculation
-- Adjust: Mapping from 6-point scale to 1-5 scale if needed
+- Primary code: `scorer.py` (add method to JobScorer, update ScoreBreakdown dataclass)
+- Configuration: `config.yaml` (add weight to `scoring.weights` section)
+- Tests: Not yet established
 
-**New Form Field:**
-- Edit: `form_filler.py` `_FIELD_KEYWORDS` dictionary
-- Add: New field key → keyword list entry
-- Update: `_value_for()` method to include mapping from `CandidateProfile`
+**New Dashboard Route:**
+- Implementation: `webapp/app.py` (add FastAPI route function)
+- Template: `webapp/templates/{name}.html` or `webapp/templates/partials/{name}.html`
+- Database: `webapp/db.py` (add query function if new data access needed)
 
-**New Dashboard Feature:**
-- Routes: Add `@app.get()` or `@app.post()` in `webapp/app.py`
-- Database: Add query method to `webapp/db.py`
-- Template: Create/edit template in `webapp/templates/`
+**New Resume AI Feature:**
+- Primary code: `resume_ai/{feature}.py`
+- Models: `resume_ai/models.py` (add Pydantic model for structured LLM output)
+- Integration: `webapp/app.py` (add POST endpoint), `webapp/templates/partials/` (add htmx partial)
 
-**New Search Query:**
-- Edit: `config.py` `Config.DEFAULT_SEARCH_QUERIES` list
-- Format: Quoted string (e.g., `"Principal Engineer" Kubernetes remote`)
-- Scope: Each platform processes independently; remote filtering is handled by platform-specific URL params
+**New Apply Engine Mode:**
+- Configuration: `apply_engine/config.py` (add ApplyMode enum member)
+- Implementation: `apply_engine/engine.py` (add conditional logic in `_apply_sync()`)
+- UI: `webapp/templates/job_detail.html` (add mode selection dropdown)
 
-**Utilities/Helpers:**
-- General utilities: `platforms/base.py` (shared across platforms)
-- Form logic: `form_filler.py` (application form filling)
-- Scoring: `scorer.py` (job matching and rating)
-- Shared models: `models.py` (Pydantic schemas)
+**Utilities:**
+- Shared helpers: Add to appropriate module (`config.py`, `models.py`) or create new module in root
+- Platform-specific helpers: `platforms/mixins.py` (BrowserPlatformMixin)
 
 ## Special Directories
 
-**browser_sessions/:**
-- Purpose: Persistent browser state for session caching
-- Generated: Yes (auto-created by `get_browser_context()`)
-- Committed: No (gitignored — contains authentication data)
-- Lifetime: Persists across multiple orchestrator runs until manually deleted
-- When to delete: If login state is corrupted; orchestrator will re-authenticate on next run
+**.claude/**
+- Purpose: GSD framework + project instructions
+- Generated: No (checked into git)
+- Committed: Yes
 
-**debug_screenshots/:**
-- Purpose: Error screenshots for troubleshooting
-- Generated: Yes (on selector failures, login issues, unexpected page states)
-- Committed: No (gitignored — can be large)
-- Naming: Includes platform, context, and timestamp for tracking
+**.planning/**
+- Purpose: GSD planning artifacts (milestones, phases, research)
+- Generated: Yes (by GSD commands)
+- Committed: Yes
 
-**job_pipeline/:**
-- Purpose: Execution outputs and intermediate files
-- Generated: Yes (phases 2-3 create JSON files; phase 4 creates descriptions)
-- Committed: No for JSON files (gitignored), but `tracker.md` can be committed for history
-- Cleanup: Safe to delete; orchestrator recreates on next run
-
-**job_pipeline/descriptions/:**
-- Purpose: Individual markdown files per scored job
-- Generated: Yes (one per score 3+ job in phase 3)
+**browser_sessions/**
+- Purpose: Playwright persistent contexts (session caching)
+- Generated: Yes (by Playwright launch_persistent_context)
 - Committed: No (gitignored)
-- Naming: `{company}_{title}.md` (sanitized for filesystem)
 
-**resumes/tailored/:**
-- Purpose: Company-specific tailored resume versions
-- Generated: Manual (not auto-generated by pipeline)
-- Committed: No (gitignored — many variants)
-- Format: PDF (same as main resumes)
+**debug_screenshots/**
+- Purpose: Error screenshots for debugging failed selectors
+- Generated: Yes (by platform adapters on error)
+- Committed: No (gitignored)
+
+**job_pipeline/**
+- Purpose: Pipeline output (JSON, SQLite, markdown)
+- Generated: Yes (by orchestrator phases)
+- Committed: No (gitignored)
+
+**resumes/tailored/**
+- Purpose: LLM-generated tailored resumes per job
+- Generated: Yes (by resume_ai endpoints)
+- Committed: No (gitignored)
+
+**.venv/**
+- Purpose: Python virtual environment
+- Generated: Yes (by venv/virtualenv)
+- Committed: No (gitignored)
+
+**.ruff_cache/**
+- Purpose: Ruff linter cache
+- Generated: Yes (by ruff)
+- Committed: No (gitignored)
 
 ---
 

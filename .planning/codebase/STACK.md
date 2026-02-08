@@ -5,91 +5,79 @@
 ## Languages
 
 **Primary:**
-- Python 3.11+ - All core application code, including browser automation, API clients, and web server
+- Python 3.11+ - All application code (orchestrator, platforms, webapp, resume AI)
 
 **Secondary:**
-- Jinja2 - Web dashboard templating (HTML)
-- JavaScript/htmx - Frontend interactions in web dashboard (minimal, htmx-driven)
+- None - Pure Python project
 
 ## Runtime
 
 **Environment:**
-- Python 3.11 (or later)
-- Chromium via Playwright (headless or headed)
+- Python 3.11 or higher (required)
 
 **Package Manager:**
-- pip/uv - `pyproject.toml` based dependency management
-- Lockfile: Present via `pyproject.toml` with `[dependency-groups]` for dev deps
+- uv / pip
+- Lockfile: None (dependencies specified in `pyproject.toml`)
+- Virtual environment: `.venv/` (gitignored)
 
 ## Frameworks
 
 **Core:**
-- Playwright 1.58.0+ - Browser automation (Indeed, Dice), persistent contexts
-- playwright-stealth 2.0.1+ - Anti-detection layer (applies Stealth patches to pages, hooks browser context)
-- httpx 0.27.0+ - Async HTTP client for RemoteOK API
-- pydantic 2.0.0+ - Data validation and serialization (Job, SearchQuery, CandidateProfile models)
-- FastAPI 0.115.0+ - Web server for job tracker dashboard
-- Jinja2 3.1.0+ - Template rendering for dashboard
+- FastAPI 0.115.0+ - Web dashboard backend (`webapp/app.py`)
+- Playwright 1.58.0+ - Browser automation (Indeed, Dice)
+- Pydantic 2.x - Data validation and settings management
 
 **Testing:**
-- pytest 8.0.0+ - Unit testing framework
-- ruff 0.9.0+ - Linting and import sorting
+- pytest 8.0.0+ - Test framework (dev dependency)
 
 **Build/Dev:**
-- hatchling - Python package building (specified in `[build-system]`)
-- uvicorn 0.34.0+ - ASGI server for FastAPI (via `webapp.app:main`)
+- Hatchling - Build backend (`pyproject.toml`)
+- Ruff 0.9.0+ - Linter and formatter (dev dependency)
 
 ## Key Dependencies
 
 **Critical:**
-- Playwright 1.58.0+ - Core browser automation infrastructure; removes `--enable-automation` flag and uses `channel="chrome"` to avoid detection
-- playwright-stealth 2.0.1+ - Applies stealth patches via `Stealth().apply_stealth_sync(page)` API; essential for circumventing Cloudflare and fingerprinting
-- httpx 0.27.0+ - Async HTTP client for RemoteOK API queries; supports `httpx.AsyncClient` with async/await
-- pydantic 2.0.0+ - Type-safe models; uses `field_validator`, `model_dump(mode="json")` for serialization
+- `playwright-stealth>=2.0.1` - Anti-detection for browser automation (`platforms/stealth.py`)
+- `httpx>=0.27.0` - Async HTTP client for RemoteOK API (`platforms/remoteok.py`)
+- `anthropic>=0.79.0` - Claude API for resume tailoring (`resume_ai/tailor.py`)
+- `pydantic>=2.0.0,<3.0.0` - Data models and validation (`models.py`, `config.py`)
+- `pydantic-settings[yaml]>=2.12.0` - Multi-source config (YAML + .env)
 
 **Infrastructure:**
-- python-dotenv 1.0.0+ - Environment variable loading from `.env` file at application startup
-- python-jobspy 1.1.0+ - Optional supplementary job discovery (listed but not actively integrated in current code)
-- FastAPI 0.115.0+ - REST API + Jinja2 template rendering for dashboard
-- uvicorn 0.34.0+ - ASGI application server (used in `webapp.app:main`)
-- python-multipart 0.0.18+ - Form data parsing for FastAPI endpoints
+- `python-dotenv>=1.0.0` - Environment variable loading from `.env`
+- `python-jobspy>=1.1.0` - Supplementary job discovery (optional)
+- `jinja2>=3.1.0` - Template engine for web dashboard
+- `uvicorn>=0.34.0` - ASGI server for FastAPI
+- `python-multipart>=0.0.18` - Form data parsing (file uploads)
+- `rapidfuzz>=3.14` - Fuzzy string matching for deduplication
+- `pymupdf4llm>=0.2.9` - PDF text extraction (resume parsing)
+- `weasyprint>=68.0` - HTML to PDF conversion (resume rendering)
+- `sse-starlette` - Server-sent events for apply engine (runtime import)
 
 ## Configuration
 
 **Environment:**
-- `.env` file (gitignored) - Contains `INDEED_EMAIL`, `INDEED_PASSWORD`, `DICE_EMAIL`, `DICE_PASSWORD`
-- Template: `.env.example` provided with placeholder credentials
-- Loaded at startup via `from dotenv import load_dotenv` in `config.py`
+- Configuration loaded via `config.py` using pydantic-settings
+- Operational settings: `config.yaml` (search queries, scoring weights, platform toggles)
+- Credentials/personal data: `.env` (Indeed email, Dice email/password, candidate profile)
+- Settings singleton: `get_settings()` from `config.py`
 
 **Build:**
-- `pyproject.toml` - Project metadata, dependency declarations, build backend config
-  - `[tool.ruff]` section: Python 3.11 target, 100-char line length, rules E, F, I, UP, B, SIM
-  - `[tool.pytest.ini_options]` section: Tests located in `tests/` directory
-  - Entry points: `jobs-scrape` → `orchestrator:main`, `jobs-web` → `webapp.app:main`
+- `pyproject.toml` - PEP 621 project metadata, dependencies, tool configuration
+- `tool.ruff` - Linter config (target Python 3.11, line length 100)
+- `tool.pytest.ini_options` - Test configuration (testpaths: `tests/`)
 
 ## Platform Requirements
 
 **Development:**
-- Python 3.11+ installed
-- Chrome/Chromium available locally (Playwright uses `channel="chrome"` for system browser)
-- Virtual environment with dependencies from `pyproject.toml`
-- Credentials in `.env`: `INDEED_EMAIL`, `DICE_EMAIL`, `DICE_PASSWORD` (Indeed uses Google OAuth, no password needed)
+- Python 3.11+
+- Chromium browser installed via `playwright install chromium`
+- System Chrome browser (for stealth mode via `channel="chrome"`)
 
 **Production:**
-- Python 3.11+ runtime
-- System Chrome installed (Playwright anti-detection requires system browser, not Playwright's bundled Chromium)
-- Persistent directories: `browser_sessions/`, `job_pipeline/`, `debug_screenshots/`, `resumes/`
-- `.env` with credentials at application root
-- Network access to: `indeed.com`, `dice.com`, `remoteok.com` APIs
-
-## Database
-
-**SQLite:**
-- Location: `job_pipeline/jobs.db`
-- Manager: Direct `sqlite3` module (not an ORM)
-- Used by: Web dashboard (`webapp/db.py`)
-- Schema created on first import via `SCHEMA` in `webapp/db.py`
-- Fields: jobs table with id, platform, title, company, location, url, salary*, apply_url, description, posted_date, tags, easy_apply, score, status, applied_date, notes, created_at, updated_at, dedup_key
+- Same as development (designed for local execution, not deployment)
+- Persistent browser sessions stored in `browser_sessions/` (gitignored)
+- SQLite database at `job_pipeline/jobs.db` (created automatically)
 
 ---
 
