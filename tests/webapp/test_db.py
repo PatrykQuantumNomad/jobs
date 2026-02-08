@@ -559,3 +559,113 @@ class TestBackfillScoreBreakdowns:
 
         count = db_module.backfill_score_breakdowns(scorer_fn)
         assert count == 0
+
+
+# ---------------------------------------------------------------------------
+# DB-05: Schema Initialization
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+class TestSchemaInitialization:
+    """Verify database schema: tables, indexes, triggers, version, idempotency."""
+
+    def test_all_tables_created(self):
+        """init_db() creates all 5 expected tables."""
+        conn = db_module.get_conn()
+        rows = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        ).fetchall()
+        table_names = {row["name"] for row in rows}
+
+        expected = {"jobs", "activity_log", "run_history", "resume_versions", "jobs_fts"}
+        assert expected <= table_names
+
+    def test_all_indexes_created(self):
+        """init_db() creates all 3 expected indexes."""
+        conn = db_module.get_conn()
+        rows = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='index' ORDER BY name"
+        ).fetchall()
+        index_names = {row["name"] for row in rows}
+
+        expected = {"idx_activity_dedup", "idx_activity_created", "idx_resume_versions_job"}
+        assert expected <= index_names
+
+    def test_all_triggers_created(self):
+        """init_db() creates all 3 FTS sync triggers."""
+        conn = db_module.get_conn()
+        rows = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='trigger' ORDER BY name"
+        ).fetchall()
+        trigger_names = {row["name"] for row in rows}
+
+        expected = {"jobs_fts_ai", "jobs_fts_ad", "jobs_fts_au"}
+        assert expected <= trigger_names
+
+    def test_schema_version(self):
+        """PRAGMA user_version equals 6 after full migration."""
+        conn = db_module.get_conn()
+        version = conn.execute("PRAGMA user_version").fetchone()[0]
+        assert version == 6
+
+    def test_init_db_idempotent(self):
+        """Calling init_db() a second time raises no errors."""
+        # _fresh_db already called init_db(); call again
+        db_module.init_db()
+
+        # Verify tables still present
+        conn = db_module.get_conn()
+        rows = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()
+        table_names = {row["name"] for row in rows}
+        assert "jobs" in table_names
+        assert "activity_log" in table_names
+
+    def test_migrate_db_idempotent(self):
+        """Calling migrate_db() on already-migrated DB raises no errors."""
+        conn = db_module.get_conn()
+        db_module.migrate_db(conn)
+
+        version = conn.execute("PRAGMA user_version").fetchone()[0]
+        assert version == 6
+
+    def test_jobs_table_columns(self):
+        """jobs table has all 28+ expected columns."""
+        conn = db_module.get_conn()
+        rows = conn.execute("PRAGMA table_info(jobs)").fetchall()
+        column_names = {row[1] for row in rows}
+
+        expected_columns = {
+            "id",
+            "platform",
+            "title",
+            "company",
+            "location",
+            "url",
+            "salary",
+            "salary_min",
+            "salary_max",
+            "apply_url",
+            "description",
+            "posted_date",
+            "tags",
+            "easy_apply",
+            "score",
+            "status",
+            "applied_date",
+            "notes",
+            "created_at",
+            "updated_at",
+            "dedup_key",
+            "first_seen_at",
+            "last_seen_at",
+            "viewed_at",
+            "score_breakdown",
+            "company_aliases",
+            "salary_display",
+            "salary_currency",
+        }
+        assert expected_columns <= column_names
+        assert len(column_names) >= 28
