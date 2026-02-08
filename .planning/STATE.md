@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 12 -- Web & API Integration Tests (v1.1 Test Web App)
+**Current focus:** Phase 13 -- Config Integration Tests (v1.1 Test Web App)
 
 ## Current Position
 
-Phase: 12 of 15 (Web & API Integration Tests)
+Phase: 12 of 15 (Web & API Integration Tests) -- COMPLETE
 Plan: 3 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-08 -- Completed 12-03-PLAN.md (RemoteOK parsing/error handling + platform registry/protocol tests).
+Status: Phase 12 complete
+Last activity: 2026-02-08 -- Completed 12-02-PLAN.md (export, bulk, import tests). Phase 12 complete.
 
-Progress: [################################....] 90% (34/39 total plans -- 24 v1.0 + 10 v1.1 complete, 5 v1.1 TBD)
+Progress: [###################################.] 90% (35/39 total plans -- 24 v1.0 + 11 v1.1 complete, 4 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -43,7 +43,7 @@ Progress: [################################....] 90% (34/39 total plans -- 24 v1
 | 09-test-infrastructure | 2/2 | -- | -- |
 | 10-unit-tests | 3/3 | 11 min | 3.7 min |
 | 11-database-integration-tests | 2/2 | 8 min | 4.0 min |
-| 12-web-api-integration-tests | 2/3 | 11 min | 5.5 min |
+| 12-web-api-integration-tests | 3/3 | 15 min | 5.0 min |
 
 ## Accumulated Context
 
@@ -111,6 +111,12 @@ From 12-03:
 - Registry tests import platforms package for auto-discovery, test metadata without calling init()
 - 42 new tests (17 parsing + 5 error handling + 11 registry + 9 protocol compliance)
 
+From 12-02:
+- CSV tested via csv.DictReader(io.StringIO(response.text)), JSON via json.loads(response.text) for StreamingResponse
+- Import endpoint tested with real pipeline dir + backup/restore (no monkeypatching)
+- Explicit None-check assertions before dict subscript for pyright strict mode
+- 26 new tests (8 CSV + 8 JSON + 6 bulk status + 4 import), 56 total endpoint tests
+
 ### Pending Todos
 
 None.
@@ -129,5 +135,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 12-03-PLAN.md (RemoteOK parsing/error handling + platform registry/protocol tests). Ready for 12-02.
+Stopped at: Completed 12-02-PLAN.md (export, bulk, import tests). Phase 12 complete. Ready for Phase 13.
 Resume file: .planning/phases/12-web-api-integration-tests/

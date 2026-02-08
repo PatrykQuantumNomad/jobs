@@ -30,7 +30,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 9: Test Infrastructure** - Fixtures, isolation, and pytest configuration -- completed 2026-02-08
 - [x] **Phase 10: Unit Tests** - Pure logic modules with zero I/O dependencies -- completed 2026-02-08
 - [x] **Phase 11: Database Integration Tests** - SQLite CRUD, FTS5, migrations -- completed 2026-02-08
-- [ ] **Phase 12: Web & API Integration Tests** - FastAPI routes, RemoteOK mocking, platform registry
+- [x] **Phase 12: Web & API Integration Tests** - FastAPI routes, RemoteOK mocking, platform registry -- completed 2026-02-08
 - [ ] **Phase 13: Config Integration Tests** - YAML loading, validation, env overrides
 - [ ] **Phase 14: CI Pipeline** - GitHub Actions workflow, coverage gates, linting
 - [ ] **Phase 15: E2E Tests** - Playwright browser tests for critical dashboard flows
@@ -100,7 +100,7 @@ Plans:
 
 Plans:
 - [x] 12-01-PLAN.md -- Dashboard, detail, status/notes, and search endpoint tests (WEB-01, WEB-02, WEB-03, WEB-08)
-- [ ] 12-02-PLAN.md -- CSV/JSON export, bulk status, and import endpoint tests (WEB-04, WEB-05, WEB-06, WEB-07)
+- [x] 12-02-PLAN.md -- CSV/JSON export, bulk status, and import endpoint tests (WEB-04, WEB-05, WEB-06, WEB-07)
 - [x] 12-03-PLAN.md -- RemoteOK parsing/error handling and platform registry/protocol tests (API-01, API-02, API-03, API-04)
 
 ### Phase 13: Config Integration Tests
@@ -168,7 +168,7 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
 | 9. Test Infrastructure | v1.1 | 2/2 | Complete | 2026-02-08 |
 | 10. Unit Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
 | 11. Database Integration Tests | v1.1 | 2/2 | Complete | 2026-02-08 |
-| 12. Web & API Integration Tests | v1.1 | 2/3 | In progress | - |
+| 12. Web & API Integration Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
 | 13. Config Integration Tests | v1.1 | 0/1 | Not started | - |
 | 14. CI Pipeline | v1.1 | 0/2 | Not started | - |
 | 15. E2E Tests | v1.1 | 0/2 | Not started | - |
