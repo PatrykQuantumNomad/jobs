@@ -680,6 +680,79 @@ KANBAN_STATUSES = [
     "ghosted",
 ]
 
+TERMINAL_STATUSES = {"rejected", "withdrawn", "ghosted"}
+
+STATUS_COLORS: dict[str, dict[str, str]] = {
+    "saved": {
+        "dot": "bg-slate-400",
+        "hex": "#94a3b8",
+        "badge_bg": "bg-slate-100",
+        "badge_text": "text-slate-700",
+    },
+    "applied": {
+        "dot": "bg-blue-500",
+        "hex": "#3b82f6",
+        "badge_bg": "bg-blue-100",
+        "badge_text": "text-blue-700",
+    },
+    "phone_screen": {
+        "dot": "bg-amber-500",
+        "hex": "#f59e0b",
+        "badge_bg": "bg-amber-100",
+        "badge_text": "text-amber-700",
+    },
+    "technical": {
+        "dot": "bg-orange-500",
+        "hex": "#f97316",
+        "badge_bg": "bg-orange-100",
+        "badge_text": "text-orange-700",
+    },
+    "final_interview": {
+        "dot": "bg-pink-500",
+        "hex": "#ec4899",
+        "badge_bg": "bg-pink-100",
+        "badge_text": "text-pink-700",
+    },
+    "offer": {
+        "dot": "bg-emerald-500",
+        "hex": "#10b981",
+        "badge_bg": "bg-emerald-100",
+        "badge_text": "text-emerald-700",
+    },
+    "rejected": {
+        "dot": "bg-red-400",
+        "hex": "#f87171",
+        "badge_bg": "bg-red-50",
+        "badge_text": "text-red-600",
+    },
+    "withdrawn": {
+        "dot": "bg-gray-400",
+        "hex": "#9ca3af",
+        "badge_bg": "bg-gray-100",
+        "badge_text": "text-gray-600",
+    },
+    "ghosted": {
+        "dot": "bg-violet-400",
+        "hex": "#a78bfa",
+        "badge_bg": "bg-violet-50",
+        "badge_text": "text-violet-600",
+    },
+}
+
+SCORE_CLASSES: dict[int, str] = {
+    5: "text-emerald-600 font-bold",
+    4: "text-blue-600 font-bold",
+    3: "text-gray-500 font-semibold",
+    2: "text-gray-400",
+    1: "text-gray-300",
+}
+
+PLATFORM_BADGE_CLASSES: dict[str, str] = {
+    "indeed": "bg-indigo-50 text-indigo-600",
+    "dice": "bg-teal-50 text-teal-600",
+    "remoteok": "bg-amber-50 text-amber-600",
+}
+
 
 @app.get("/kanban", response_class=HTMLResponse)
 async def kanban_page(request: Request):
@@ -697,6 +770,10 @@ async def kanban_page(request: Request):
             "stats": stats,
             "enhanced_stats": enhanced,
             "statuses": STATUSES,
+            "status_colors": STATUS_COLORS,
+            "score_classes": SCORE_CLASSES,
+            "platform_badge_classes": PLATFORM_BADGE_CLASSES,
+            "terminal_statuses": TERMINAL_STATUSES,
         },
     )
 

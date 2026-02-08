@@ -27,25 +27,34 @@
 </div>
 {% else %}
 <!-- Kanban Board -->
-<div class="flex gap-4 overflow-x-auto pb-4">
-    {% for status in kanban_statuses %}
-    {% set is_terminal = status in ['rejected', 'withdrawn', 'ghosted'] %}
-    <div class="min-w-[280px] flex-shrink-0">
-        <div class="flex items-center gap-2 mb-2 px-1 {% if is_terminal %}opacity-60{% endif %}">
-            <span class="status-badge status-{{ status }}">
-                {{ status.replace('_', ' ').title() }}
-            </span>
-            <span class="col-count text-xs text-gray-400 font-medium">({{ columns[status] | length }})</span>
+<div class="bg-gray-100 rounded-xl p-4 -mx-4">
+    <div class="flex gap-3 overflow-x-auto pb-4">
+        {% for status in kanban_statuses %}
+        {% set is_terminal = status in terminal_statuses %}
+        {% set colors = status_colors.get(status, {}) %}
+        <div class="{% if is_terminal %}min-w-[220px] w-[220px] opacity-70{% else %}min-w-[260px] w-[260px]{% endif %} flex-shrink-0 flex flex-col">
+            <!-- Column Header -->
+            <div class="flex items-center gap-2 mb-3 px-1">
+                <span class="w-2.5 h-2.5 rounded-full {{ colors.get('dot', 'bg-gray-400') }}"></span>
+                <span class="text-sm font-semibold text-gray-700">
+                    {{ status.replace('_', ' ').title() }}
+                </span>
+                <span class="col-count text-xs text-gray-500 font-medium bg-gray-200 rounded-full px-2 py-0.5">
+                    {{ columns[status] | length }}
+                </span>
+            </div>
+            <!-- Card List / Drop Zone -->
+            <div class="kanban-list flex-1 space-y-2 min-h-[200px] bg-gray-50/50 rounded-lg p-2"
+                 data-status="{{ status }}"
+                 id="col-{{ status }}">
+                {% for job in columns[status] %}
+                    {% set card_status = status %}
+                    {% include "partials/kanban_card.html" %}
+                {% endfor %}
+            </div>
         </div>
-        <div class="kanban-list space-y-2 min-h-[200px] bg-gray-50 rounded-lg p-2"
-             data-status="{{ status }}"
-             id="col-{{ status }}">
-            {% for job in columns[status] %}
-                {% include "partials/kanban_card.html" %}
-            {% endfor %}
-        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
 {% endif %}
 {% endblock %}
@@ -57,10 +66,14 @@
 document.querySelectorAll('.kanban-list').forEach(function(list) {
     new Sortable(list, {
         group: 'kanban',
-        animation: 150,
-        ghostClass: 'opacity-30',
-        dragClass: 'shadow-lg',
+        animation: 200,
+        ghostClass: 'kanban-ghost',
+        dragClass: 'kanban-drag',
+        chosenClass: 'kanban-chosen',
         forceFallback: true,
+        fallbackTolerance: 3,
+        scrollSensitivity: 80,
+        scrollSpeed: 12,
         onEnd: async function(evt) {
             var dedupKey = evt.item.dataset.key;
             var newStatus = evt.to.dataset.status;
@@ -68,6 +81,13 @@ document.querySelectorAll('.kanban-list').forEach(function(list) {
 
             // If dropped in same column, do nothing
             if (newStatus === oldStatus) return;
+
+            // Update the card's left border color to match new status
+            var statusHexMap = {{ status_colors | tojson }};
+            var newColor = statusHexMap[newStatus];
+            if (newColor && newColor.hex) {
+                evt.item.style.borderLeftColor = newColor.hex;
+            }
 
             // Optimistically update column counts
             updateColumnCount(oldStatus, -1);
@@ -92,6 +112,11 @@ document.querySelectorAll('.kanban-list').forEach(function(list) {
                 } else {
                     fromCol.insertBefore(evt.item, children[evt.oldIndex]);
                 }
+                // Rollback border color
+                var oldColor = statusHexMap[oldStatus];
+                if (oldColor && oldColor.hex) {
+                    evt.item.style.borderLeftColor = oldColor.hex;
+                }
                 // Rollback counts
                 updateColumnCount(oldStatus, 1);
                 updateColumnCount(newStatus, -1);
@@ -108,7 +133,11 @@ function updateColumnCount(status, delta) {
     if (!header) return;
     var match = header.textContent.match(/\d+/);
     var current = match ? parseInt(match[0], 10) : 0;
-    header.textContent = '(' + (current + delta) + ')';
+    var newCount = current + delta;
+    header.textContent = newCount;
+    // Pulse animation on count change
+    header.classList.add('col-count-changed');
+    setTimeout(function() { header.classList.remove('col-count-changed'); }, 400);
 }
 </script>
 {% endblock %}

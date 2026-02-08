@@ -1,13 +1,35 @@
-<div class="kanban-card bg-white rounded-lg shadow-sm border p-3 cursor-grab active:cursor-grabbing"
+{% set colors = status_colors.get(card_status, {}) %}
+{% set score_cls = score_classes.get(job.score, '') %}
+{% set platform_cls = platform_badge_classes.get(job.platform|lower, 'bg-gray-100 text-gray-600') %}
+<div class="kanban-card bg-white rounded-lg border border-gray-200 shadow-sm
+            hover:shadow-md transition-shadow duration-200
+            cursor-grab active:cursor-grabbing
+            border-l-4 p-3"
+     style="border-left-color: {{ colors.get('hex', '#9ca3af') }}"
      data-key="{{ job.dedup_key }}">
-    <a href="/jobs/{{ job.dedup_key }}" class="block no-underline text-inherit">
-        <div class="font-medium text-sm truncate text-gray-900">{{ job.title }}</div>
-        <div class="text-xs text-gray-500 mt-1 truncate">{{ job.company }}</div>
-        <div class="flex items-center gap-2 mt-2">
+    <a href="/jobs/{{ job.dedup_key }}" class="block no-underline group">
+        <div class="flex items-start justify-between gap-2">
+            <div class="font-semibold text-sm text-gray-900 leading-tight truncate
+                        group-hover:text-blue-700 transition-colors duration-150">
+                {{ job.title }}
+            </div>
             {% if job.score %}
-            <span class="score-{{ job.score }} text-xs font-semibold">{{ job.score }}/5</span>
+            <span class="text-xs {{ score_cls }} shrink-0">
+                {{ job.score }}/5
+            </span>
             {% endif %}
-            <span class="text-xs text-gray-400">{{ job.platform }}</span>
+        </div>
+        <div class="text-xs text-gray-500 mt-1 truncate">{{ job.company }}</div>
+        <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+            <span class="text-[10px] font-medium px-1.5 py-0.5 rounded-full {{ platform_cls }}">
+                {{ job.platform }}
+            </span>
+            {% if job.location %}
+            <span class="text-[10px] text-gray-400 truncate max-w-[120px]">{{ job.location }}</span>
+            {% endif %}
+            {% if job.salary_display %}
+            <span class="text-[10px] text-gray-400">{{ job.salary_display }}</span>
+            {% endif %}
         </div>
     </a>
 </div>
