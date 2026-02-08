@@ -63,12 +63,12 @@ Plans:
   3. Job scoring produces deterministic 1-5 scores for known inputs and the breakdown explains each point awarded or withheld
   4. Deduplication detects same job across platforms when company names differ by case, suffix (Inc/LLC), or spacing
   5. Delta detection correctly distinguishes new jobs from previously-seen jobs based on normalized identifiers
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 10-01: TBD
-- [ ] 10-02: TBD
-- [ ] 10-03: TBD
+- [ ] 10-01-PLAN.md — Pydantic model validation (UNIT-01) and salary normalization (UNIT-02)
+- [ ] 10-02-PLAN.md — Job scoring correctness and score breakdown (UNIT-03, UNIT-04)
+- [ ] 10-03-PLAN.md — Deduplication (UNIT-05, UNIT-06), anti-fabrication (UNIT-07), delta detection (UNIT-08)
 
 ### Phase 11: Database Integration Tests
 **Goal**: All database operations (CRUD lifecycle, FTS5 search, activity log, bulk updates, schema initialization) work correctly against an in-memory SQLite instance
