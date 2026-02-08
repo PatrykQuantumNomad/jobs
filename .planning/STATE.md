@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 Phase: 15 of 15 complete
 Plan: All complete
 Status: v1.0 MVP + v1.1 Test Web App shipped. Ready for next milestone.
-Last activity: 2026-02-08 -- v1.1 milestone complete, archived to milestones/
+Last activity: 2026-02-08 - Completed quick task 002: Fix CI: increase test coverage from 62.61% to meet 80% threshold
 
 Progress: [########################################] 100% (38 total plans -- 24 v1.0 + 14 v1.1 complete)
 
