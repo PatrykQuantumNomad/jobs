@@ -866,3 +866,153 @@ class TestImportEndpoint:
                 scored_path.write_text(backup)
             elif scored_path.exists():
                 scored_path.unlink()
+
+
+# ---------------------------------------------------------------------------
+# Run History Endpoint
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+class TestRunHistoryEndpoint:
+    """Verify GET /runs returns run history page."""
+
+    def test_run_history_returns_200(self, client):
+        """GET /runs returns 200 with HTML."""
+        response = client.get("/runs")
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+
+
+# ---------------------------------------------------------------------------
+# Analytics Endpoint
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+class TestAnalyticsEndpoint:
+    """Verify GET /analytics returns analytics page and API returns JSON."""
+
+    def test_analytics_page_returns_200(self, client):
+        """GET /analytics returns 200 with HTML."""
+        response = client.get("/analytics")
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+
+    def test_analytics_api_returns_json(self, client):
+        """GET /api/analytics returns 200 with JSON."""
+        response = client.get("/api/analytics")
+        assert response.status_code == 200
+        assert "application/json" in response.headers["content-type"]
+
+
+# ---------------------------------------------------------------------------
+# Kanban Endpoint
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+class TestKanbanEndpoint:
+    """Verify GET /kanban returns kanban board."""
+
+    def test_kanban_page_returns_200(self, client):
+        """GET /kanban returns 200 with HTML."""
+        response = client.get("/kanban")
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+
+    def test_kanban_shows_saved_jobs(self, client):
+        """Kanban board shows jobs with 'saved' status."""
+        db_module.upsert_job(_make_job_dict("KanbanCo", "Kanban Engineer"))
+        key = _compute_dedup_key("KanbanCo", "Kanban Engineer")
+        db_module.update_job_status(key, "saved")
+
+        response = client.get("/kanban")
+        assert response.status_code == 200
+        assert "Kanban Engineer" in response.text
+
+
+# ---------------------------------------------------------------------------
+# Stats Cards Endpoint
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+class TestStatsCardsEndpoint:
+    """Verify GET /api/stats-cards returns partial HTML."""
+
+    def test_stats_cards_returns_200(self, client):
+        """GET /api/stats-cards returns 200 with HTML."""
+        response = client.get("/api/stats-cards")
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+
+
+# ---------------------------------------------------------------------------
+# Serve Resume Endpoint
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+class TestServeResume:
+    """Verify GET /resumes/tailored/{filename} serves or 404s."""
+
+    def test_serve_nonexistent_resume_returns_404(self, client):
+        """GET /resumes/tailored/nonexistent.pdf returns 404."""
+        response = client.get("/resumes/tailored/nonexistent.pdf")
+        assert response.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Apply Endpoints
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+class TestApplyEndpoints:
+    """Verify apply trigger, confirm, and cancel endpoints."""
+
+    def test_trigger_apply_job_not_found(self, client):
+        """POST /jobs/nonexistent::key/apply returns 404 for missing job."""
+        response = client.post("/jobs/nonexistent::key/apply", data={"mode": "semi_auto"})
+        assert response.status_code == 404
+
+    def test_trigger_apply_already_applied(self, client):
+        """POST /jobs/{key}/apply returns already-applied message."""
+        db_module.upsert_job(_make_job_dict("ApplyCo", "Already Applied Role"))
+        key = _compute_dedup_key("ApplyCo", "Already Applied Role")
+        db_module.update_job_status(key, "applied")
+
+        response = client.post(f"/jobs/{key}/apply", data={"mode": "semi_auto"})
+        assert response.status_code == 200
+        assert "Already applied" in response.text
+
+    def test_apply_confirm_returns_200(self, client):
+        """POST /jobs/{key}/apply/confirm returns 200 with confirmation text."""
+        response = client.post("/jobs/test::key/apply/confirm")
+        assert response.status_code == 200
+        assert "Confirmed" in response.text
+
+    def test_apply_cancel_returns_200(self, client):
+        """POST /jobs/{key}/apply/cancel returns 200 with cancellation text."""
+        response = client.post("/jobs/test::key/apply/cancel")
+        assert response.status_code == 200
+        assert "cancelled" in response.text
+
+
+# ---------------------------------------------------------------------------
+# Resume Versions Endpoint
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+class TestResumeVersionsEndpoint:
+    """Verify GET /jobs/{key}/resume-versions returns partial HTML."""
+
+    def test_resume_versions_returns_200(self, client):
+        """GET /jobs/{key}/resume-versions returns 200."""
+        db_module.upsert_job(_make_job_dict("VersionCo", "Version Engineer"))
+        key = _compute_dedup_key("VersionCo", "Version Engineer")
+
+        response = client.get(f"/jobs/{key}/resume-versions")
+        assert response.status_code == 200
