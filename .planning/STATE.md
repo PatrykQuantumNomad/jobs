@@ -49,11 +49,11 @@ None.
 
 None -- milestone complete.
 
-## Quick Tasks
+### Quick Tasks Completed
 
-| Task | Description | Status | Date |
-|------|-------------|--------|------|
-| 001 | Fix technical debt: remove Config shim, dead static mount, update arch docs | Complete | 2026-02-08 |
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 001 | Fix technical debt: remove Config shim, dead static mount, update arch docs | 2026-02-08 | 9f7f3de | [001-fix-technical-debt](./quick/001-fix-technical-debt/) |
 
 ## Session Continuity
 
