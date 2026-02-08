@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 9 of 15 (Test Infrastructure)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-08 -- Completed 09-01-PLAN.md (test dependencies, pytest/coverage config, test directory structure)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-02-08 -- Completed 09-02-PLAN.md (conftest.py fixtures, factories, smoke tests)
 
-Progress: [#########################.........] 71% (25/39 total plans -- 24 v1.0 + 1 v1.1 complete, 14 v1.1 TBD)
+Progress: [##########################........] 74% (26/39 total plans -- 24 v1.0 + 2 v1.1 complete, 13 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -53,6 +53,12 @@ From 09-01:
 - Browser platform files omitted from coverage
 - test_config.yaml loaded via AppSettings.model_config['yaml_file'] override + reset_settings()
 
+From 09-02:
+- JOBFLOW_TEST_DB=1 and ANTHROPIC_API_KEY set before any imports in conftest.py
+- Factory-boy Meta.model=Job triggers Pydantic validation automatically
+- salary_max uses LazyAttribute to reference salary_min for cross-field guarantee
+- Anthropic guard patches Messages.create/parse at method level (not constructor)
+
 ### Pending Todos
 
 None.
@@ -71,5 +77,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 09-01. Ready for 09-02 (conftest.py, fixtures, initial test files).
-Resume file: .planning/phases/09-test-infrastructure/09-02-PLAN.md
+Stopped at: Phase 09 complete (both plans). Ready for Phase 10.
+Resume file: .planning/ROADMAP.md (next phase)
