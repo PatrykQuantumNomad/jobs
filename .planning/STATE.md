@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 12 of 15 (Web & API Integration Tests)
-Plan: 1 of 3 in current phase
+Plan: 3 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-08 -- Completed 12-01-PLAN.md (dashboard, detail, status, search endpoint tests).
+Last activity: 2026-02-08 -- Completed 12-03-PLAN.md (RemoteOK parsing/error handling + platform registry/protocol tests).
 
-Progress: [##############################......] 89% (32/39 total plans -- 24 v1.0 + 8 v1.1 complete, 7 v1.1 TBD)
+Progress: [################################....] 90% (34/39 total plans -- 24 v1.0 + 10 v1.1 complete, 5 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -43,7 +43,7 @@ Progress: [##############################......] 89% (32/39 total plans -- 24 v1
 | 09-test-infrastructure | 2/2 | -- | -- |
 | 10-unit-tests | 3/3 | 11 min | 3.7 min |
 | 11-database-integration-tests | 2/2 | 8 min | 4.0 min |
-| 12-web-api-integration-tests | 1/3 | 4 min | 4.0 min |
+| 12-web-api-integration-tests | 2/3 | 11 min | 5.5 min |
 
 ## Accumulated Context
 
@@ -104,6 +104,13 @@ From 12-01:
 - Partial HTML detection: assert no <!DOCTYPE or <html> for htmx fragment endpoints
 - 30 new tests (9 dashboard + 5 search + 6 detail + 6 status + 4 notes)
 
+From 12-03:
+- Fixed registry.py inspect.signature() for Python 3.14: use Format.FORWARDREF to avoid resolving TYPE_CHECKING annotations
+- Fixed except clause from Python 2 comma syntax to proper tuple syntax in registry.py
+- RemoteOK tests use local remoteok_platform fixture (loads test config + calls init())
+- Registry tests import platforms package for auto-discovery, test metadata without calling init()
+- 42 new tests (17 parsing + 5 error handling + 11 registry + 9 protocol compliance)
+
 ### Pending Todos
 
 None.
@@ -122,5 +129,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 12-01-PLAN.md (dashboard, detail, status, search endpoint tests). Ready for 12-02.
+Stopped at: Completed 12-03-PLAN.md (RemoteOK parsing/error handling + platform registry/protocol tests). Ready for 12-02.
 Resume file: .planning/phases/12-web-api-integration-tests/
