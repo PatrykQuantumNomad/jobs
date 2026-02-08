@@ -80,11 +80,11 @@ Plans:
   3. Activity log entries are automatically created on status transitions and include accurate timestamps
   4. Bulk status update applied to N jobs changes exactly those N jobs and no others
   5. Database initialization creates all required tables, indexes, and FTS5 virtual tables from a blank database
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 11-01: TBD
-- [ ] 11-02: TBD
+- [ ] 11-01-PLAN.md — CRUD lifecycle, bulk operations, stats, run history, backfill, and schema initialization (DB-01, DB-04, DB-05)
+- [ ] 11-02-PLAN.md — FTS5 full-text search and activity log recording (DB-02, DB-03)
 
 ### Phase 12: Web & API Integration Tests
 **Goal**: All FastAPI endpoints return correct responses, and platform integration code (RemoteOK parsing, platform registry) works correctly with mocked external dependencies
