@@ -68,7 +68,7 @@ Plans:
 Plans:
 - [x] 10-01-PLAN.md — Pydantic model validation (UNIT-01) and salary normalization (UNIT-02)
 - [x] 10-02-PLAN.md — Job scoring correctness and score breakdown (UNIT-03, UNIT-04)
-- [ ] 10-03-PLAN.md — Deduplication (UNIT-05, UNIT-06), anti-fabrication (UNIT-07), delta detection (UNIT-08)
+- [x] 10-03-PLAN.md — Deduplication (UNIT-05, UNIT-06), anti-fabrication (UNIT-07), delta detection (UNIT-08)
 
 ### Phase 11: Database Integration Tests
 **Goal**: All database operations (CRUD lifecycle, FTS5 search, activity log, bulk updates, schema initialization) work correctly against an in-memory SQLite instance

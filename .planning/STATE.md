@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 10 of 15 (Unit Tests)
-Plan: 2 of 3 in current phase
-Status: Plan 02 complete
-Last activity: 2026-02-08 -- Completed 10-02-PLAN.md (scorer unit tests)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-08 -- Completed 10-03-PLAN.md (dedup, validator, and delta tests)
 
-Progress: [############################........] 79% (28/39 total plans -- 24 v1.0 + 4 v1.1 complete, 11 v1.1 TBD)
+Progress: [#############################.......] 82% (29/39 total plans -- 24 v1.0 + 5 v1.1 complete, 10 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -41,7 +41,7 @@ Progress: [############################........] 79% (28/39 total plans -- 24 v1
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 09-test-infrastructure | 2/2 | -- | -- |
-| 10-unit-tests | 2/3 | 6 min | 3.0 min |
+| 10-unit-tests | 3/3 | 11 min | 3.7 min |
 
 ## Accumulated Context
 
@@ -78,6 +78,12 @@ From 10-02:
 - 92% coverage of scorer.py (uncovered: score_batch_with_breakdown only)
 - Tags concatenated into search text for tech keyword matching
 
+From 10-03:
+- Reordered text validator test uses lowercase skill names to avoid regex false positives
+- Delta tests use direct SQL UPDATE (_set_last_seen helper) for deterministic timestamps
+- dedup.py 96% coverage, resume_ai/validator.py 98% coverage
+- 67 new tests across 3 files (33 + 23 + 11)
+
 ### Pending Todos
 
 None.
@@ -96,5 +102,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 10-02-PLAN.md (scorer unit tests). Ready for 10-03.
-Resume file: .planning/phases/10-unit-tests/10-03-PLAN.md
+Stopped at: Phase 10 complete (all 3 plans). Ready for Phase 11.
+Resume file: .planning/ROADMAP.md (next phase)
