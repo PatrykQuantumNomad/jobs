@@ -28,7 +28,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 **Milestone Goal:** Comprehensive automated test suite with CI pipeline covering all application layers -- unit/integration (pytest) + E2E (Playwright) for scoring, deduplication, dashboard, platform scrapers (mocked), and apply flow. 80%+ coverage target, CI-ready on GitHub Actions.
 
 - [x] **Phase 9: Test Infrastructure** - Fixtures, isolation, and pytest configuration -- completed 2026-02-08
-- [ ] **Phase 10: Unit Tests** - Pure logic modules with zero I/O dependencies
+- [x] **Phase 10: Unit Tests** - Pure logic modules with zero I/O dependencies -- completed 2026-02-08
 - [ ] **Phase 11: Database Integration Tests** - SQLite CRUD, FTS5, migrations
 - [ ] **Phase 12: Web & API Integration Tests** - FastAPI routes, RemoteOK mocking, platform registry
 - [ ] **Phase 13: Config Integration Tests** - YAML loading, validation, env overrides
@@ -166,7 +166,7 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
 | 7. AI Resume & Cover Letter | v1.0 | 4/4 | Complete | 2026-02-07 |
 | 8. One-Click Apply | v1.0 | 4/4 | Complete | 2026-02-08 |
 | 9. Test Infrastructure | v1.1 | 2/2 | Complete | 2026-02-08 |
-| 10. Unit Tests | v1.1 | 0/3 | Not started | - |
+| 10. Unit Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
 | 11. Database Integration Tests | v1.1 | 0/2 | Not started | - |
 | 12. Web & API Integration Tests | v1.1 | 0/3 | Not started | - |
 | 13. Config Integration Tests | v1.1 | 0/1 | Not started | - |
