@@ -69,7 +69,7 @@ jobs:
         run: uv run playwright install --with-deps chromium
 
       - name: Run E2E tests
-        run: uv run pytest -m e2e --tracing=retain-on-failure || true
+        run: uv run pytest -m e2e -p no:socket --tracing=retain-on-failure || true
 
       - name: Upload Playwright traces
         uses: actions/upload-artifact@v5
