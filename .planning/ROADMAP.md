@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Dashboard Core** - Search, extended status workflow, bulk actions, export, activity log
 - [x] **Phase 6: Dashboard Analytics** - Stats, metrics, and kanban board view
 - [x] **Phase 7: AI Resume & Cover Letter** - LLM-powered resume tailoring and cover letter generation
-- [ ] **Phase 8: One-Click Apply** - Apply modes and dashboard-triggered application submission
+- [x] **Phase 8: One-Click Apply** - Apply modes and dashboard-triggered application submission
 
 ## Phase Details
 
@@ -148,10 +148,10 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 08-01-PLAN.md -- Apply config models (ApplyMode, ApplyConfig, ApplyEvent), duplicate detection, config.yaml integration
-- [ ] 08-02-PLAN.md -- Apply engine with thread bridge, event emission, enhanced form filler, event-based confirmation
-- [ ] 08-03-PLAN.md -- Dashboard SSE integration (sse-starlette, htmx SSE extension, apply endpoints, UI)
-- [ ] 08-04-PLAN.md -- Smoke tests and human verification of full apply flow
+- [x] 08-01-PLAN.md -- Apply config models (ApplyMode, ApplyConfig, ApplyEvent), duplicate detection, config.yaml integration
+- [x] 08-02-PLAN.md -- Apply engine with thread bridge, event emission, enhanced form filler, event-based confirmation
+- [x] 08-03-PLAN.md -- Dashboard SSE integration (sse-starlette, htmx SSE extension, apply endpoints, UI)
+- [x] 08-04-PLAN.md -- Smoke tests and human verification of full apply flow
 
 ## Progress
 
@@ -169,4 +169,4 @@ Note: Phases 3 and 7 only depend on Phase 1 (not on each other or Phase 2), so t
 | 5. Dashboard Core | 4/4 | Complete | 2026-02-07 |
 | 6. Dashboard Analytics | 2/2 | Complete | 2026-02-07 |
 | 7. AI Resume & Cover Letter | 4/4 | Complete | 2026-02-07 |
-| 8. One-Click Apply | 0/4 | Not started | - |
+| 8. One-Click Apply | 4/4 | Complete | 2026-02-08 |
