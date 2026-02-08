@@ -102,3 +102,37 @@ class BrowserPlatformMixin:
             return True
         except Exception:
             return False
+
+    def wait_for_confirmation(self, message: str, timeout: int = 300) -> bool:
+        """Wait for user confirmation -- event-based when in dashboard mode.
+
+        In dashboard mode (``_dashboard_mode=True``), blocks on a
+        ``threading.Event`` that is set by ``ApplyEngine.confirm()``.
+
+        In CLI mode, falls back to ``wait_for_human()`` which prompts on
+        stdin and always returns True on any input.
+
+        Parameters
+        ----------
+        message:
+            Prompt to display (used in CLI fallback).
+        timeout:
+            Maximum seconds to wait for confirmation.
+
+        Returns
+        -------
+        True if confirmed within timeout, False if timed out.
+        """
+        if getattr(self, "_dashboard_mode", False):
+            confirmation_event = getattr(self, "_confirmation_event", None)
+            if confirmation_event is not None:
+                return confirmation_event.wait(timeout=timeout)
+            return False
+
+        # CLI fallback -- wait_for_human returns a string, treat any input as confirm
+        try:
+            self.wait_for_human(message)
+            return True
+        except RuntimeError:
+            # Unattended mode -- cannot confirm
+            return False
