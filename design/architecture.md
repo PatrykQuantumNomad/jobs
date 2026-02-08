@@ -192,7 +192,7 @@ Source: [13-ai-integration-map.mmd](./diagrams/13-ai-integration-map.mmd)
 | **Security: Browser Sessions** | 🟡 | Persistent sessions stored in `browser_sessions/` (gitignored). No encryption at rest. Session theft = account access. |
 | **Security: API Keys** | 🟡 | `ANTHROPIC_API_KEY` loaded via env. Lazy-imported -- dashboard works without it. No rate limiting or cost tracking. |
 | **Security: Dashboard** | 🔴 | **No authentication** on FastAPI. Localhost-only binding mitigates risk, but no auth if port-forwarded. |
-| **Technical Debt** | 🟡 | Legacy `Config` shim class (config.py:346) still exists. Only 1 TODO/FIXME. `webapp/static/` directory missing (mounted but empty). |
+| **Technical Debt** | ✅ | Only 1 TODO/FIXME across the codebase. No legacy shims. No dead mounts. |
 | **Error Handling** | ✅ | Screenshots on selector failure. Structured error types in ApplyEngine. `_run_errors` tracked and recorded. |
 | **Portability** | 🟡 | macOS-specific scheduler (launchd). Browser stealth hardcoded to Chrome on macOS user-agent. |
 | **File Size Distribution** | ✅ | Largest files: db.py (723L), app.py (712L), orchestrator.py (566L). All manageable. |
@@ -223,7 +223,7 @@ Source: [13-ai-integration-map.mmd](./diagrams/13-ai-integration-map.mmd)
 
 3. **Extract `webapp/app.py` into route modules:** At 712 lines with 20 endpoints spanning 5 concerns (pages, job actions, AI generation, apply engine, exports), this file is ripe for splitting into a FastAPI `APIRouter` per domain: `routes/pages.py`, `routes/jobs.py`, `routes/ai.py`, `routes/apply.py`, `routes/export.py`.
 
-4. **Remove the legacy `Config` class shim:** `config.py:346-411` maintains a backward-compatibility class that delegates to `AppSettings`. The docstring says "will be removed after Phase 1, Plan 02-03" -- this migration appears complete since all modules already import `get_settings()` directly.
+4. ~~Remove the legacy `Config` class shim~~ -- **DONE.** Removed in technical debt cleanup (2026-02-08). All modules use `get_settings()` directly.
 
 5. **Add AI cost tracking:** The Anthropic API calls in `resume_ai/tailor.py` and `resume_ai/cover_letter.py` have no token counting or cost estimation. Since each tailored resume costs ~$0.01-0.10, adding `response.usage.input_tokens` / `output_tokens` logging to the `resume_versions` table would provide visibility into AI spend per job application.
 
