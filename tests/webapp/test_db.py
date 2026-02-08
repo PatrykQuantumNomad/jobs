@@ -856,3 +856,149 @@ class TestFts5Search:
         # Quoted term -- FTS5 exact match operator, passed through as-is
         result = db_module.get_jobs(search='"kubernetes"')
         assert isinstance(result, list)
+
+
+# ---------------------------------------------------------------------------
+# DB-03: Activity Log
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+class TestActivityLog:
+    """Verify automatic activity logging on job lifecycle events."""
+
+    def test_upsert_new_job_logs_discovered(self):
+        """Inserting a new job auto-logs a 'discovered' event."""
+        db_module.upsert_job(_make_job_dict("Google", "Staff Engineer"))
+        key = _compute_dedup_key("Google", "Staff Engineer")
+
+        log = db_module.get_activity_log(key)
+        assert len(log) == 1
+        assert log[0]["event_type"] == "discovered"
+        assert log[0]["new_value"] == "indeed"
+
+    def test_upsert_existing_job_no_duplicate_discovered(self):
+        """Re-upserting the same job does not create a duplicate 'discovered' entry."""
+        job = _make_job_dict("Google", "Staff Engineer")
+        db_module.upsert_job(job)
+        db_module.upsert_job(job)  # second upsert
+
+        key = _compute_dedup_key("Google", "Staff Engineer")
+        log = db_module.get_activity_log(key)
+
+        discovered_entries = [e for e in log if e["event_type"] == "discovered"]
+        assert len(discovered_entries) == 1
+
+    def test_status_change_logged(self):
+        """update_job_status() logs a 'status_change' event with old and new values."""
+        db_module.upsert_job(_make_job_dict("Google", "Staff Engineer"))
+        key = _compute_dedup_key("Google", "Staff Engineer")
+
+        db_module.update_job_status(key, "applied")
+
+        log = db_module.get_activity_log(key)
+        status_changes = [e for e in log if e["event_type"] == "status_change"]
+        assert len(status_changes) == 1
+        assert status_changes[0]["old_value"] == "discovered"
+        assert status_changes[0]["new_value"] == "applied"
+
+    def test_multiple_status_changes_tracked(self):
+        """Multiple status transitions produce multiple activity log entries."""
+        db_module.upsert_job(_make_job_dict("Google", "Staff Engineer"))
+        key = _compute_dedup_key("Google", "Staff Engineer")
+
+        db_module.update_job_status(key, "scored")
+        db_module.update_job_status(key, "saved")
+        db_module.update_job_status(key, "applied")
+
+        log = db_module.get_activity_log(key)
+        status_changes = [e for e in log if e["event_type"] == "status_change"]
+        assert len(status_changes) == 3
+
+        # Verify the chain (newest first in log, so reverse for chronological)
+        chronological = list(reversed(status_changes))
+        assert chronological[0]["old_value"] == "discovered"
+        assert chronological[0]["new_value"] == "scored"
+        assert chronological[1]["old_value"] == "scored"
+        assert chronological[1]["new_value"] == "saved"
+        assert chronological[2]["old_value"] == "saved"
+        assert chronological[2]["new_value"] == "applied"
+
+    def test_notes_update_logged(self):
+        """update_job_notes() logs a 'note_added' event with detail."""
+        db_module.upsert_job(_make_job_dict("Google", "Staff Engineer"))
+        key = _compute_dedup_key("Google", "Staff Engineer")
+
+        db_module.update_job_notes(key, "Great K8s role")
+
+        log = db_module.get_activity_log(key)
+        note_entries = [e for e in log if e["event_type"] == "note_added"]
+        assert len(note_entries) == 1
+        assert note_entries[0]["detail"] == "Great K8s role"
+
+    def test_activity_log_has_timestamps(self):
+        """All activity log entries have non-null created_at timestamps."""
+        db_module.upsert_job(_make_job_dict("Google", "Staff Engineer"))
+        key = _compute_dedup_key("Google", "Staff Engineer")
+
+        db_module.update_job_status(key, "scored")
+
+        log = db_module.get_activity_log(key)
+        assert len(log) >= 2
+        for entry in log:
+            assert entry["created_at"] is not None
+
+    def test_activity_log_newest_first(self):
+        """get_activity_log() returns entries newest first."""
+        db_module.upsert_job(_make_job_dict("Google", "Staff Engineer"))
+        key = _compute_dedup_key("Google", "Staff Engineer")
+
+        db_module.update_job_status(key, "scored")
+        db_module.update_job_status(key, "applied")
+
+        log = db_module.get_activity_log(key)
+        # First entry (index 0) is the most recent -- "applied" status change
+        assert log[0]["event_type"] == "status_change"
+        assert log[0]["new_value"] == "applied"
+        # Last entry is the oldest -- "discovered"
+        assert log[-1]["event_type"] == "discovered"
+
+    def test_activity_log_empty_for_nonexistent_key(self):
+        """get_activity_log() returns empty list for a key with no events."""
+        log = db_module.get_activity_log("nonexistent::key")
+        assert log == []
+
+    def test_log_activity_direct(self):
+        """log_activity() can be called directly with custom event fields."""
+        db_module.log_activity(
+            "test::key",
+            "custom_event",
+            old_value="old",
+            new_value="new",
+            detail="custom detail",
+        )
+
+        log = db_module.get_activity_log("test::key")
+        assert len(log) == 1
+        assert log[0]["event_type"] == "custom_event"
+        assert log[0]["old_value"] == "old"
+        assert log[0]["new_value"] == "new"
+        assert log[0]["detail"] == "custom detail"
+
+    def test_full_lifecycle_activity_trail(self):
+        """Full lifecycle (discover, score, save, apply, note) produces 5 events."""
+        db_module.upsert_job(_make_job_dict("Google", "Staff Engineer"))
+        key = _compute_dedup_key("Google", "Staff Engineer")
+
+        db_module.update_job_status(key, "scored")
+        db_module.update_job_status(key, "saved")
+        db_module.update_job_status(key, "applied")
+        db_module.update_job_notes(key, "Great match")
+
+        log = db_module.get_activity_log(key)
+        assert len(log) == 5  # 1 discovered + 3 status_change + 1 note_added
+
+        event_types = [e["event_type"] for e in log]
+        assert event_types.count("discovered") == 1
+        assert event_types.count("status_change") == 3
+        assert event_types.count("note_added") == 1
