@@ -83,7 +83,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 11-01-PLAN.md — CRUD lifecycle, bulk operations, stats, run history, backfill, and schema initialization (DB-01, DB-04, DB-05)
+- [x] 11-01-PLAN.md — CRUD lifecycle, bulk operations, stats, run history, backfill, and schema initialization (DB-01, DB-04, DB-05)
 - [ ] 11-02-PLAN.md — FTS5 full-text search and activity log recording (DB-02, DB-03)
 
 ### Phase 12: Web & API Integration Tests
@@ -167,7 +167,7 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
 | 8. One-Click Apply | v1.0 | 4/4 | Complete | 2026-02-08 |
 | 9. Test Infrastructure | v1.1 | 2/2 | Complete | 2026-02-08 |
 | 10. Unit Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
-| 11. Database Integration Tests | v1.1 | 0/2 | Not started | - |
+| 11. Database Integration Tests | v1.1 | 1/2 | In progress | - |
 | 12. Web & API Integration Tests | v1.1 | 0/3 | Not started | - |
 | 13. Config Integration Tests | v1.1 | 0/1 | Not started | - |
 | 14. CI Pipeline | v1.1 | 0/2 | Not started | - |

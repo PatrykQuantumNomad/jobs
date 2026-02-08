@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 10 -- Unit Tests (v1.1 Test Web App)
+**Current focus:** Phase 11 -- Database Integration Tests (v1.1 Test Web App)
 
 ## Current Position
 
-Phase: 10 of 15 (Unit Tests)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-08 -- Completed 10-03-PLAN.md (dedup, validator, and delta tests)
+Phase: 11 of 15 (Database Integration Tests)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-08 -- Completed 11-01-PLAN.md (CRUD lifecycle, bulk ops, schema tests)
 
-Progress: [#############################.......] 82% (29/39 total plans -- 24 v1.0 + 5 v1.1 complete, 10 v1.1 TBD)
+Progress: [##############################......] 85% (30/39 total plans -- 24 v1.0 + 6 v1.1 complete, 9 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -42,6 +42,7 @@ Progress: [#############################.......] 82% (29/39 total plans -- 24 v1
 |-------|-------|-------|----------|
 | 09-test-infrastructure | 2/2 | -- | -- |
 | 10-unit-tests | 3/3 | 11 min | 3.7 min |
+| 11-database-integration-tests | 1/2 | 4 min | 4.0 min |
 
 ## Accumulated Context
 
@@ -84,6 +85,12 @@ From 10-03:
 - dedup.py 96% coverage, resume_ai/validator.py 98% coverage
 - 67 new tests across 3 files (33 + 23 + 11)
 
+From 11-01:
+- All DB integration tests marked @pytest.mark.integration (not unit -- they touch SQLite)
+- Direct SQL for score/breakdown manipulation in backfill tests (bypasses COALESCE in upsert)
+- Schema tests use set comparison against sqlite_master for order-independent verification
+- 46 new tests in 1 file, 85% webapp/db.py coverage
+
 ### Pending Todos
 
 None.
@@ -102,5 +109,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Phase 10 complete (all 3 plans). Ready for Phase 11.
-Resume file: .planning/ROADMAP.md (next phase)
+Stopped at: Completed 11-01-PLAN.md (CRUD lifecycle, bulk ops, schema tests). Ready for 11-02.
+Resume file: .planning/phases/11-database-integration-tests/11-02-PLAN.md
