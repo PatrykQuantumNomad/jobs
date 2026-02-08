@@ -1,0 +1,47 @@
+# Test configuration -- safe defaults for automated tests.
+# No real credentials. All platforms disabled. Zero delays.
+
+search:
+  min_salary: 100000
+  queries:
+    - title: "test engineer"
+      keywords: []
+      max_pages: 1
+
+scoring:
+  target_titles:
+    - "Senior Software Engineer"
+    - "Principal Engineer"
+  tech_keywords:
+    - python
+    - kubernetes
+    - terraform
+  weights:
+    title_match: 2.0
+    tech_overlap: 2.0
+    remote: 1.0
+    salary: 1.0
+
+platforms:
+  indeed:
+    enabled: false
+  dice:
+    enabled: false
+  remoteok:
+    enabled: true
+
+timing:
+  nav_delay_min: 0.0
+  nav_delay_max: 0.0
+  form_delay_min: 0.0
+  form_delay_max: 0.0
+  page_load_timeout: 5000
+
+apply:
+  default_mode: semi_auto
+  confirm_before_submit: true
+  max_concurrent_applies: 1
+  screenshot_before_submit: false
+  headed_mode: false
+  ats_form_fill_enabled: false
+  ats_form_fill_timeout: 10
