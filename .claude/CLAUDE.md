@@ -2,7 +2,7 @@
 
 Self-hosted pipeline that scrapes job boards (Indeed, Dice, RemoteOK), scores matches against a candidate profile, manages listings through a web dashboard, generates AI-tailored resumes, and automates applications with configurable control levels. Single-user, local-only.
 
-**Stack:** Python 3.11+, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), Pydantic v2 + pydantic-settings (YAML), Anthropic SDK, WeasyPrint, SSE via sse-starlette.
+**Stack:** Python 3.14, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), Pydantic v2 + pydantic-settings (YAML), Anthropic SDK, WeasyPrint, SSE via sse-starlette.
 
 ## Commands
 
@@ -42,7 +42,7 @@ Five-phase pipeline (setup → login → search → score → apply) with plugga
 ## Conventions
 
 - **Formatting:** Ruff, line length 100, rules `["E", "F", "I", "UP", "B", "SIM"]`
-- **Types:** `from __future__ import annotations` in every file. Use `str | None` not `Optional[str]`, `list[Job]` not `List[Job]`
+- **Types:** Use `str | None` not `Optional[str]`, `list[Job]` not `List[Job]`. No `from __future__ import annotations` needed (Python 3.14 has native deferred evaluation)
 - **Imports:** Absolute only, never relative. Order: future → stdlib → third-party → local. Use `if TYPE_CHECKING:` for type-only imports
 - **Naming:** snake_case functions/vars, PascalCase classes, UPPER_CASE constants. Private with underscore prefix. Platform classes: `{Name}Platform`
 - **Pydantic:** `BaseModel` for domain objects, `BaseSettings` for config. `model_dump(mode="json")` for serialization. `@field_validator` with `@classmethod`
