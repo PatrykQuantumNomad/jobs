@@ -390,6 +390,129 @@ async def resume_versions_endpoint(request: Request, dedup_key: str):
     )
 
 
+# ---------------------------------------------------------------------------
+# Apply engine endpoints (must be registered BEFORE the catch-all /jobs/{path} GET)
+# ---------------------------------------------------------------------------
+
+# Lazy-init apply engine (avoid import errors if playwright not installed)
+_apply_engine = None
+
+
+def _get_apply_engine():
+    global _apply_engine
+    if _apply_engine is None:
+        from apply_engine.engine import ApplyEngine
+        _apply_engine = ApplyEngine()
+    return _apply_engine
+
+
+async def _run_apply(job: dict, mode: str, queue: asyncio.Queue):
+    """Background task: run apply engine and catch errors."""
+    engine = _get_apply_engine()
+    try:
+        await engine.apply(job, mode, queue)
+    except Exception as exc:
+        from apply_engine.events import ApplyEvent, ApplyEventType
+        await queue.put(ApplyEvent(type=ApplyEventType.ERROR, message=str(exc)).model_dump())
+        await queue.put(ApplyEvent(type=ApplyEventType.DONE, message="Apply failed").model_dump())
+
+
+@app.post("/jobs/{dedup_key:path}/apply", response_class=HTMLResponse)
+async def trigger_apply(request: Request, dedup_key: str, mode: str = Form("")):
+    """Trigger the apply engine for a job, returning SSE connection HTML."""
+    # Default mode from settings
+    if not mode:
+        try:
+            from config import get_settings
+            mode = get_settings().apply.default_mode.value
+        except Exception:
+            mode = "semi_auto"
+
+    # Check duplicate
+    from apply_engine.dedup import is_already_applied
+    already = is_already_applied(dedup_key)
+    if already:
+        status_label = already.get("status", "unknown").replace("_", " ").title()
+        return HTMLResponse(
+            f'<div class="bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-3 rounded">'
+            f'<p class="text-sm font-medium">Already applied</p>'
+            f'<p class="text-sm">This job has status: {status_label}</p>'
+            f'</div>'
+        )
+
+    # Get job
+    job = db.get_job(dedup_key)
+    if not job:
+        return HTMLResponse("<p class='text-red-600 text-sm'>Job not found</p>", status_code=404)
+
+    # Create queue and register session
+    queue = asyncio.Queue()
+    engine = _get_apply_engine()
+    engine._sessions[dedup_key] = queue
+
+    # Start background task
+    asyncio.create_task(_run_apply(job, mode, queue))
+
+    # Return HTML that establishes SSE connection
+    encoded_key = urllib.parse.quote(dedup_key, safe="")
+    return HTMLResponse(
+        f'<div hx-ext="sse"'
+        f' sse-connect="/jobs/{encoded_key}/apply/stream"'
+        f' sse-swap="progress"'
+        f' sse-close="done">'
+        f'  <div id="apply-live-status">'
+        f'    <p class="text-sm text-gray-500">Connecting to apply engine...</p>'
+        f'  </div>'
+        f'</div>'
+    )
+
+
+@app.get("/jobs/{dedup_key:path}/apply/stream")
+async def apply_stream(request: Request, dedup_key: str):
+    """SSE endpoint streaming real-time apply progress events."""
+    from sse_starlette import EventSourceResponse
+
+    engine = _get_apply_engine()
+    queue = engine.get_session_queue(dedup_key)
+    if queue is None:
+        return HTMLResponse("<p class='text-red-600 text-sm'>No active apply session</p>", status_code=404)
+
+    async def event_generator():
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=15)
+                    event_type = event.get("type", "progress")
+                    html = templates.get_template("partials/apply_status.html").render(
+                        event=event, dedup_key=dedup_key
+                    )
+                    yield {"event": event_type, "data": html}
+                    if event_type == "done":
+                        break
+                except asyncio.TimeoutError:
+                    yield {"event": "ping", "data": ""}
+        except asyncio.CancelledError:
+            pass
+
+    return EventSourceResponse(event_generator())
+
+
+@app.post("/jobs/{dedup_key:path}/apply/confirm", response_class=HTMLResponse)
+async def apply_confirm(dedup_key: str):
+    """Confirm an apply that is awaiting user confirmation."""
+    _get_apply_engine().confirm(dedup_key)
+    return HTMLResponse('<p class="text-sm text-green-600">Confirmed -- submitting application...</p>')
+
+
+@app.post("/jobs/{dedup_key:path}/apply/cancel", response_class=HTMLResponse)
+async def apply_cancel(dedup_key: str):
+    """Cancel an active apply session."""
+    _get_apply_engine().cancel(dedup_key)
+    return HTMLResponse('<p class="text-sm text-yellow-600">Apply cancelled.</p>')
+
+
 @app.get("/jobs/{dedup_key:path}", response_class=HTMLResponse)
 async def job_detail(request: Request, dedup_key: str):
     job = db.get_job(dedup_key)
