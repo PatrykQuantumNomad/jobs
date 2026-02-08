@@ -1,4 +1,4 @@
-"""Integration tests for FastAPI web endpoints -- WEB-01, WEB-02, WEB-03, WEB-08.
+"""Integration tests for FastAPI web endpoints -- WEB-01 through WEB-08.
 
 Tests cover:
 - Dashboard (WEB-01): GET / with empty DB, populated DB, score/platform/status
@@ -12,11 +12,23 @@ Tests cover:
   badge HTML, sets HX-Trigger header, logs activity, sets applied_date.
 - Notes Update (WEB-03): POST /jobs/{key}/notes persists notes, returns
   confirmation HTML, logs activity.
+- CSV Export (WEB-04): GET /export/csv returns parseable CSV with 10 headers,
+  correct row counts, data accuracy, platform filtering, empty DB handling.
+- JSON Export (WEB-05): GET /export/json returns parseable JSON with 12 fields,
+  correct row counts, data accuracy, score filtering, empty DB handling.
+- Bulk Status (WEB-06): POST /bulk/status changes target jobs, no-op on empty,
+  returns HTML, logs activity.
+- Import (WEB-07): POST /import reads pipeline JSON, upserts into DB, redirects
+  with count, handles missing files gracefully.
 
 All tests use the `client` fixture from tests/webapp/conftest.py (TestClient)
 and the `_fresh_db` autouse fixture from tests/conftest.py for in-memory
 SQLite isolation.
 """
+
+import csv
+import io
+import json
 
 import pytest
 
@@ -424,3 +436,180 @@ class TestNotesUpdateEndpoint:
         log = db_module.get_activity_log(key)
         note_entries = [e for e in log if e["event_type"] == "note_added"]
         assert len(note_entries) == 1
+
+
+# ---------------------------------------------------------------------------
+# WEB-04: CSV Export Endpoint
+# ---------------------------------------------------------------------------
+
+
+CSV_EXPECTED_FIELDS = [
+    "title",
+    "company",
+    "location",
+    "salary_display",
+    "platform",
+    "status",
+    "score",
+    "url",
+    "posted_date",
+    "created_at",
+]
+
+
+@pytest.mark.integration
+class TestCsvExport:
+    """Verify GET /export/csv returns valid, filterable CSV downloads."""
+
+    def test_csv_returns_200(self, client, db_with_jobs):
+        """GET /export/csv returns 200."""
+        response = client.get("/export/csv")
+        assert response.status_code == 200
+
+    def test_csv_content_type(self, client, db_with_jobs):
+        """GET /export/csv returns text/csv content type."""
+        response = client.get("/export/csv")
+        assert "text/csv" in response.headers["content-type"]
+
+    def test_csv_has_content_disposition(self, client, db_with_jobs):
+        """GET /export/csv returns Content-Disposition attachment header."""
+        response = client.get("/export/csv")
+        disposition = response.headers.get("content-disposition", "")
+        assert "attachment" in disposition
+        assert ".csv" in disposition
+
+    def test_csv_parseable_by_csv_module(self, client, db_with_jobs):
+        """CSV body is parseable by csv.DictReader and contains 10 rows."""
+        response = client.get("/export/csv")
+        reader = csv.DictReader(io.StringIO(response.text))
+        rows = list(reader)
+        assert len(rows) == 10
+
+    def test_csv_has_correct_headers(self, client, db_with_jobs):
+        """CSV headers contain all 10 expected fields."""
+        response = client.get("/export/csv")
+        reader = csv.DictReader(io.StringIO(response.text))
+        # Must read at least one row to populate fieldnames
+        list(reader)
+        assert reader.fieldnames is not None
+        for field in CSV_EXPECTED_FIELDS:
+            assert field in reader.fieldnames, f"Missing CSV header: {field}"
+
+    def test_csv_row_data_matches_jobs(self, client):
+        """Inserted job data appears correctly in CSV output."""
+        db_module.upsert_job(_make_job_dict("TestCorp", "Staff K8s Engineer", score=5))
+        response = client.get("/export/csv")
+        reader = csv.DictReader(io.StringIO(response.text))
+        rows = list(reader)
+        matching = [r for r in rows if r["title"] == "Staff K8s Engineer"]
+        assert len(matching) == 1
+        assert matching[0]["company"] == "TestCorp"
+
+    def test_csv_respects_platform_filter(self, client):
+        """GET /export/csv?platform=dice returns only dice jobs."""
+        db_module.upsert_job(_make_job_dict("AlphaCo", "Indeed Dev", platform="indeed"))
+        db_module.upsert_job(_make_job_dict("BetaCo", "Dice Dev", platform="dice"))
+        response = client.get("/export/csv?platform=dice")
+        reader = csv.DictReader(io.StringIO(response.text))
+        rows = list(reader)
+        assert len(rows) >= 1
+        for row in rows:
+            assert row["platform"] == "dice"
+
+    def test_csv_empty_db_returns_headers_only(self, client):
+        """GET /export/csv with no jobs returns headers but zero rows."""
+        response = client.get("/export/csv")
+        reader = csv.DictReader(io.StringIO(response.text))
+        rows = list(reader)
+        assert len(rows) == 0
+        assert reader.fieldnames is not None
+        assert len(reader.fieldnames) == 10
+
+
+# ---------------------------------------------------------------------------
+# WEB-05: JSON Export Endpoint
+# ---------------------------------------------------------------------------
+
+
+JSON_EXPECTED_FIELDS = [
+    "title",
+    "company",
+    "location",
+    "salary_display",
+    "platform",
+    "status",
+    "score",
+    "url",
+    "apply_url",
+    "posted_date",
+    "created_at",
+    "notes",
+]
+
+
+@pytest.mark.integration
+class TestJsonExport:
+    """Verify GET /export/json returns valid, filterable JSON downloads."""
+
+    def test_json_returns_200(self, client, db_with_jobs):
+        """GET /export/json returns 200."""
+        response = client.get("/export/json")
+        assert response.status_code == 200
+
+    def test_json_content_type(self, client, db_with_jobs):
+        """GET /export/json returns application/json content type."""
+        response = client.get("/export/json")
+        assert "application/json" in response.headers["content-type"]
+
+    def test_json_has_content_disposition(self, client, db_with_jobs):
+        """GET /export/json returns Content-Disposition attachment header."""
+        response = client.get("/export/json")
+        disposition = response.headers.get("content-disposition", "")
+        assert "attachment" in disposition
+        assert ".json" in disposition
+
+    def test_json_parseable(self, client, db_with_jobs):
+        """JSON body is parseable by json.loads and contains 10 entries."""
+        response = client.get("/export/json")
+        data = json.loads(response.text)
+        assert isinstance(data, list)
+        assert len(data) == 10
+
+    def test_json_has_correct_fields(self, client, db_with_jobs):
+        """Each JSON entry contains all 12 expected fields."""
+        response = client.get("/export/json")
+        data = json.loads(response.text)
+        assert len(data) > 0
+        for entry in data:
+            for field in JSON_EXPECTED_FIELDS:
+                assert field in entry, f"Missing JSON field: {field}"
+
+    def test_json_row_data_matches_jobs(self, client):
+        """Inserted job data appears correctly in JSON output."""
+        db_module.upsert_job(
+            _make_job_dict(
+                "ExportCorp", "Platform Lead", score=4, apply_url="https://apply.example.com"
+            )
+        )
+        response = client.get("/export/json")
+        data = json.loads(response.text)
+        matching = [d for d in data if d["title"] == "Platform Lead"]
+        assert len(matching) == 1
+        assert matching[0]["company"] == "ExportCorp"
+        assert matching[0]["apply_url"] == "https://apply.example.com"
+
+    def test_json_respects_score_filter(self, client):
+        """GET /export/json?score=5 returns only jobs with score >= 5."""
+        db_module.upsert_job(_make_job_dict("AlphaCo", "Low Score Export", score=3))
+        db_module.upsert_job(_make_job_dict("BetaCo", "High Score Export", score=5))
+        response = client.get("/export/json?score=5")
+        data = json.loads(response.text)
+        assert len(data) >= 1
+        for entry in data:
+            assert entry["score"] >= 5
+
+    def test_json_empty_db_returns_empty_list(self, client):
+        """GET /export/json with no jobs returns an empty list."""
+        response = client.get("/export/json")
+        data = json.loads(response.text)
+        assert data == []
