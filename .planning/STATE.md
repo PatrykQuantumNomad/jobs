@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 9 of 15 (Test Infrastructure)
-Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-02-08 -- Roadmap created for v1.1 (7 phases, 45 requirements)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-08 -- Completed 09-01-PLAN.md (test dependencies, pytest/coverage config, test directory structure)
 
-Progress: [########################..........] 68% (24/39 total plans -- 24 v1.0 complete, 15 v1.1 TBD)
+Progress: [#########################.........] 71% (25/39 total plans -- 24 v1.0 + 1 v1.1 complete, 14 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -46,6 +46,13 @@ v1.1-relevant from research:
 - No Playwright mocking for scraper tests -- extract pure parsing functions instead
 - E2E tests CI-optional (separate job, not blocking)
 
+From 09-01:
+- Strict asyncio mode (force explicit @pytest.mark.asyncio on async tests)
+- Socket disabled by default (--allow-unix-socket for SQLite)
+- E2e excluded from default run (-m "not e2e")
+- Browser platform files omitted from coverage
+- test_config.yaml loaded via AppSettings.model_config['yaml_file'] override + reset_settings()
+
 ### Pending Todos
 
 None.
@@ -64,5 +71,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: v1.1 roadmap created. Phase 9 ready to plan.
-Resume file: None
+Stopped at: Completed 09-01. Ready for 09-02 (conftest.py, fixtures, initial test files).
+Resume file: .planning/phases/09-test-infrastructure/09-02-PLAN.md
