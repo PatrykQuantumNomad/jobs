@@ -112,10 +112,10 @@ Plans:
   2. Invalid config values (bad URLs, wrong types, missing required fields) produce clear validation errors, not silent failures
   3. Optional fields that are omitted from YAML get their documented default values
   4. Environment variables override YAML values when both are present, following pydantic-settings precedence rules
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 13-01: TBD
+- [ ] 13-01-PLAN.md -- YAML loading, validation, defaults, and env var override tests (CFG-01, CFG-02, CFG-03, CFG-04)
 
 ### Phase 14: CI Pipeline
 **Goal**: All tests run automatically on every push and PR via GitHub Actions, with coverage enforcement and fast feedback
@@ -169,6 +169,6 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
 | 10. Unit Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
 | 11. Database Integration Tests | v1.1 | 2/2 | Complete | 2026-02-08 |
 | 12. Web & API Integration Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
-| 13. Config Integration Tests | v1.1 | 0/1 | Not started | - |
+| 13. Config Integration Tests | v1.1 | 0/1 | Planned | - |
 | 14. CI Pipeline | v1.1 | 0/2 | Not started | - |
 | 15. E2E Tests | v1.1 | 0/2 | Not started | - |
