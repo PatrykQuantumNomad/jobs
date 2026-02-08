@@ -117,3 +117,37 @@ timing:
 # Placeholder for Phase 4 scheduled/recurring runs.
 # Currently unused. Will support cron-like scheduling in a future release.
 schedule: {}
+
+# -- Apply Engine Configuration ---------------------------------------------
+# Controls how the one-click apply engine submits applications.
+apply:
+  # Apply mode determines the level of automation:
+  #   full_auto     -- Submit applications without human confirmation
+  #   semi_auto     -- Fill forms automatically, pause for human confirmation
+  #   easy_apply_only -- Only apply to Easy Apply jobs (Indeed/Dice built-in)
+  default_mode: semi_auto
+
+  # Require explicit human confirmation before clicking submit on each application.
+  # Strongly recommended to keep true. Only set false in full_auto mode with high
+  # confidence in form filling accuracy.
+  confirm_before_submit: true
+
+  # Maximum number of concurrent apply sessions. Keep at 1 to avoid detection.
+  # Values above 1 are experimental and may trigger anti-bot measures.
+  max_concurrent_applies: 1
+
+  # Capture a screenshot of the filled form right before submission.
+  # Screenshots are saved to debug_screenshots/ for review.
+  screenshot_before_submit: true
+
+  # Run the browser in headed mode (visible window) during apply flows.
+  # Set to false for headless operation (not recommended for first-time use).
+  headed_mode: true
+
+  # Enable automatic form filling on external ATS pages (Greenhouse, Lever, etc.).
+  # When false, the engine only handles Easy Apply flows on Indeed/Dice.
+  ats_form_fill_enabled: true
+
+  # Timeout in seconds for ATS form fill operations. If a form takes longer
+  # than this to fill, the apply attempt is aborted. Range: 10-600.
+  ats_form_fill_timeout: 120

@@ -118,3 +118,12 @@ schedule:
   minute: 0            # Minute (0-59) to run the pipeline
   # weekdays: [1,2,3,4,5]  # Optional: limit to specific days (0=Sun, 6=Sat)
                             # Omit for daily execution
+
+apply:
+  default_mode: semi_auto
+  confirm_before_submit: true
+  max_concurrent_applies: 1
+  screenshot_before_submit: true
+  headed_mode: true
+  ats_form_fill_enabled: true
+  ats_form_fill_timeout: 120

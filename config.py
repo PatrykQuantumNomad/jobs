@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic_settings.main import YamlConfigSettingsSource
 
+from apply_engine.config import ApplyConfig
 from models import CandidateProfile, SearchQuery
 
 # -- Directory constants -----------------------------------------------------
@@ -157,6 +158,7 @@ class AppSettings(BaseSettings):
     platforms: PlatformsConfig = Field(default_factory=PlatformsConfig)
     timing: TimingConfig = Field(default_factory=TimingConfig)
     schedule: ScheduleConfig = Field(default_factory=ScheduleConfig)
+    apply: ApplyConfig = Field(default_factory=ApplyConfig)
 
     # ── .env credentials ───────────────────────────────────────────────────
     indeed_email: str | None = None
