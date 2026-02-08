@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 12 of 15 (Web & API Integration Tests)
-Plan: 0 of 3 in current phase
-Status: Ready to start
-Last activity: 2026-02-08 -- Completed 11-02-PLAN.md (FTS5 search + activity log tests). Phase 11 complete.
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-08 -- Completed 12-01-PLAN.md (dashboard, detail, status, search endpoint tests).
 
-Progress: [##############################......] 87% (31/39 total plans -- 24 v1.0 + 7 v1.1 complete, 8 v1.1 TBD)
+Progress: [##############################......] 89% (32/39 total plans -- 24 v1.0 + 8 v1.1 complete, 7 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Progress: [##############################......] 87% (31/39 total plans -- 24 v1
 | 09-test-infrastructure | 2/2 | -- | -- |
 | 10-unit-tests | 3/3 | 11 min | 3.7 min |
 | 11-database-integration-tests | 2/2 | 8 min | 4.0 min |
+| 12-web-api-integration-tests | 1/3 | 4 min | 4.0 min |
 
 ## Accumulated Context
 
@@ -97,6 +98,12 @@ From 11-02:
 - FTS sync test uses short-then-long description to trigger LENGTH comparison in ON CONFLICT
 - 22 new tests (12 FTS5 + 10 activity log), 91% webapp/db.py coverage, 68 total in file
 
+From 12-01:
+- Added check_same_thread=False to in-memory SQLite for TestClient thread safety
+- POST endpoints tested with data= (form encoding) not json= for FastAPI Form(...) parameters
+- Partial HTML detection: assert no <!DOCTYPE or <html> for htmx fragment endpoints
+- 30 new tests (9 dashboard + 5 search + 6 detail + 6 status + 4 notes)
+
 ### Pending Todos
 
 None.
@@ -115,5 +122,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 11-02-PLAN.md (FTS5 search + activity log tests). Phase 11 complete. Ready for Phase 12.
+Stopped at: Completed 12-01-PLAN.md (dashboard, detail, status, search endpoint tests). Ready for 12-02.
 Resume file: .planning/phases/12-web-api-integration-tests/

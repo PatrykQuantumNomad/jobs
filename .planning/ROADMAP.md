@@ -99,7 +99,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 12-01-PLAN.md -- Dashboard, detail, status/notes, and search endpoint tests (WEB-01, WEB-02, WEB-03, WEB-08)
+- [x] 12-01-PLAN.md -- Dashboard, detail, status/notes, and search endpoint tests (WEB-01, WEB-02, WEB-03, WEB-08)
 - [ ] 12-02-PLAN.md -- CSV/JSON export, bulk status, and import endpoint tests (WEB-04, WEB-05, WEB-06, WEB-07)
 - [ ] 12-03-PLAN.md -- RemoteOK parsing/error handling and platform registry/protocol tests (API-01, API-02, API-03, API-04)
 
@@ -168,7 +168,7 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
 | 9. Test Infrastructure | v1.1 | 2/2 | Complete | 2026-02-08 |
 | 10. Unit Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
 | 11. Database Integration Tests | v1.1 | 2/2 | Complete | 2026-02-08 |
-| 12. Web & API Integration Tests | v1.1 | 0/3 | Not started | - |
+| 12. Web & API Integration Tests | v1.1 | 1/3 | In progress | - |
 | 13. Config Integration Tests | v1.1 | 0/1 | Not started | - |
 | 14. CI Pipeline | v1.1 | 0/2 | Not started | - |
 | 15. E2E Tests | v1.1 | 0/2 | Not started | - |
