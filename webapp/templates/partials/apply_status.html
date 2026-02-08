@@ -1,0 +1,72 @@
+{# Apply status partial -- rendered per SSE event and swapped into #apply-live-status #}
+
+{% if event.type == "progress" %}
+<div class="flex items-center gap-2 py-2">
+    <div class="animate-spin h-4 w-4 border-2 border-purple-500 border-t-transparent rounded-full"></div>
+    <span class="text-sm text-gray-700">{{ event.message }}</span>
+</div>
+
+{% elif event.type == "awaiting_confirm" %}
+<div class="bg-yellow-50 border border-yellow-300 rounded p-4">
+    <p class="text-sm font-medium text-yellow-800 mb-2">{{ event.message }}</p>
+    {% if event.fields_filled %}
+    <div class="text-xs text-gray-600 mb-3">
+        <p class="font-medium mb-1">Fields auto-filled:</p>
+        <ul class="list-disc list-inside">
+            {% for field, value in event.fields_filled.items() %}
+            <li>{{ field }}: {{ value }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% if event.screenshot_path %}
+    <p class="text-xs text-gray-500 mb-2">Screenshot saved: {{ event.screenshot_path }}</p>
+    {% endif %}
+    <div class="flex gap-2">
+        <button hx-post="/jobs/{{ dedup_key | urlencode }}/apply/confirm"
+                hx-target="#apply-status"
+                hx-swap="innerHTML"
+                class="bg-green-600 text-white px-4 py-1.5 rounded text-sm hover:bg-green-700">
+            Confirm &amp; Submit
+        </button>
+        <button hx-post="/jobs/{{ dedup_key | urlencode }}/apply/cancel"
+                hx-target="#apply-status"
+                hx-swap="innerHTML"
+                class="bg-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-400">
+            Cancel
+        </button>
+    </div>
+</div>
+
+{% elif event.type == "captcha" %}
+<div class="bg-orange-50 border border-orange-300 rounded p-4">
+    <p class="text-sm font-medium text-orange-800 mb-2">CAPTCHA Detected</p>
+    <p class="text-sm text-orange-700">{{ event.message }}</p>
+    {% if event.screenshot_path %}
+    <p class="text-xs text-gray-500 mt-1">Screenshot: {{ event.screenshot_path }}</p>
+    {% endif %}
+    <p class="text-sm text-orange-700 mt-2">Please solve the CAPTCHA in the browser window, then click Continue.</p>
+    <button hx-post="/jobs/{{ dedup_key | urlencode }}/apply/confirm"
+            hx-target="#apply-status"
+            hx-swap="innerHTML"
+            class="mt-2 bg-orange-600 text-white px-4 py-1.5 rounded text-sm hover:bg-orange-700">
+        I solved it -- Continue
+    </button>
+</div>
+
+{% elif event.type == "error" %}
+<div class="bg-red-50 border border-red-400 text-red-800 px-4 py-3 rounded">
+    <p class="text-sm font-medium">Error</p>
+    <p class="text-sm">{{ event.message }}</p>
+</div>
+
+{% elif event.type == "done" %}
+<div class="{% if event.message and 'success' in event.message.lower() %}bg-green-50 border-green-400 text-green-800{% else %}bg-gray-50 border-gray-300 text-gray-700{% endif %} border px-4 py-3 rounded">
+    <p class="text-sm font-medium">{{ event.message or "Apply flow complete" }}</p>
+</div>
+
+{% else %}
+<div class="py-2">
+    <span class="text-sm text-gray-500">{{ event.message }}</span>
+</div>
+{% endif %}
