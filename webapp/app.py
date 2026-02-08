@@ -26,6 +26,17 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Job Tracker")
 
+
+def _parse_score(value: str | None) -> int | None:
+    """Convert a score query/form parameter to int, treating empty string as None."""
+    if not value:
+        return None
+    try:
+        return int(value)
+    except Exception:
+        return None
+
+
 BASE_DIR = Path(__file__).parent
 RESUMES_TAILORED_DIR = Path("resumes/tailored")
 DEFAULT_RESUME_PATH = "resumes/Patryk_Golabek_Resume_ATS.pdf"
@@ -52,17 +63,18 @@ STATUSES = [
 async def dashboard(
     request: Request,
     q: str = Query(""),
-    score: int | None = Query(None),
+    score: str | None = Query(None),
     platform: str | None = Query(None),
     status: str | None = Query(None),
     sort: str = Query("score"),
     dir: str = Query("desc"),
 ):
+    score_int = _parse_score(score)
     jobs = db.get_jobs(
         search=q if q else None,
-        score_min=score,
-        platform=platform,
-        status=status,
+        score_min=score_int,
+        platform=platform if platform else None,
+        status=status if status else None,
         sort_by=sort,
         sort_dir=dir,
     )
@@ -76,7 +88,7 @@ async def dashboard(
             "statuses": STATUSES,
             "filters": {
                 "q": q,
-                "score": score,
+                "score": score_int,
                 "platform": platform,
                 "status": status,
                 "sort": sort,
@@ -90,7 +102,7 @@ async def dashboard(
 async def search_jobs(
     request: Request,
     q: str = Query(""),
-    score: int | None = Query(None),
+    score: str | None = Query(None),
     platform: str | None = Query(None),
     status: str | None = Query(None),
     sort: str = Query("score"),
@@ -98,9 +110,9 @@ async def search_jobs(
 ):
     jobs = db.get_jobs(
         search=q if q else None,
-        score_min=score,
-        platform=platform,
-        status=status,
+        score_min=_parse_score(score),
+        platform=platform if platform else None,
+        status=status if status else None,
         sort_by=sort,
         sort_dir=dir,
     )
@@ -116,7 +128,7 @@ async def bulk_status_update(
     job_keys: Annotated[list[str] | None, Form()] = None,
     bulk_status: str = Form(""),
     q: str = Form(""),
-    score: int | None = Form(None),
+    score: str | None = Form(None),
     platform: str | None = Form(None),
     status: str | None = Form(None),
     sort: str = Form("score"),
@@ -130,9 +142,9 @@ async def bulk_status_update(
     # Re-fetch with current filters and return updated table body
     jobs = db.get_jobs(
         search=q if q else None,
-        score_min=score,
-        platform=platform,
-        status=status,
+        score_min=_parse_score(score),
+        platform=platform if platform else None,
+        status=status if status else None,
         sort_by=sort,
         sort_dir=dir,
     )
@@ -145,7 +157,7 @@ async def bulk_status_update(
 @app.get("/export/csv")
 async def export_csv(
     q: str = Query(""),
-    score: int | None = Query(None),
+    score: str | None = Query(None),
     platform: str | None = Query(None),
     status: str | None = Query(None),
     sort: str = Query("score"),
@@ -153,9 +165,9 @@ async def export_csv(
 ):
     jobs = db.get_jobs(
         search=q if q else None,
-        score_min=score,
-        platform=platform,
-        status=status,
+        score_min=_parse_score(score),
+        platform=platform if platform else None,
+        status=status if status else None,
         sort_by=sort,
         sort_dir=dir,
     )
@@ -188,7 +200,7 @@ async def export_csv(
 @app.get("/export/json")
 async def export_json(
     q: str = Query(""),
-    score: int | None = Query(None),
+    score: str | None = Query(None),
     platform: str | None = Query(None),
     status: str | None = Query(None),
     sort: str = Query("score"),
@@ -196,9 +208,9 @@ async def export_json(
 ):
     jobs = db.get_jobs(
         search=q if q else None,
-        score_min=score,
-        platform=platform,
-        status=status,
+        score_min=_parse_score(score),
+        platform=platform if platform else None,
+        status=status if status else None,
         sort_by=sort,
         sort_dir=dir,
     )
