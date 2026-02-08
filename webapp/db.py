@@ -156,7 +156,7 @@ def get_conn() -> sqlite3.Connection:
     global _memory_conn
     if _USE_MEMORY:
         if _memory_conn is None:
-            _memory_conn = sqlite3.connect(":memory:")
+            _memory_conn = sqlite3.connect(":memory:", check_same_thread=False)
             _memory_conn.row_factory = sqlite3.Row
             _memory_conn.execute("PRAGMA journal_mode=WAL")
             _memory_conn.execute("PRAGMA busy_timeout = 5000")
