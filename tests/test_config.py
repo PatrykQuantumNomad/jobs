@@ -330,3 +330,172 @@ class TestConfigValidation:
             AppSettings.model_config["yaml_file"] = original_yaml
             AppSettings.model_config["env_file"] = original_env
             reset_settings()
+
+
+# =============================================================================
+# CFG-03: Default Values
+# =============================================================================
+
+
+@pytest.mark.integration
+class TestConfigDefaults:
+    """Verify that optional fields get documented default values."""
+
+    def test_minimal_yaml_gets_all_defaults(self, config_from_yaml):
+        """Loading only required fields fills all defaults correctly."""
+        settings = config_from_yaml(MINIMAL_YAML)
+
+        # search defaults
+        assert settings.search.min_salary == 150_000
+
+        # platforms all default to enabled
+        assert settings.platforms.indeed.enabled is True
+        assert settings.platforms.dice.enabled is True
+        assert settings.platforms.remoteok.enabled is True
+
+        # timing defaults
+        assert settings.timing.nav_delay_min == 2.0
+        assert settings.timing.nav_delay_max == 5.0
+        assert settings.timing.form_delay_min == 1.0
+        assert settings.timing.form_delay_max == 2.0
+        assert settings.timing.page_load_timeout == 30_000
+
+        # schedule defaults
+        assert settings.schedule.enabled is False
+        assert settings.schedule.hour == 8
+        assert settings.schedule.minute == 0
+        assert settings.schedule.weekdays is None
+
+        # scoring weight defaults
+        assert settings.scoring.weights.title_match == 2.0
+        assert settings.scoring.weights.tech_overlap == 2.0
+        assert settings.scoring.weights.remote == 1.0
+        assert settings.scoring.weights.salary == 1.0
+
+        # apply defaults
+        assert settings.apply.default_mode == "semi_auto"
+        assert settings.apply.confirm_before_submit is True
+        assert settings.apply.max_concurrent_applies == 1
+        assert settings.apply.screenshot_before_submit is True
+        assert settings.apply.headed_mode is True
+        assert settings.apply.ats_form_fill_enabled is True
+        assert settings.apply.ats_form_fill_timeout == 120
+
+    def test_credential_defaults_are_none_or_empty(self, config_from_yaml):
+        """Credential and candidate fields default to None/empty with /dev/null env."""
+        settings = config_from_yaml(MINIMAL_YAML)
+
+        assert settings.indeed_email is None
+        assert settings.dice_email is None
+        assert settings.dice_password is None
+        assert settings.candidate_first_name == ""
+        assert settings.candidate_desired_salary_usd == 200_000
+        assert settings.candidate_resume_path == "resumes/Patryk_Golabek_Resume_ATS.pdf"
+
+    def test_partial_section_gets_remaining_defaults(self, config_from_yaml):
+        """Partial timing section keeps defaults for unspecified fields."""
+        partial = {**MINIMAL_YAML, "timing": {"nav_delay_min": 0.5}}
+        settings = config_from_yaml(partial)
+
+        assert settings.timing.nav_delay_min == 0.5
+        assert settings.timing.nav_delay_max == 5.0  # default
+        assert settings.timing.form_delay_min == 1.0  # default
+        assert settings.timing.form_delay_max == 2.0  # default
+        assert settings.timing.page_load_timeout == 30_000  # default
+
+    def test_search_query_defaults(self, config_from_yaml):
+        """Query with only title gets default keywords, location, max_pages."""
+        settings = config_from_yaml(MINIMAL_YAML)
+        query = settings.search.queries[0]
+
+        assert query.title == "test engineer"
+        assert query.keywords == []
+        assert query.location == ""
+        assert query.max_pages == 5
+        assert query.platforms == []
+
+
+# =============================================================================
+# CFG-04: Environment Variable Overrides
+# =============================================================================
+
+
+@pytest.mark.integration
+class TestConfigEnvOverrides:
+    """Verify that environment variables override YAML and model defaults."""
+
+    def test_top_level_env_overrides_default(self, monkeypatch, config_from_yaml):
+        """Env var overrides the model default for a top-level scalar field."""
+        monkeypatch.setenv("CANDIDATE_DESIRED_SALARY_USD", "300000")
+        settings = config_from_yaml(MINIMAL_YAML)
+
+        assert settings.candidate_desired_salary_usd == 300_000
+
+    def test_credential_env_overrides(self, monkeypatch, config_from_yaml):
+        """Env vars for credentials populate fields that default to None."""
+        monkeypatch.setenv("DICE_EMAIL", "test@test.com")
+        monkeypatch.setenv("DICE_PASSWORD", "secret")
+        settings = config_from_yaml(MINIMAL_YAML)
+
+        assert settings.dice_email == "test@test.com"
+        assert settings.dice_password == "secret"
+
+    def test_json_env_overrides_nested_section(self, monkeypatch, config_from_yaml):
+        """JSON env var overrides an entire nested section."""
+        import json
+
+        monkeypatch.setenv(
+            "TIMING",
+            json.dumps(
+                {
+                    "nav_delay_min": 99.0,
+                    "nav_delay_max": 99.0,
+                    "form_delay_min": 99.0,
+                    "form_delay_max": 99.0,
+                    "page_load_timeout": 99000,
+                }
+            ),
+        )
+        settings = config_from_yaml(MINIMAL_YAML)
+
+        assert settings.timing.nav_delay_min == 99.0
+        assert settings.timing.page_load_timeout == 99000
+
+    def test_underscore_delimiter_does_not_work_for_nested(self, monkeypatch, config_from_yaml):
+        """Double-underscore env vars do NOT override nested fields (no env_nested_delimiter)."""
+        monkeypatch.setenv("TIMING__NAV_DELAY_MIN", "99")
+        settings = config_from_yaml(MINIMAL_YAML)
+
+        # Unchanged because pydantic-settings has no env_nested_delimiter configured
+        assert settings.timing.nav_delay_min == 2.0
+
+    def test_env_overrides_yaml_value(self, monkeypatch, config_from_yaml):
+        """Env var wins over YAML-specified value (env > yaml precedence)."""
+        import json
+
+        monkeypatch.setenv(
+            "SEARCH",
+            json.dumps({"min_salary": 250000, "queries": [{"title": "test"}]}),
+        )
+        # FULL_YAML sets search.min_salary=180000, but env should win
+        settings = config_from_yaml(FULL_YAML)
+
+        assert settings.search.min_salary == 250_000
+
+    def test_source_priority_chain(self, monkeypatch, config_from_yaml):
+        """Full priority chain: model default < yaml < env var."""
+        # Step 1: model default (no YAML override, no env var)
+        settings = config_from_yaml(MINIMAL_YAML)
+        assert settings.candidate_desired_salary_usd == 200_000  # model default
+
+        # Step 2: env var overrides model default
+        monkeypatch.setenv("CANDIDATE_DESIRED_SALARY_USD", "350000")
+        settings = config_from_yaml(MINIMAL_YAML)
+        assert settings.candidate_desired_salary_usd == 350_000  # env wins
+
+    def test_env_file_dev_null_isolates_from_real_dotenv(self, config_from_yaml):
+        """With env_file=/dev/null, real .env values do not leak in."""
+        settings = config_from_yaml(MINIMAL_YAML)
+
+        # If real .env leaked, dice_password would be set
+        assert settings.dice_password is None
