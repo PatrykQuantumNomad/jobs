@@ -5,16 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** v1.0 shipped. Planning next milestone.
+**Current focus:** v1.1 Test Web App — comprehensive test suite + CI pipeline
 
 ## Current Position
 
-Phase: All complete (8 of 8)
-Plan: Not started (next milestone)
-Status: Ready to plan
-Last activity: 2026-02-08 -- Completed quick/001-fix-technical-debt
-
-Progress: [##############################] 30/30 (100%) -- v1.0
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-08 — Milestone v1.1 started
 
 ## v1.0 Performance Summary
 

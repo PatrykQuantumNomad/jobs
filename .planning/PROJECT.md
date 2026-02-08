@@ -45,7 +45,18 @@ A self-hosted, single-user job search automation platform. Clone the repo, drop 
 
 ### Active
 
-(None -- fresh for next milestone)
+## Current Milestone: v1.1 Test Web App
+
+**Goal:** Comprehensive automated test suite with CI pipeline covering all application layers — unit/integration (pytest) + E2E (Playwright) for scoring, deduplication, dashboard, platform scrapers (mocked), and apply flow. 80%+ coverage target, CI-ready on GitHub Actions.
+
+**Target features:**
+- pytest-based unit tests for scoring, dedup, salary normalization, config validation
+- pytest-based integration tests for FastAPI routes, SQLite queries, FTS5 search
+- Mocked platform scraper tests (Indeed, Dice, RemoteOK extraction logic)
+- Playwright E2E tests for critical dashboard flows (filtering, status updates, kanban, export)
+- E2E tests for AI resume/cover letter generation and apply flow
+- GitHub Actions CI pipeline running all tests on push/PR
+- Coverage reporting with 80%+ target
 
 ### Out of Scope
 
@@ -66,7 +77,7 @@ A self-hosted, single-user job search automation platform. Clone the repo, drop 
 **Tech stack:** Python 3.11+, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), pydantic-settings + YAML, Anthropic SDK (Claude), WeasyPrint, sse-starlette, Chart.js, SortableJS
 
 **Known technical debt:**
-- No automated test suite (manual verification only)
+- No automated test suite (manual verification only) — **v1.1 addresses this**
 - CDN-loaded JS libraries (htmx, Chart.js, SortableJS) rather than bundled
 - Lazy imports could be replaced with proper dependency injection
 - ATS form fill covers 5 providers (Greenhouse, Lever, Ashby, BambooHR, Workday) but needs broader coverage
@@ -95,4 +106,4 @@ A self-hosted, single-user job search automation platform. Clone the repo, drop 
 | Lazy imports throughout | Prevents circular deps and startup failures when optional deps missing | ✓ Good -- but tech debt |
 
 ---
-*Last updated: 2026-02-08 after v1.0 milestone*
+*Last updated: 2026-02-08 after v1.1 milestone started*
