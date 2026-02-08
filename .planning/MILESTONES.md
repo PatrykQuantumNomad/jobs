@@ -1,5 +1,35 @@
 # Milestones: JobFlow
 
+## v1.1 Test Web App (Shipped: 2026-02-08)
+
+**Delivered:** Comprehensive automated test suite with CI pipeline covering all application layers -- 428 tests (unit, integration, E2E) with 80%+ coverage and GitHub Actions CI.
+
+**Phases completed:** 9-15 (14 plans total)
+
+**Key accomplishments:**
+
+- Built complete test infrastructure with isolation fixtures (settings reset, in-memory DB, network/API blocking) ensuring zero cross-test contamination
+- Created 204 unit tests covering all pure logic modules (models, scoring, salary, dedup, anti-fabrication, delta detection) with 92-100% coverage
+- Built 68 database integration tests verifying CRUD lifecycle, FTS5 search, activity log, and schema initialization at 91% coverage
+- Created 98 web/API integration tests for all FastAPI endpoints, RemoteOK parsing, and platform registry protocol compliance
+- Set up GitHub Actions CI pipeline with coverage enforcement (80% threshold), ruff linting, and separate non-blocking E2E job
+- Built 11 Playwright E2E tests for dashboard, filtering, kanban drag-and-drop, and CSV/JSON export downloads
+
+**Stats:**
+
+- 141 files created/modified
+- 5,639 lines of test code (Python)
+- 7 phases, 14 plans
+- 428 tests total (417 unit/integration + 11 E2E)
+- 45 requirements satisfied (45/45)
+- 1 day (2026-02-08)
+
+**Git range:** `docs(09)` -> `code clean up (3741989)`
+
+**What's next:** Next milestone TBD
+
+---
+
 ## v1.0 MVP (Shipped: 2026-02-08)
 
 **Delivered:** Complete job search automation platform with discovery, scoring, web dashboard, AI resume tailoring, and one-click apply -- from CLI tool to daily-driver web application in a single day.
