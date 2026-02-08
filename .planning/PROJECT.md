@@ -1,62 +1,79 @@
-# JobFlow — Personal Job Search Automation
+# JobFlow -- Personal Job Search Automation
 
 ## What This Is
 
-A self-hosted, single-user job search automation tool. Clone the repo, drop in your resume and a config file, and the system scrapes job boards, scores matches against your profile, manages listings through a web dashboard, and automates applications with flexible control — from fully automated to manual review. Built for power users who want to replace manual job searching with a reliable daily pipeline.
+A self-hosted, single-user job search automation platform. Clone the repo, drop in your resume and a YAML config file, and the system scrapes job boards (Indeed, Dice, RemoteOK), scores matches against your profile, manages listings through a web dashboard with analytics and kanban views, generates AI-tailored resumes and cover letters, and automates applications with configurable control levels -- from one-click auto-apply to careful manual review. Runs daily via launchd scheduler with real-time SSE progress streaming to the dashboard.
 
 ## Core Value
 
-**From discovery to application in one tool.** The system must reliably find relevant jobs, present them clearly, and make applying as frictionless as the user wants — whether that's one-click auto-apply or careful manual review.
+**From discovery to application in one tool.** The system must reliably find relevant jobs, present them clearly, and make applying as frictionless as the user wants -- whether that's one-click auto-apply or careful manual review.
 
 ## Requirements
 
 ### Validated
 
-- ✓ Multi-platform scraping (Indeed, Dice, RemoteOK) — existing
-- ✓ Stealth browser automation with anti-detection (Playwright + playwright-stealth) — existing
-- ✓ Session persistence per platform (browser_sessions/) — existing
-- ✓ Human-in-the-loop CAPTCHA/verification handling — existing
-- ✓ Job scoring engine (1-5 scale against candidate profile) — existing
-- ✓ Cross-platform deduplication by normalized company+title — existing
-- ✓ CLI orchestrator with 5-phase pipeline (setup → login → search → score → apply) — existing
-- ✓ Raw + scored JSON output with per-job description files — existing
-- ✓ Web dashboard with SQLite persistence, filtering, status updates — existing
-- ✓ Form filling heuristics for application fields — existing
-- ✓ Configurable search queries and platform selection — existing
-- ✓ Debug screenshot capture on selector failure — existing
+- ✓ Multi-platform scraping (Indeed, Dice, RemoteOK) -- existing + v1.0
+- ✓ Stealth browser automation with anti-detection (Playwright + playwright-stealth) -- existing
+- ✓ Session persistence per platform (browser_sessions/) -- existing
+- ✓ Human-in-the-loop CAPTCHA/verification handling -- existing
+- ✓ Job scoring engine (1-5 scale against candidate profile) -- existing + v1.0
+- ✓ Cross-platform deduplication by normalized company+title -- existing + v1.0 (fuzzy)
+- ✓ CLI orchestrator with 5-phase pipeline (setup -> login -> search -> score -> apply) -- existing
+- ✓ Web dashboard with SQLite persistence, filtering, status updates -- existing + v1.0
+- ✓ Form filling heuristics for application fields -- existing + v1.0 (ATS iframe)
+- ✓ Configurable search queries and platform selection -- existing + v1.0 (YAML)
+- ✓ Debug screenshot capture on selector failure -- existing
+- ✓ CFG-01: Single YAML config for all settings -- v1.0
+- ✓ CFG-02: Scheduled pipeline runs via launchd -- v1.0
+- ✓ CFG-03: Salary normalization to comparable USD annual -- v1.0
+- ✓ CFG-04: Apply mode selection (full-auto, semi-auto, easy-apply-only) -- v1.0
+- ✓ DISC-01: Delta detection for new jobs -- v1.0
+- ✓ DISC-02: Fuzzy company deduplication -- v1.0
+- ✓ DISC-03: Score breakdown with point-by-point explanation -- v1.0
+- ✓ DASH-01: FTS5 text search -- v1.0
+- ✓ DASH-02: 9-status workflow (Saved through Ghosted) -- v1.0
+- ✓ DASH-03: Bulk status actions -- v1.0
+- ✓ DASH-04: CSV/JSON export -- v1.0
+- ✓ DASH-05: Activity log per job -- v1.0
+- ✓ DASH-06: Analytics with Chart.js -- v1.0
+- ✓ DASH-07: Kanban board with SortableJS drag-and-drop -- v1.0
+- ✓ AI-01: AI-tailored resume per job -- v1.0
+- ✓ AI-02: AI-generated cover letter -- v1.0
+- ✓ AI-03: Multi-resume version tracking -- v1.0
+- ✓ APPLY-01: One-click apply from dashboard with SSE streaming -- v1.0
+- ✓ PLAT-01: Pluggable platform architecture -- v1.0
 
 ### Active
 
-- [ ] Single config file (YAML/JSON) for all user settings — replace hardcoded CLAUDE.md profile
-- [ ] Resume directory with original + variant support
-- [ ] AI-powered resume tailoring per job description
-- [ ] Flexible apply modes: full-auto (with approval gate), semi-auto (review + submit), Easy Apply only
-- [ ] Dashboard improvements: polish UI, better job detail views, apply actions from dashboard
-- [ ] Pluggable platform architecture — easy to add new job boards
-- [ ] Application tracking and status management (applied, interviewing, rejected, etc.)
-- [ ] Portfolio-quality README, tests, and code polish
+(None -- fresh for next milestone)
 
 ### Out of Scope
 
-- Multi-user / multi-tenant support — this is a single-user tool, configured per clone
-- Mobile app — web dashboard is sufficient
-- Real-time notifications (email/Slack alerts) — user runs the pipeline on their schedule
-- LinkedIn scraping — high legal/ToS risk, complex anti-bot, defer to future consideration
-- Guided CLI setup wizard — edit config files directly, keep it simple
+- Multi-user / multi-tenant support -- single-user tool, configured per clone
+- Mobile app / PWA -- web dashboard is sufficient, job apps happen at a desk
+- LinkedIn integration -- aggressive anti-automation, permanent account ban risk
+- CAPTCHA/Cloudflare bypass -- arms race, legally grey, detect-and-notify is correct
+- Chrome extension -- separate product, tangential to core
+- AI chatbot interface -- LLM latency per interaction, slower than clicking filters
+- Contact/networking CRM -- separate problem domain, notes field is sufficient
+- Payment/subscription features -- open-source portfolio project, no monetization
+- Fully autonomous mass-apply -- ATS blacklisting risk, destroys candidate reputation
 
 ## Context
 
-**Existing codebase:** Fully functional 5-phase pipeline with Indeed, Dice, and RemoteOK support. Browser automation uses Playwright with stealth patches. Web dashboard built with FastAPI + Jinja2 + htmx + SQLite. Scoring engine uses weighted criteria (title, tech stack, location, salary). End-to-end tested: 619 raw jobs → 106 unique → 19 scored 3+.
+**v1.0 shipped:** 2026-02-08. 8 phases, 24 plans, ~80 tasks. 6,705 Python + 1,501 HTML LOC. Full pipeline from YAML config through discovery, scoring, dashboard management, AI resume tailoring, to one-click apply with real-time SSE streaming.
 
-**Current friction:** The pipeline finds jobs reliably, but everything after scraping is manual. Getting from "here are 20 good matches" to "applied to 15 of them" requires too much hand-holding. The apply phase needs the most work.
+**Tech stack:** Python 3.11+, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), pydantic-settings + YAML, Anthropic SDK (Claude), WeasyPrint, sse-starlette, Chart.js, SortableJS
 
-**User profile:** Currently hardcoded in CLAUDE.md. Needs to move to a standalone config file that any user can populate for themselves.
-
-**Platform stability:** Indeed, Dice, and RemoteOK selectors have been stable as of Feb 2026. Selector breakage is a known risk but not the primary pain point.
+**Known technical debt:**
+- No automated test suite (manual verification only)
+- CDN-loaded JS libraries (htmx, Chart.js, SortableJS) rather than bundled
+- Lazy imports could be replaced with proper dependency injection
+- ATS form fill covers 5 providers (Greenhouse, Lever, Ashby, BambooHR, Workday) but needs broader coverage
 
 ## Constraints
 
-- **Tech stack**: Python 3.11+, Playwright, FastAPI — established and working, no reason to change
+- **Tech stack**: Python 3.11+, Playwright, FastAPI -- established and working, no reason to change
 - **Single user**: All design decisions assume one user per installation. No auth layer needed.
 - **Anti-detection**: Must maintain stealth browser approach. System Chrome, no automation flags.
 - **Human-in-the-loop**: Application submission always requires human approval (even in "auto" mode, there's an approve step)
@@ -66,11 +83,16 @@ A self-hosted, single-user job search automation tool. Clone the repo, drop in y
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Single config file + resume dir for user profile | Simple, git-friendly, no setup wizard needed | — Pending |
-| Pluggable platform architecture | Future-proof for adding boards without touching core | — Pending |
-| Three apply modes (auto/semi/manual) | Different comfort levels for different job types | — Pending |
-| AI resume tailoring | Competitive advantage — personalized resumes score better | — Pending |
-| Keep FastAPI + htmx dashboard | Already built and working, just needs polish | — Pending |
+| pydantic-settings with YAML config | Clean, validated, type-safe configuration | ✓ Good |
+| Protocol-based platform architecture | More Pythonic than ABC, easier to test and extend | ✓ Good |
+| Three apply modes (auto/semi/manual) | Different comfort levels for different job types | ✓ Good |
+| Anthropic SDK for AI (not LangChain) | Lightweight, single-prompt use doesn't need framework overhead | ✓ Good |
+| asyncio.to_thread for Playwright bridge | Correct pattern for sync-in-async without blocking event loop | ✓ Good |
+| FTS5 content-sync tables | Search without double-storage of job data | ✓ Good |
+| WeasyPrint for PDF rendering | Jinja2 HTML templates, Calibri/Carlito font fallback for ATS | ✓ Good |
+| SSE via sse-starlette + htmx-ext-sse | Real-time dashboard updates without WebSocket complexity | ✓ Good |
+| Temperature=0 for resume, 0.3 for cover letter | Max accuracy for factual resume, natural voice for letters | ✓ Good |
+| Lazy imports throughout | Prevents circular deps and startup failures when optional deps missing | ✓ Good -- but tech debt |
 
 ---
-*Last updated: 2026-02-07 after initialization*
+*Last updated: 2026-02-08 after v1.0 milestone*
