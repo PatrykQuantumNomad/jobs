@@ -3,7 +3,7 @@
 ## Milestones
 
 - SHIPPED **v1.0 MVP** -- Phases 1-8 (shipped 2026-02-08)
-- IN PROGRESS **v1.1 Test Web App** -- Phases 9-15
+- SHIPPED **v1.1 Test Web App** -- Phases 9-15 (shipped 2026-02-08)
 
 ## Phases
 
@@ -23,7 +23,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 </details>
 
-### v1.1 Test Web App (In Progress)
+### v1.1 Test Web App (SHIPPED 2026-02-08)
 
 **Milestone Goal:** Comprehensive automated test suite with CI pipeline covering all application layers -- unit/integration (pytest) + E2E (Playwright) for scoring, deduplication, dashboard, platform scrapers (mocked), and apply flow. 80%+ coverage target, CI-ready on GitHub Actions.
 
@@ -33,7 +33,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 12: Web & API Integration Tests** - FastAPI routes, RemoteOK mocking, platform registry -- completed 2026-02-08
 - [x] **Phase 13: Config Integration Tests** - YAML loading, validation, env overrides -- completed 2026-02-08
 - [x] **Phase 14: CI Pipeline** - GitHub Actions workflow, coverage gates, linting -- completed 2026-02-08
-- [ ] **Phase 15: E2E Tests** - Playwright browser tests for critical dashboard flows
+- [x] **Phase 15: E2E Tests** - Playwright browser tests for critical dashboard flows -- completed 2026-02-08
 
 ## Phase Details
 
@@ -146,7 +146,7 @@ Plans:
 
 Plans:
 - [x] 15-01-PLAN.md -- E2E infrastructure (pytest-playwright, live server fixture, seeded DB) + dashboard load, filtering, and status change tests (E2E-01, E2E-02, E2E-03)
-- [ ] 15-02-PLAN.md -- Kanban drag-and-drop, CSV/JSON export download tests, and CI E2E command fix (E2E-04, E2E-05)
+- [x] 15-02-PLAN.md -- Kanban drag-and-drop, CSV/JSON export download tests, and CI E2E command fix (E2E-04, E2E-05)
 
 ## Progress
 
@@ -170,4 +170,4 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
 | 12. Web & API Integration Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
 | 13. Config Integration Tests | v1.1 | 1/1 | Complete | 2026-02-08 |
 | 14. CI Pipeline | v1.1 | 1/1 | Complete | 2026-02-08 |
-| 15. E2E Tests | v1.1 | 1/2 | In Progress | - |
+| 15. E2E Tests | v1.1 | 2/2 | Complete | 2026-02-08 |

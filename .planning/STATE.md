@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 15 -- E2E Tests (v1.1 Test Web App)
+**Current focus:** v1.1 Test Web App COMPLETE
 
 ## Current Position
 
-Phase: 15 of 15 (E2E Tests) -- IN PROGRESS
-Plan: 2 of 2 in current phase
-Status: Plan 15-01 complete, plan 15-02 pending
-Last activity: 2026-02-08 -- Completed 15-01-PLAN.md (E2E infrastructure + dashboard/filtering/status tests). 6 Playwright tests passing.
+Phase: 15 of 15 (E2E Tests) -- COMPLETE
+Plan: 2 of 2 in current phase -- COMPLETE
+Status: All 39 plans across 15 phases complete. v1.0 MVP + v1.1 Test Web App shipped.
+Last activity: 2026-02-08 -- Completed 15-02-PLAN.md (kanban drag-and-drop, export downloads, CI fix). 11 E2E tests + 417 unit/integration tests = 428 total.
 
-Progress: [######################################] 97% (38/39 total plans -- 24 v1.0 + 14 v1.1 complete, 1 v1.1 TBD)
+Progress: [########################################] 100% (39/39 total plans -- 24 v1.0 + 15 v1.1 complete)
 
 ## Performance Metrics
 
@@ -46,7 +46,7 @@ Progress: [######################################] 97% (38/39 total plans -- 24 
 | 12-web-api-integration-tests | 3/3 | 15 min | 5.0 min |
 | 13-config-integration-tests | 1/1 | 4 min | 4.0 min |
 | 14-ci-pipeline | 1/1 | 2 min | 2.0 min |
-| 15-e2e-tests | 1/2 | 11 min | 11.0 min |
+| 15-e2e-tests | 2/2 | 14 min | 7.0 min |
 
 ## Accumulated Context
 
@@ -139,6 +139,13 @@ From 15-01:
 - E2E tests require `-p no:socket -o addopts=` to override pytest-socket blocking
 - Use page.expect_response() context manager for htmx POST waiting (not wait_for_response)
 
+From 15-02:
+- htmx.ajax fallback for SortableJS drag-and-drop (forceFallback: true makes native drag_to unreliable)
+- seeded_kanban_db fixture creates 5 jobs in saved/applied statuses for kanban-specific tests
+- CSV/JSON validation reads downloaded file content and parses with stdlib csv/json modules
+- CI E2E command uses -p no:socket to disable pytest-socket plugin entirely
+- Final totals: 428 tests (417 unit/integration + 11 E2E), 80%+ coverage
+
 ### Pending Todos
 
 None.
@@ -156,5 +163,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 15-01-PLAN.md (E2E infrastructure + dashboard/filtering/status tests). 6 Playwright tests passing. Ready for 15-02.
+Stopped at: Completed 15-02-PLAN.md (kanban drag-and-drop, export downloads, CI fix). v1.1 Test Web App milestone SHIPPED. All 39 plans complete.
 Resume file: .planning/phases/15-e2e-tests/
