@@ -14,7 +14,6 @@ import pytest
 
 import webapp.db as db_module
 
-
 # ---------------------------------------------------------------------------
 # Test helpers
 # ---------------------------------------------------------------------------
@@ -99,11 +98,13 @@ class TestNewJobTimestamps:
         db_module.upsert_job(job)
         key = _compute_dedup_key("Google", "Staff Engineer")
         row1 = db_module.get_job(key)
+        assert row1 is not None
         original_first_seen = row1["first_seen_at"]
 
         # Upsert again
         db_module.upsert_job(job)
         row2 = db_module.get_job(key)
+        assert row2 is not None
         assert row2["first_seen_at"] == original_first_seen
 
     def test_last_seen_updated_on_re_upsert(self):
@@ -115,11 +116,13 @@ class TestNewJobTimestamps:
         # Set last_seen_at to an old time
         _set_last_seen(key, "2026-01-01T00:00:00")
         row_before = db_module.get_job(key)
+        assert row_before is not None
         assert row_before["last_seen_at"] == "2026-01-01T00:00:00"
 
         # Re-upsert (sets last_seen_at = datetime.now())
         db_module.upsert_job(job)
         row_after = db_module.get_job(key)
+        assert row_after is not None
         assert row_after["last_seen_at"] > "2026-01-01T00:00:00"
 
 
@@ -250,11 +253,16 @@ class TestDeltaDetectionFlow:
         # All 3 should have timestamps
         for key in keys:
             row = db_module.get_job(key)
+            assert row is not None
             assert row["first_seen_at"] is not None
             assert row["last_seen_at"] is not None
 
         # Record first_seen_at values
-        first_seen_values = {key: db_module.get_job(key)["first_seen_at"] for key in keys}
+        first_seen_values = {}
+        for key in keys:
+            r = db_module.get_job(key)
+            assert r is not None
+            first_seen_values[key] = r["first_seen_at"]
 
         # --- Run 2: re-upsert 2 of 3, make 3rd stale ---
         # Set the 3rd job's last_seen_at to an old time (simulates not being in search results)
@@ -277,6 +285,7 @@ class TestDeltaDetectionFlow:
         # Remaining jobs have preserved first_seen_at from Run 1
         for key in keys[:2]:
             row = db_module.get_job(key)
+            assert row is not None
             assert row["first_seen_at"] == first_seen_values[key]
             # last_seen_at was updated by re-upsert (newer than the stale timestamp)
             assert row["last_seen_at"] > "2026-01-01T00:00:00"

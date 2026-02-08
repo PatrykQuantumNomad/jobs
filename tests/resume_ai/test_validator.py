@@ -13,7 +13,6 @@ import pytest
 
 from resume_ai.validator import ValidationResult, _extract_entities, validate_no_fabrication
 
-
 # ---------------------------------------------------------------------------
 # UNIT-07: Entity extraction
 # ---------------------------------------------------------------------------
@@ -123,7 +122,9 @@ class TestAntiFabrication:
 
     def test_identical_text_is_valid(self):
         """Same text for original and tailored -> is_valid=True, all lists empty."""
-        text = "Worked at Translucent Computing using Python and Kubernetes. Achieved 50% improvement."
+        text = (
+            "Worked at Translucent Computing using Python and Kubernetes. Achieved 50% improvement."
+        )
         result = validate_no_fabrication(text, text)
         assert result.is_valid is True
         assert result.new_companies == []
@@ -139,7 +140,10 @@ class TestAntiFabrication:
     def test_new_company_detected(self):
         """Tailored text with new company -> is_valid=False, company in new_companies."""
         original = "Worked at Translucent Computing building cloud infrastructure for 5 years"
-        tailored = "Worked at Translucent Computing and at Stripe building cloud infrastructure for 5 years"
+        tailored = (
+            "Worked at Translucent Computing and at Stripe"
+            " building cloud infrastructure for 5 years"
+        )
         result = validate_no_fabrication(original, tailored)
         assert result.is_valid is False
         assert "stripe" in result.new_companies
@@ -155,7 +159,9 @@ class TestAntiFabrication:
     def test_new_metric_detected(self):
         """Tailored text with new metric -> is_valid=False, metric in new_metrics."""
         original = "Achieved 50% improvement in system latency over baseline"
-        tailored = "Achieved 50% improvement in system latency and 300% growth in throughput over baseline"
+        tailored = (
+            "Achieved 50% improvement in system latency and 300% growth in throughput over baseline"
+        )
         result = validate_no_fabrication(original, tailored)
         assert result.is_valid is False
         assert "300%" in result.new_metrics
@@ -181,8 +187,12 @@ class TestAntiFabrication:
 
     def test_reordered_text_valid(self):
         """Same entities in different order -> is_valid=True."""
-        original = "Experience with python, kubernetes, and terraform at Google. Achieved 50% improvement."
-        tailored = "Achieved 50% improvement at Google. Experience with terraform, kubernetes, and python."
+        original = (
+            "Experience with python, kubernetes, and terraform at Google. Achieved 50% improvement."
+        )
+        tailored = (
+            "Achieved 50% improvement at Google. Experience with terraform, kubernetes, and python."
+        )
         result = validate_no_fabrication(original, tailored)
         assert result.is_valid is True
 

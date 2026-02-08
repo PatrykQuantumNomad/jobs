@@ -26,7 +26,6 @@ import pytest
 
 import webapp.db as db_module
 
-
 # ---------------------------------------------------------------------------
 # Test helpers
 # ---------------------------------------------------------------------------
@@ -115,10 +114,13 @@ class TestCrudLifecycle:
         key = _compute_dedup_key("Google", "Staff Engineer")
 
         # Re-upsert with longer description
-        job2 = _make_job_dict("Google", "Staff Engineer", description="A much longer description text")
+        job2 = _make_job_dict(
+            "Google", "Staff Engineer", description="A much longer description text"
+        )
         db_module.upsert_job(job2)
 
         row = db_module.get_job(key)
+        assert row is not None
         assert row["description"] == "A much longer description text"
 
     def test_upsert_preserves_existing_score(self):
@@ -132,6 +134,7 @@ class TestCrudLifecycle:
         db_module.upsert_job(job2)
 
         row = db_module.get_job(key)
+        assert row is not None
         assert row["score"] == 4
 
     def test_get_job_nonexistent_returns_none(self):
@@ -147,6 +150,7 @@ class TestCrudLifecycle:
 
         db_module.update_job_status(key, status)
         row = db_module.get_job(key)
+        assert row is not None
         assert row["status"] == status
 
     def test_applied_status_sets_applied_date(self):
@@ -157,6 +161,7 @@ class TestCrudLifecycle:
 
         db_module.update_job_status(key, "applied")
         row = db_module.get_job(key)
+        assert row is not None
         assert row["applied_date"] is not None
 
     def test_non_applied_status_no_applied_date(self):
@@ -167,6 +172,7 @@ class TestCrudLifecycle:
 
         db_module.update_job_status(key, "scored")
         row = db_module.get_job(key)
+        assert row is not None
         assert row["applied_date"] is None
 
     def test_update_notes(self):
@@ -177,6 +183,7 @@ class TestCrudLifecycle:
 
         db_module.update_job_notes(key, "Great match for K8s role")
         row = db_module.get_job(key)
+        assert row is not None
         assert row["notes"] == "Great match for K8s role"
 
     def test_mark_viewed_sets_timestamp(self):
@@ -187,6 +194,7 @@ class TestCrudLifecycle:
 
         db_module.mark_viewed(key)
         row = db_module.get_job(key)
+        assert row is not None
         assert row["viewed_at"] is not None
 
     def test_mark_viewed_idempotent(self):
@@ -197,10 +205,12 @@ class TestCrudLifecycle:
 
         db_module.mark_viewed(key)
         row1 = db_module.get_job(key)
+        assert row1 is not None
         first_viewed = row1["viewed_at"]
 
         db_module.mark_viewed(key)
         row2 = db_module.get_job(key)
+        assert row2 is not None
         assert row2["viewed_at"] == first_viewed
 
     def test_get_jobs_filter_by_status(self):
@@ -264,10 +274,7 @@ class TestBulkOperations:
 
     def test_upsert_jobs_returns_count(self):
         """upsert_jobs() processes N jobs and returns N."""
-        jobs = [
-            _make_job_dict(f"Company{i}", f"Engineer {i}")
-            for i in range(5)
-        ]
+        jobs = [_make_job_dict(f"Company{i}", f"Engineer {i}") for i in range(5)]
         count = db_module.upsert_jobs(jobs)
         assert count == 5
 
@@ -289,12 +296,16 @@ class TestBulkOperations:
         # Verify first 2 changed
         for i in range(2):
             key = _compute_dedup_key(f"Company{i}", f"Engineer {i}")
-            assert db_module.get_job(key)["status"] == "saved"
+            row = db_module.get_job(key)
+            assert row is not None
+            assert row["status"] == "saved"
 
         # Verify last 2 unchanged
         for i in range(2, 4):
             key = _compute_dedup_key(f"Company{i}", f"Engineer {i}")
-            assert db_module.get_job(key)["status"] == "discovered"
+            row = db_module.get_job(key)
+            assert row is not None
+            assert row["status"] == "discovered"
 
     def test_bulk_status_update_all_jobs(self):
         """Updating all 3 jobs to 'applied' sets status and applied_date on all."""
@@ -308,6 +319,7 @@ class TestBulkOperations:
         for i in range(3):
             key = _compute_dedup_key(f"Company{i}", f"Engineer {i}")
             row = db_module.get_job(key)
+            assert row is not None
             assert row["status"] == "applied"
             assert row["applied_date"] is not None
 
@@ -532,6 +544,7 @@ class TestBackfillScoreBreakdowns:
         assert count == 1
 
         row = db_module.get_job(key)
+        assert row is not None
         assert row["score"] == 5
         assert row["score_breakdown"] is not None
         assert "title" in row["score_breakdown"]
@@ -624,9 +637,7 @@ class TestSchemaInitialization:
 
         # Verify tables still present
         conn = db_module.get_conn()
-        rows = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        ).fetchall()
+        rows = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
         table_names = {row["name"] for row in rows}
         assert "jobs" in table_names
         assert "activity_log" in table_names
@@ -690,9 +701,7 @@ class TestFts5Search:
 
     def test_search_by_title_keyword(self):
         """Searching by a title keyword returns the matching job."""
-        db_module.upsert_job(
-            _make_job_dict("Acme Corp", "Staff Kubernetes Engineer")
-        )
+        db_module.upsert_job(_make_job_dict("Acme Corp", "Staff Kubernetes Engineer"))
         results = db_module.get_jobs(search="kubernetes")
         assert len(results) == 1
         assert results[0]["title"] == "Staff Kubernetes Engineer"

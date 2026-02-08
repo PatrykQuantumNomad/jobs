@@ -14,7 +14,6 @@ from pydantic import ValidationError
 
 from models import CandidateProfile, Job, JobStatus, SearchQuery
 
-
 # ---------------------------------------------------------------------------
 # JobStatus enum
 # ---------------------------------------------------------------------------
@@ -56,7 +55,7 @@ class TestJobStatus:
 # Job model validation
 # ---------------------------------------------------------------------------
 
-_MINIMAL_JOB = {
+_MINIMAL_JOB: dict = {
     "platform": "indeed",
     "title": "Engineer",
     "company": "ACME",
@@ -110,7 +109,7 @@ class TestJob:
     def test_invalid_platform_rejected(self):
         """Platform not in Literal['indeed','dice','remoteok'] raises."""
         with pytest.raises(ValidationError):
-            Job(platform="linkedin", title="Eng", company="Co", url="https://x.com")
+            Job(platform="linkedin", title="Eng", company="Co", url="https://x.com")  # type: ignore[reportArgumentType]
 
     @pytest.mark.parametrize("field", ["title", "company", "url"])
     def test_missing_required_fields(self, field):
@@ -246,7 +245,7 @@ class TestSearchQuery:
     def test_invalid_platform(self):
         """platform='glassdoor' rejected (not in Literal)."""
         with pytest.raises(ValidationError):
-            SearchQuery(query="python", platform="glassdoor")
+            SearchQuery(query="python", platform="glassdoor")  # type: ignore[reportArgumentType]
 
 
 # ---------------------------------------------------------------------------

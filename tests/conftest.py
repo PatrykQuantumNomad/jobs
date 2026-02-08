@@ -14,6 +14,7 @@ The ``# noqa: E402`` comments suppress ruff's "module-level import not at top
 of file" warning, which is expected here.
 """
 
+import contextlib
 import os
 
 # ── Environment setup (BEFORE any project imports) ────────────────────────
@@ -22,10 +23,8 @@ os.environ["ANTHROPIC_API_KEY"] = "test-key-not-real"
 
 import pytest  # noqa: E402
 
-from config import reset_settings  # noqa: E402
-
 import webapp.db as db_module  # noqa: E402
-
+from config import reset_settings  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Autouse fixture 1: Settings isolation
@@ -61,10 +60,8 @@ def _fresh_db():
     """
     # Teardown any leftover connection from a previous test
     if db_module._memory_conn is not None:
-        try:
+        with contextlib.suppress(Exception):
             db_module._memory_conn.close()
-        except Exception:
-            pass
     db_module._memory_conn = None
 
     # Create a fresh database with full schema
@@ -74,10 +71,8 @@ def _fresh_db():
 
     # Teardown
     if db_module._memory_conn is not None:
-        try:
+        with contextlib.suppress(Exception):
             db_module._memory_conn.close()
-        except Exception:
-            pass
     db_module._memory_conn = None
 
 
@@ -104,12 +99,8 @@ def _block_anthropic(monkeypatch):
                 "-- use the mock_anthropic fixture instead"
             )
 
-        monkeypatch.setattr(
-            anthropic.resources.messages.Messages, "create", _blocked
-        )
-        monkeypatch.setattr(
-            anthropic.resources.messages.Messages, "parse", _blocked
-        )
+        monkeypatch.setattr(anthropic.resources.messages.Messages, "create", _blocked)
+        monkeypatch.setattr(anthropic.resources.messages.Messages, "parse", _blocked)
     except ImportError:
         pass  # anthropic not installed -- nothing to block
 

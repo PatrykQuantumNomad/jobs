@@ -5,6 +5,7 @@ factory-boy has no native Pydantic integration, but setting
 ``Job(field1=val1, ...)`` which triggers Pydantic validation.
 """
 
+# pyright: reportPrivateImportUsage=false
 import factory
 from faker import Faker
 
@@ -23,7 +24,7 @@ class JobFactory(factory.Factory):
     - description: str (not list -- Faker's paragraphs returns list)
     """
 
-    class Meta:
+    class Meta:  # type: ignore[reportIncompatibleVariableOverride]
         model = Job
 
     id = factory.LazyFunction(lambda: fake.hexify("????????????????"))
@@ -33,22 +34,12 @@ class JobFactory(factory.Factory):
     location = factory.LazyFunction(
         lambda: fake.random_element(["Remote", "New York, NY", "Toronto, ON"])
     )
-    url = factory.LazyFunction(
-        lambda: f"https://example.com/jobs/{fake.uuid4()}"
-    )
-    salary = factory.LazyFunction(
-        lambda: f"${fake.random_int(150, 300)}K"
-    )
-    salary_min = factory.LazyFunction(
-        lambda: fake.random_int(150000, 200000)
-    )
+    url = factory.LazyFunction(lambda: f"https://example.com/jobs/{fake.uuid4()}")
+    salary = factory.LazyFunction(lambda: f"${fake.random_int(150, 300)}K")
+    salary_min = factory.LazyFunction(lambda: fake.random_int(150000, 200000))
     # salary_max must be >= salary_min (Pydantic validator)
-    salary_max = factory.LazyAttribute(
-        lambda obj: obj.salary_min + fake.random_int(0, 150000)
-    )
-    posted_date = factory.LazyFunction(
-        lambda: fake.date_between("-14d", "today").isoformat()
-    )
+    salary_max = factory.LazyAttribute(lambda obj: obj.salary_min + fake.random_int(0, 150000))
+    posted_date = factory.LazyFunction(lambda: fake.date_between("-14d", "today").isoformat())
     tags = factory.LazyFunction(
         lambda: fake.random_elements(
             ["python", "kubernetes", "terraform", "docker", "aws", "gcp"],

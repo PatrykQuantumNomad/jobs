@@ -15,7 +15,6 @@ import pytest
 from dedup import _normalize_company, fuzzy_deduplicate
 from models import Job
 
-
 # ---------------------------------------------------------------------------
 # Test helpers
 # ---------------------------------------------------------------------------
@@ -23,11 +22,11 @@ from models import Job
 
 def _make_job(company: str, title: str, platform: str = "indeed", **kwargs) -> Job:
     """Build a Job with minimal required fields for dedup tests."""
-    defaults = {
+    defaults: dict = {
         "url": f"https://example.com/{company.lower().replace(' ', '-')}",
     }
     defaults.update(kwargs)
-    return Job(platform=platform, title=title, company=company, **defaults)
+    return Job(platform=platform, title=title, company=company, **defaults)  # type: ignore[reportArgumentType]
 
 
 # ---------------------------------------------------------------------------
@@ -117,9 +116,7 @@ class TestExactDedup:
 
     def test_winner_has_longer_description(self):
         """Same date, different description lengths -> winner is longer."""
-        j1 = _make_job(
-            "Google", "Staff Engineer", posted_date="2026-01-01", description="short"
-        )
+        j1 = _make_job("Google", "Staff Engineer", posted_date="2026-01-01", description="short")
         j2 = _make_job(
             "Google",
             "Staff Engineer",

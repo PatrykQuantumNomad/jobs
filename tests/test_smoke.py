@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from models import Job, JobStatus
+from models import Job
 
 
 class TestFactorySmoke:
@@ -138,10 +138,11 @@ class TestNetworkBlocked:
     """Verify real network access is blocked by pytest-socket."""
 
     def test_socket_blocked(self):
-        import socket
+        from pytest_socket import SocketBlockedError
 
-        with pytest.raises(Exception):
-            # pytest-socket raises SocketBlockedError
+        with pytest.raises(SocketBlockedError):
+            import socket
+
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect(("1.1.1.1", 80))
 

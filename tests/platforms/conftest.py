@@ -1,7 +1,7 @@
 """Platform test fixtures -- mocked API responses."""
 
-import pytest
 import httpx
+import pytest
 import respx
 
 

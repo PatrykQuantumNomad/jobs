@@ -20,7 +20,6 @@ from config import ScoringWeights
 from models import CandidateProfile, Job, JobStatus
 from scorer import JobScorer, ScoreBreakdown
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -55,9 +54,9 @@ def _make_scorer(
     return JobScorer(profile=profile, weights=weights or ScoringWeights())
 
 
-def _make_job(**kwargs):
+def _make_job(**kwargs) -> Job:
     """Build a Job with sensible defaults for scoring tests."""
-    defaults = {
+    defaults: dict = {
         "platform": "indeed",
         "title": "Software Developer",
         "company": "TestCo",
@@ -143,9 +142,7 @@ class TestTechScoring:
 
     def test_five_plus_keywords_scores_2(self):
         scorer = _make_scorer()
-        job = _make_job(
-            description="python kubernetes terraform docker aws gcp"
-        )
+        job = _make_job(description="python kubernetes terraform docker aws gcp")
         _, breakdown = scorer.score_job_with_breakdown(job)
         assert breakdown.tech_points == 2
         assert len(breakdown.tech_matched) >= 5
@@ -378,7 +375,8 @@ class TestScoreBatch:
         ]
         result = scorer.score_batch(jobs)
         scores = [j.score for j in result]
-        assert scores == sorted(scores, reverse=True)
+        assert all(s is not None for s in scores)
+        assert scores == sorted(scores, reverse=True)  # type: ignore[reportArgumentType]
 
 
 @pytest.mark.unit

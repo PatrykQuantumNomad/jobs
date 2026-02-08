@@ -104,7 +104,7 @@ def _validate_against_protocol(cls: type, protocol: type) -> None:
                     f"{method_name} (requires {impl_required} params, "
                     f"protocol allows {proto_required})"
                 )
-        except (ValueError, TypeError, NameError):
+        except ValueError, TypeError, NameError:
             # Some builtins/descriptors are not introspectable -- skip check.
             # NameError can occur if annotations reference unresolvable names.
             pass
