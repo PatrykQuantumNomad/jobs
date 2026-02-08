@@ -1,325 +1,576 @@
-# Domain Pitfalls
+# Domain Pitfalls: Adding a Test Suite to JobFlow
 
-**Domain:** Job search automation -- automated application submission, AI resume tailoring, pluggable platform architecture
-**Researched:** 2026-02-07
-**Confidence:** HIGH (grounded in existing codebase analysis, open-source project patterns, and verified platform behavior)
+**Domain:** Automated test suite + CI pipeline for a Python/FastAPI/Playwright job search automation app
+**Researched:** 2026-02-08
+**Confidence:** HIGH (grounded in direct codebase analysis of all 20+ modules, verified against pytest/FastAPI documentation)
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites, account bans, or render the tool useless.
+Mistakes that cause test suites to be unreliable, misleading, or abandoned entirely.
 
 ---
 
-### Pitfall 1: Account Ban from Behavioral Fingerprinting (Not Just Technical Detection)
+### Pitfall 1: The `webapp.db` Module Runs `init_db()` at Import Time
 
-**What goes wrong:** The tool applies to jobs at machine speed with perfectly uniform timing, identical mouse paths, and zero scroll variation. Indeed's anomaly detection flags the account within days. The account gets permanently suspended with no appeal path.
+**What goes wrong:** Line 723 of `webapp/db.py` calls `init_db()` as a module-level side effect. This means _any_ import of `webapp.db` (or anything that transitively imports it) immediately creates a SQLite database, runs the full migration chain (6 versions, including FTS5 virtual tables and triggers), and sets `PRAGMA user_version`. In tests, this fires before any fixture has a chance to set up a test database. The production `jobs.db` file gets touched by test collection. If the file doesn't exist (CI environment), it gets created in the wrong location.
 
-**Why it happens:** Developers focus entirely on *technical* anti-detection (stealth plugins, UA spoofing, disabling automation flags) and ignore *behavioral* fingerprinting. Indeed explicitly uses "anomaly detection and machine learning solutions to distinguish between human users and bots" (per their DSA transparency report). The existing `human_delay()` with random 2-5s pauses is necessary but insufficient -- real humans also scroll erratically, hover over elements before clicking, sometimes go back and re-read, and have session-level patterns (time of day, session length, breaks).
+**Why it happens:** The module was designed for a single-process dashboard app where eager initialization is convenient. The `JOBFLOW_TEST_DB=1` environment variable support exists but must be set _before_ the module is first imported, which pytest doesn't guarantee unless carefully managed.
 
-**Consequences:** Permanent Indeed account ban. All cached sessions invalidated. Must create new account, potentially from new IP/device. Employer blacklist if flagged mid-application.
+**Consequences:**
+- Tests corrupt the production database if run from the project root
+- In CI, `init_db()` creates `job_pipeline/jobs.db` in the checkout directory, which may be read-only
+- FTS5 virtual tables fail silently if the SQLite build doesn't include FTS5 (some CI images have minimal SQLite)
+- The `_memory_conn` singleton persists across tests if not explicitly reset, leaking state between test functions
 
 **Prevention:**
-1. Rate-limit applications to 5-10 per day maximum (not 5-10 per hour). The commercial tool Wonsulting shut down its bulk-send feature in August 2025 after clients averaged only 2% callback rates from mass applications.
-2. Add session-level behavioral modeling: vary session duration, include "idle" periods, sometimes navigate to non-job pages.
-3. Randomize mouse movement paths, not just timing. Use Bezier curves, not straight lines.
-4. Never apply to more than 2-3 jobs in a single browser session. Close and reopen between batches.
-5. Implement a daily application budget with hard enforcement in the orchestrator.
-6. Monitor for ban signals: unexpected redirects to captcha, "unusual activity" emails, sudden 403s.
+1. Set `JOBFLOW_TEST_DB=1` in `conftest.py` at the very top, before any application imports. Use `os.environ["JOBFLOW_TEST_DB"] = "1"` as the first line.
+2. Add a session-scoped fixture that resets `webapp.db._memory_conn = None` and calls `webapp.db.init_db()` to guarantee a clean schema, then a function-scoped fixture that resets `_memory_conn` between tests for isolation.
+3. Never import `webapp.db` at the top of test files -- always import inside test functions or via fixtures that run after environment setup.
+4. In CI, verify the SQLite version supports FTS5: `sqlite3.connect(":memory:").execute("pragma compile_options").fetchall()` and check for `ENABLE_FTS5`.
 
 **Detection (warning signs):**
-- Cloudflare challenges appearing more frequently than on first use
-- Session cookies invalidated despite no expiry
-- Indeed showing "something went wrong" on apply pages that worked before
-- Application confirmations stop arriving by email
+- Tests pass locally but fail in CI with "no such table: jobs_fts"
+- A `jobs.db` file appears in `job_pipeline/` after running tests
+- Tests that modify job data see stale data from previous tests
 
-**Phase:** Must be addressed in Phase 1 (apply infrastructure) before any automated submissions happen. The daily budget and behavioral guardrails are prerequisites for the entire apply pipeline.
+**Phase:** Must be the FIRST thing addressed. The `conftest.py` environment setup is a prerequisite for every other test.
 
-**Confidence:** HIGH -- verified against Indeed's DSA report and Wonsulting's public shutdown announcement.
+**Confidence:** HIGH -- verified by direct reading of `webapp/db.py` lines 10-16, 152-168, and 723.
 
 ---
 
-### Pitfall 2: ATS Form Diversity is Exponentially Harder Than It Looks
+### Pitfall 2: The `config.py` Singleton Poisons Cross-Test State
 
-**What goes wrong:** The tool is built to handle Indeed Easy Apply and Dice Easy Apply (both platform-native, predictable forms). Then RemoteOK `apply_url` redirects land on Greenhouse, Lever, Ashby, Workday, Workable, BambooHR, JazzHR, iCIMS, SmartRecruiters, Taleo, and dozens of custom company career pages. Each has completely different DOM structure, field names, validation behavior, and multi-step flows. The "generic form filler" handles maybe 30% of forms correctly.
+**What goes wrong:** `config.py` uses a module-level `_settings: AppSettings | None = None` singleton cached by `get_settings()`. Once any test calls `get_settings()`, ALL subsequent tests in the same process get the same `AppSettings` instance -- including its credential fields, search queries, scoring weights, and platform toggles. Tests that need different configurations (e.g., testing with Dice disabled, or testing with different scoring weights) silently use the first test's configuration.
 
-**Why it happens:** The current `FormFiller` uses keyword matching on field attributes (`name`, `id`, `placeholder`, `aria-label`) to identify fields. This works for standardized fields (name, email, phone) but fails on:
-- **Custom questions** that are unique per job posting (e.g., "Are you comfortable with on-call rotations?", "Describe your experience with distributed systems")
-- **Multi-step forms** where fields appear across multiple pages/modals
-- **Iframe-embedded forms** (Greenhouse default is an iframe embed)
-- **Shadow DOM components** (Workday uses Web Components extensively)
-- **Dynamic form fields** that appear based on previous answers
-- **File upload variations** (some accept PDF only, some want DOCX, some have drag-and-drop, some have hidden file inputs)
-- **Dropdown menus** with values that don't match your data format (country picker expecting "US" vs "United States" vs "USA")
+**Why it happens:** The singleton pattern is efficient for production but toxic for test isolation. The `reset_settings()` function exists (line 315) but only clears the cache -- it doesn't prevent the next `get_settings()` from reading the real `config.yaml` and `.env` files, which may not exist in CI.
 
-**Consequences:** Partial form submissions with missing fields. Applications that get rejected by ATS validation. Wrong data in wrong fields (salary in phone field). Wasted applications that count against your daily budget.
+**Consequences:**
+- Tests depend on the order they run (first test sets the singleton)
+- Tests fail in CI because `config.yaml` doesn't exist, causing `ValidationError` on required fields (`search.queries`, `scoring.target_titles`)
+- Credential fields (`dice_password`, etc.) leak into test output/logs
+- Changing scoring weights in one test affects scoring tests that run later
 
 **Prevention:**
-1. Do NOT attempt a single universal form filler. Instead, build explicit handlers for the top 5 ATS platforms (Greenhouse, Lever, Workday, Ashby, Workable) plus a generic fallback.
-2. Greenhouse has a public Job Board API (`POST https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs/{id}`) that accepts applications without browser automation. Use the API where possible -- it is documented, stable, and has known field names. Query `?questions=true` to get dynamic custom fields per job.
-3. For Lever, use the public Postings API (`POST https://api.lever.co/v0/postings/{company}/{postingId}?key={api_key}`) -- also documented.
-4. For browser-based forms, detect the ATS first (check URL patterns: `boards.greenhouse.io`, `jobs.lever.co`, `*.workday.com/*/job-apply/`) and route to the appropriate handler.
-5. For custom questions that cannot be auto-filled, queue them for human review rather than guessing. A blank custom answer is better than a wrong one.
-6. Build an "ATS detection confidence" metric: if the form filler identifies fewer than 3 standard fields, abort and flag for manual application.
+1. Create a `tests/fixtures/config.yaml` with minimal valid configuration (a few search queries, a few tech keywords, all platforms disabled). This is the "test config" that every test uses.
+2. Build a `conftest.py` fixture that calls `reset_settings()` in teardown AND patches the YAML file path to point at the test config:
+   ```python
+   @pytest.fixture(autouse=True)
+   def clean_settings(tmp_path):
+       from config import reset_settings
+       reset_settings()
+       yield
+       reset_settings()
+   ```
+3. For tests that need custom settings, use `AppSettings` constructor directly with explicit kwargs instead of `get_settings()` -- this bypasses the singleton entirely.
+4. Never rely on `.env` existing in tests. Set `env_file = None` or use `model_config` overrides in test fixtures.
 
 **Detection (warning signs):**
-- Form filler `filled` dict returns fewer than 4 fields on a page with 10+ visible inputs
-- Application confirmation page never loads after submit
-- ATS responds with validation errors
-- Resume upload silently fails (no file attached)
+- Tests pass when run individually but fail when run together
+- `pytest --randomly-seed=X` produces different pass/fail results
+- Tests fail in CI with "field required" errors on settings fields
 
-**Phase:** This is the hardest engineering problem in the entire project. Should be Phase 2 or 3 (after apply infrastructure is stable). Start with Greenhouse API + Lever API (no browser needed), then add Workday/Ashby browser handlers. Generic form filler is last resort, not first approach.
+**Phase:** Must be addressed in the same initial `conftest.py` setup as Pitfall 1. Settings and database isolation are co-dependent.
 
-**Confidence:** HIGH -- Greenhouse and Lever APIs verified via official documentation. ATS diversity is well-documented in the industry.
+**Confidence:** HIGH -- verified by direct reading of `config.py` lines 288-317 and the `AppSettings` class.
 
 ---
 
-### Pitfall 3: AI Resume Tailoring Fabricates Experience
+### Pitfall 3: Platform Auto-Discovery Imports Playwright at Collection Time
 
-**What goes wrong:** The LLM is asked to "tailor this resume for the job description" and it invents quantified metrics ("increased deployment frequency by 340%"), fabricates technologies you have not used ("extensive experience with Terraform CDK"), or inflates job titles. The fabricated resume passes ATS but fails at the interview stage, or worse, gets you blacklisted from the company for dishonesty.
+**What goes wrong:** `platforms/__init__.py` calls `_auto_discover()` at import time (line 36), which uses `pkgutil.iter_modules` to import every platform module. This imports `platforms/indeed.py`, `platforms/dice.py`, and `platforms/stealth.py`, all of which have top-level `from playwright.sync_api import ...` imports. If Playwright is not installed (lightweight CI) or browsers aren't available, test collection crashes with `ImportError` before a single test runs.
 
-**Why it happens:** LLMs are designed to generate plausible-sounding text. When given a sparse resume and a demanding job description, the model fills gaps with plausible fabrications. AI hallucination rates remain at 0.7-5% even in frontier models (Vectara study, 2025). In resume context, even one hallucinated skill or metric is unacceptable. The problem is amplified when the LLM prompt says "optimize for this job description" without explicit guardrails.
+Even if Playwright is installed, importing `stealth.py` instantiates `_stealth = Stealth()` at module level (line 9), which may have side effects depending on the playwright-stealth version.
 
-**Consequences:** Blacklisted by employer. Caught in interview when asked about fabricated experience. Legal risk if the fabrication constitutes fraud (especially for roles requiring specific certifications). Destroyed credibility -- recruiters talk to each other.
+**Why it happens:** The decorator-based platform registry (`@register_platform`) requires modules to be imported for registration to occur. This is a classic tradeoff between convenient auto-discovery and testability.
+
+**Consequences:**
+- Cannot run ANY tests in a CI environment that doesn't have Playwright + Chromium installed
+- Tests for pure-logic modules (scorer, dedup, salary, models) fail at collection because they transitively import platform code
+- The 400MB Playwright browser download becomes a CI requirement even for unit tests
 
 **Prevention:**
-1. The LLM must NEVER generate new facts. Provide it with a structured "source of truth" document containing all verifiable experience, metrics, and skills (the `CandidateProfile` model is a start but needs expansion to include specific achievements with real metrics).
-2. Use a constrained prompt pattern: "Reorder and rephrase the following REAL experience to emphasize relevance to this job description. Do NOT add skills, metrics, or experience not present in the source document."
-3. Implement a post-generation verification step: diff the tailored resume against the source document. Any skill, technology, or metric that appears in the output but not the input must be flagged and removed automatically.
-4. Use structured output (JSON) for the LLM response, not free-form text. Define exact fields: summary, skills_to_highlight (must be subset of known skills), experience_order, emphasis_keywords. This constrains the generation space.
-5. Keep a "never claim" list: technologies and skills the candidate explicitly does not have. Check output against this list.
-6. Human review checkpoint: display a diff between base resume and tailored version before any submission.
+1. Structure tests in layers that control imports:
+   - `tests/unit/` -- NEVER imports `platforms`, `orchestrator`, or `webapp.app`. Tests `scorer.py`, `dedup.py`, `salary.py`, `models.py` in isolation.
+   - `tests/integration/` -- Imports webapp/db but mocks Playwright. Tests FastAPI endpoints via `TestClient`.
+   - `tests/e2e/` -- Requires Playwright. Tests platform modules (skipped in CI without browsers).
+2. For unit tests, avoid importing anything from `platforms` or `orchestrator` at the top of test files. If a unit under test imports from `platforms`, mock the import:
+   ```python
+   import sys
+   sys.modules["platforms"] = MagicMock()
+   ```
+3. In CI, use conditional test markers:
+   ```python
+   # conftest.py
+   import pytest
+   try:
+       import playwright
+       HAS_PLAYWRIGHT = True
+   except ImportError:
+       HAS_PLAYWRIGHT = False
+
+   playwright_required = pytest.mark.skipif(
+       not HAS_PLAYWRIGHT, reason="Playwright not installed"
+   )
+   ```
+4. Mark all tests that need a browser with `@pytest.mark.playwright` and exclude them in fast CI runs: `pytest -m "not playwright"`.
 
 **Detection (warning signs):**
-- Tailored resume contains technology names not in `CandidateProfile.tech_keywords`
-- Quantified metrics appear that were not in the source material
-- Job titles or company names differ from source
-- "Extensive experience with X" where X is not in the known skill set
+- `pytest --collect-only` crashes with `ModuleNotFoundError: playwright`
+- CI pipeline installs Playwright + Chromium for a "unit test" job that never opens a browser
+- Test suite takes 3+ minutes just to install dependencies
 
-**Phase:** Must be addressed when building the AI tailoring module (likely Phase 2). The verification step is non-negotiable and should be built simultaneously with generation, not retrofitted.
+**Phase:** Must be addressed in test directory structure design (Phase 1). Getting import boundaries wrong early means restructuring every test file later.
 
-**Confidence:** HIGH -- hallucination rates verified via published research. Resume fabrication consequences well-documented in HR industry.
+**Confidence:** HIGH -- verified by reading `platforms/__init__.py` lines 24-36 and `platforms/stealth.py` lines 6-9.
 
 ---
 
-### Pitfall 4: Duplicate Applications Destroy Credibility
+### Pitfall 4: Testing `asyncio.to_thread` Code Without Understanding the Event Loop
 
-**What goes wrong:** The tool applies to the same job twice (or to the same company for the same role posted on Indeed AND Dice). The recruiter sees duplicate applications, which signals either desperation or bot usage. Some ATS systems auto-reject duplicate applicants.
+**What goes wrong:** The webapp uses `asyncio.to_thread()` in multiple endpoints (`tailor_resume_endpoint`, `cover_letter_endpoint`) to run synchronous LLM calls off the event loop. The `ApplyEngine` uses `asyncio.to_thread(self._apply_sync, ...)` for browser automation. When testing these endpoints with FastAPI's `TestClient`, the test hangs or raises `RuntimeError: no running event loop` because `TestClient` manages its own event loop and `to_thread` interacts poorly with it.
 
-**Why it happens:** The current dedup logic (`dedup_key = f"{company}::{title}"`) only operates within a single pipeline run. It does not persist across runs. If the tool is run on Monday and again on Wednesday, it will rediscover and potentially re-apply to the same jobs. The `jobs.db` SQLite database tracks discovered jobs but the `apply` flow does not check it before submitting. Additionally, the dedup key uses simple string normalization that can miss variants ("Google LLC" vs "Google" vs "Alphabet - Google").
+Additionally, `ApplyEngine._make_emitter()` captures `asyncio.get_running_loop()` and uses `loop.call_soon_threadsafe()` to bridge sync-to-async. In tests, the captured loop may not be the same loop the test is running on, causing events to be silently dropped.
 
-**Consequences:** Recruiter marks candidate as spam. ATS auto-rejects future applications. Wastes daily application budget on already-applied jobs.
+**Why it happens:** FastAPI's `TestClient` (via Starlette) creates a new event loop internally. `asyncio.to_thread` needs a running loop. The combination works in production (uvicorn provides the loop) but in tests, the loop lifecycle is different. The `ApplyEngine` further complicates this by mixing `asyncio.Queue`, `threading.Event`, and `asyncio.Semaphore` across async and sync contexts.
+
+**Consequences:**
+- Tests hang indefinitely waiting for thread results
+- Events emitted via `call_soon_threadsafe` disappear in test context
+- Flaky test failures that depend on thread scheduling
+- SSE streaming tests are impossible to write deterministically without careful queue management
 
 **Prevention:**
-1. Before ANY application submission, query `jobs.db` for the dedup_key with `status = 'applied'`. If found, skip.
-2. Record application attempts immediately (before waiting for confirmation), not just successful ones. Use status `'applying'` during submission, `'applied'` on success, `'apply_failed'` on failure.
-3. Expand the dedup key to be more aggressive: normalize company names more thoroughly (strip "Inc", "LLC", "Corp", "Technologies", "Labs", common suffixes), and use fuzzy title matching (Levenshtein distance < 3 or token overlap > 80%).
-4. Add a cross-platform dedup check: before applying on Dice, check if already applied on Indeed for the same company+title.
-5. Store the exact URL applied through (not just platform), so manual applications can also be tracked via the web dashboard.
+1. For endpoint tests that call `asyncio.to_thread`, mock the synchronous function directly. Do NOT let the actual thread spawn in unit tests:
+   ```python
+   @patch("webapp.app.tailor_resume", return_value=mock_tailored_resume)
+   async def test_tailor_endpoint(mock_tailor, client):
+       ...
+   ```
+2. For `ApplyEngine` tests, test `_apply_sync` directly as a synchronous function (it's the actual logic). Test the async wrapper (`apply`) separately with a controlled event loop using `pytest-asyncio`.
+3. For SSE streaming endpoints, use `httpx.AsyncClient` with `pytest-asyncio` instead of `TestClient`, and pre-populate the event queue in the fixture:
+   ```python
+   @pytest.mark.asyncio
+   async def test_apply_stream():
+       queue = asyncio.Queue()
+       await queue.put({"type": "progress", "message": "test"})
+       await queue.put({"type": "done", "message": "done"})
+       # Then consume the SSE endpoint
+   ```
+4. Never test thread-to-event-loop bridging in unit tests. Accept that `_make_emitter` and `call_soon_threadsafe` need an integration test with a real event loop, and mark it accordingly.
 
 **Detection (warning signs):**
-- The `discovered_jobs.json` file contains entries with `status: "applied"` that get re-scored in the next run
-- Recruiter emails mention "we already received your application"
-- Application count in tracker exceeds expectation
+- Tests hang with no output (deadlocked on thread/queue)
+- `RuntimeError: This event loop is already running` in test output
+- SSE tests randomly pass/fail depending on thread scheduling
+- Tests that pass locally but timeout in CI (different CPU timing)
 
-**Phase:** Must be addressed in Phase 1 (apply infrastructure) as part of the state management layer. The apply function must be idempotent by design.
+**Phase:** Phase 2 (integration tests). Unit tests should mock away the threading entirely.
 
-**Confidence:** HIGH -- based on direct analysis of existing codebase (`orchestrator.py` and `db.py`).
+**Confidence:** HIGH -- verified by reading `webapp/app.py` lines 264, 354, `apply_engine/engine.py` lines 82-86, 112-122.
 
 ---
 
-### Pitfall 5: Session Expiry Mid-Application Causes Partial Submissions
+### Pitfall 5: FTS5 Virtual Tables Break In-Memory Database Isolation
 
-**What goes wrong:** The tool starts filling a multi-step application form. Partway through, the session cookie expires server-side (Indeed sessions typically last 24 hours, Dice sessions vary). The form submit fails silently or redirects to a login page. The tool records "applied" status because it clicked submit, but the application never went through.
+**What goes wrong:** The `JOBFLOW_TEST_DB=1` flag switches to an in-memory SQLite database, which is good for isolation. But the FTS5 triggers (migration version 4) create AFTER INSERT/UPDATE/DELETE triggers on the `jobs` table that sync data to the `jobs_fts` virtual table. If a test inserts data, the FTS triggers fire. If the test then calls `get_jobs(search="kubernetes")`, the FTS query runs against the virtual table. This works -- until you need to test FTS-specific behavior like prefix matching, boolean operators, or the rebuild command.
 
-**Why it happens:** Persistent browser contexts cache cookies, but server-side sessions expire independently. The current code checks `is_logged_in()` only at startup (Phase 1), not before each application. If Phase 2 (search) takes 30+ minutes and Phase 4 (apply) happens afterward, the session may be stale.
+The real problem: if you reset the database between tests by simply deleting all rows (`DELETE FROM jobs`), the FTS triggers fire and try to update `jobs_fts`. If the FTS index is corrupted (which can happen from interrupted tests), subsequent FTS queries fail with `fts5: database disk image is malformed`. The in-memory database is gone, but the corruption happened during the test run.
 
-**Consequences:** Phantom "applied" entries in the database. Candidate thinks they applied but didn't. Missed opportunities on high-scoring jobs.
+**Why it happens:** FTS5 virtual tables maintain their own internal B-tree data structure. The `DELETE FROM jobs` cascades to the FTS triggers, but if the test process is interrupted (e.g., `KeyboardInterrupt`, test timeout, fixture teardown error), the FTS index can be left in an inconsistent state. In-memory databases don't have WAL journaling to recover from this.
+
+**Consequences:**
+- FTS5 corruption causes ALL subsequent tests in the session to fail with cryptic SQLite errors
+- Tests that pass individually fail when run as a suite (FTS state leaks)
+- Cannot reliably test the full-text search functionality
 
 **Prevention:**
-1. Check `is_logged_in()` immediately before each application attempt, not just at pipeline start.
-2. After form submission, verify the confirmation page actually loaded (look for "application received", "thank you", confirmation number). Do NOT assume submit button click equals successful application.
-3. Implement a post-submit verification: check email for confirmation within 5 minutes, or check the ATS for application status.
-4. Use `storageState` file modification time to detect stale sessions (if > 20 hours old, force re-login before apply phase).
-5. If login is needed mid-pipeline, do it transparently rather than failing the entire run.
+1. For each test function, create a fresh in-memory database connection rather than sharing one across the test session:
+   ```python
+   @pytest.fixture
+   def test_db():
+       import webapp.db as db
+       db._memory_conn = None  # Force new connection
+       db._USE_MEMORY = True
+       db.init_db()
+       yield db
+       db._memory_conn.close()
+       db._memory_conn = None
+   ```
+2. Never use `DELETE FROM jobs` for cleanup. Instead, drop the entire in-memory connection and reinitialize. This is faster and guarantees a clean FTS state.
+3. For tests that specifically test FTS search behavior, use a dedicated fixture that inserts known data and verifies FTS queries against it. Do not mix FTS tests with other database tests.
+4. Add a safety check in `conftest.py` teardown that verifies `jobs_fts` integrity:
+   ```python
+   conn.execute("INSERT INTO jobs_fts(jobs_fts) VALUES('integrity-check')")
+   ```
 
 **Detection (warning signs):**
-- Submit button click is followed by redirect to `/login` or `/auth`
-- No confirmation page or confirmation email
-- Page title changes to "Sign In" after submit
+- `sqlite3.DatabaseError: database disk image is malformed` in test output
+- FTS search tests return 0 results despite data being present in `jobs` table
+- Tests that use `db.get_jobs(search=...)` fail intermittently
 
-**Phase:** Phase 1 (apply infrastructure). Session management must be robust before any automated submissions.
+**Phase:** Phase 1 (database fixture design). FTS5 handling must be correct from the start.
 
-**Confidence:** HIGH -- verified against Playwright GitHub issues (session cookie persistence is a known problem with `launch_persistent_context`).
+**Confidence:** HIGH -- FTS5 corruption behavior verified via SQLite documentation. Trigger cascade verified by reading `webapp/db.py` lines 83-124.
 
 ---
 
 ## Moderate Pitfalls
 
-Mistakes that cause delays, technical debt, or degraded quality.
+Mistakes that cause flaky tests, slow CI, or testing gaps.
 
 ---
 
-### Pitfall 6: God Object BasePlatform When Adding Apply Logic
+### Pitfall 6: Lazy Imports in Endpoint Handlers Evade Mock Patches
 
-**What goes wrong:** The `BasePlatform` abstract class currently has a clean interface: `login()`, `search()`, `get_job_details()`, `apply()`. When adding AI resume tailoring, custom question handling, multi-step form navigation, error recovery, and ATS-specific logic, everything gets stuffed into the platform subclass. `IndeedPlatform` grows from 200 lines to 2000 lines. Apply logic for Greenhouse (via RemoteOK redirects) gets tangled with Indeed-specific code.
+**What goes wrong:** Multiple FastAPI endpoints use lazy imports inside the function body. For example, `tailor_resume_endpoint` imports `resume_ai.tailor`, `resume_ai.diff`, `resume_ai.extractor`, etc. inside the `try` block (lines 242-247 of `webapp/app.py`). The `trigger_apply` endpoint imports `apply_engine.dedup` inside the function (line 476). When you write a test that patches `resume_ai.tailor.tailor_resume`, the patch doesn't take effect because the endpoint imports from the module path at call time, not at module load time.
 
-**Why it happens:** The existing architecture couples "platform where job was discovered" with "platform where application is submitted." A job discovered on RemoteOK might need to be applied to via Greenhouse, Lever, or a custom career page. The current `BasePlatform.apply()` assumes the same browser context used for search is used for apply, but external ATS systems are entirely different websites.
+The standard `@patch("webapp.app.tailor_resume")` pattern fails because `tailor_resume` is NOT a module-level attribute of `webapp.app` -- it's imported locally inside the endpoint function.
+
+**Why it happens:** The lazy imports were deliberately chosen to avoid import errors when optional dependencies (Anthropic SDK, Playwright) aren't installed. This is good production practice but makes standard mock.patch patterns fail.
+
+**Consequences:**
+- Tests that patch LLM calls still make real API calls (costs money, requires API keys in CI)
+- Tests that patch `is_already_applied` don't prevent the real DB check
+- Patches applied at the wrong module path silently do nothing -- tests appear to pass but aren't actually testing the mock
 
 **Prevention:**
-1. Separate discovery from application. Create two interface hierarchies:
-   - `SearchPlatform` (login, search, get_details) -- Indeed, Dice, RemoteOK
-   - `ApplyHandler` (detect, can_handle, fill_form, submit) -- IndeedEasyApply, DiceEasyApply, GreenhouseAPI, LeverAPI, GenericBrowserForm
-2. Use an `ApplyRouter` that examines the job's `apply_url` and routes to the correct `ApplyHandler`. This is the plugin extension point.
-3. Keep `ApplyHandler` implementations small and focused: one handler per ATS, each under 200 lines.
-4. Resist the urge to add apply logic to `BasePlatform`. The apply path is fundamentally different from the search path.
+1. Patch at the SOURCE module, not at the import site. For lazy imports inside functions, you must patch the module that the function imports from:
+   ```python
+   # WRONG -- webapp.app.tailor_resume doesn't exist at module level
+   @patch("webapp.app.tailor_resume")
 
-**Phase:** Phase 1 (architecture refactor) before building any apply handlers. Getting the interface boundaries right first prevents a costly refactor later.
+   # RIGHT -- patch where the function actually imports from
+   @patch("resume_ai.tailor.tailor_resume")
+   ```
+2. For the Anthropic SDK calls, mock at the `anthropic.Anthropic` class level to prevent any real API calls:
+   ```python
+   @patch("anthropic.Anthropic")
+   def test_tailor(mock_anthropic):
+       mock_client = mock_anthropic.return_value
+       mock_client.messages.parse.return_value = ...
+   ```
+3. Create reusable fixtures for common mock targets:
+   ```python
+   @pytest.fixture
+   def mock_anthropic(monkeypatch):
+       mock = MagicMock()
+       monkeypatch.setattr("anthropic.Anthropic", lambda: mock)
+       return mock
+   ```
+4. Verify mocks are actually being called with `mock.assert_called_once()`. Silent mock failures are the most dangerous test bug.
 
-**Confidence:** HIGH -- based on direct analysis of `base.py` and `orchestrator.py` architecture.
+**Detection (warning signs):**
+- Tests make real HTTP requests to Anthropic API (visible in network logs)
+- Tests fail with `ANTHROPIC_API_KEY not set` -- the mock didn't intercept the call
+- `mock.call_count == 0` despite the test supposedly exercising the mocked code path
+
+**Phase:** Phase 2 (integration tests). Must understand this pattern before writing any endpoint tests.
+
+**Confidence:** HIGH -- verified by reading all lazy import sites in `webapp/app.py` (lines 242-247, 334-337, 425, 445-446, 457, 469, 476, 518).
 
 ---
 
-### Pitfall 7: Hardcoded Selectors Rot Within Weeks
+### Pitfall 7: Scoring and Dedup Tests Depend on Config State
 
-**What goes wrong:** The tool works perfectly on day 1. Two weeks later, Indeed deploys a frontend update. The `div.job_seen_beacon` selector no longer matches. The `data-testid` attributes on Dice change to different naming conventions. Every external ATS updates independently. The tool silently returns zero results or fills wrong fields.
+**What goes wrong:** `JobScorer.__init__()` calls `get_settings()` to get the candidate profile and scoring weights (line 95-97 of `scorer.py`). `RemoteOKPlatform.search()` calls `get_settings()` for tech keywords (line 49). `FormFiller.__init__()` calls `get_settings()` for the candidate profile (line 50 of `form_filler.py`). Every pure-logic module that seems like it should be independently testable actually reaches back to the global settings singleton.
 
-**Why it happens:** Web scraping against third-party sites is inherently fragile. The existing codebase already isolates selectors into separate files (`indeed_selectors.py`, `dice_selectors.py`), which is good practice. But the failure mode is silent: if a selector doesn't match, `query_selector_all` returns an empty list and the pipeline reports "0 jobs found" with no error.
+**Why it happens:** Dependency injection was partially implemented -- `JobScorer` accepts optional `profile` and `weights` parameters. But the fallback to `get_settings()` means tests that forget to pass explicit values silently use the global config, which may be the real `config.yaml` or a corrupted singleton from a previous test.
+
+**Consequences:**
+- Scorer tests produce different results depending on which `config.yaml` is loaded
+- Tests pass locally (where `config.yaml` has 30 tech keywords) but fail in CI (where the test config has 5)
+- Dedup tests are affected by scoring weights (scorer is called during orchestrator dedup phase)
 
 **Prevention:**
-1. Add selector health checks at the start of each search/apply session: verify at least one expected element exists on a known page. If zero matches, raise immediately with screenshot.
-2. Implement a "selector confidence" system: if a page loads but key selectors return 0 results, try fallback selectors (CSS class, XPath, text content) and log which one worked.
-3. For apply forms, never rely solely on selectors. Use the accessible label text, ARIA attributes, and surrounding text as fallbacks.
-4. Add monitoring: track selector match rates over time. A sudden drop from 20 matches to 0 is a selector rot event.
-5. Consider a selector versioning system: date-stamp each selector set so you know when they were last verified.
+1. Always pass explicit dependencies in tests. Never rely on `get_settings()` defaults:
+   ```python
+   def test_scorer():
+       profile = CandidateProfile(
+           target_titles=["Senior Engineer"],
+           tech_keywords=["python", "kubernetes"],
+           desired_salary_usd=200_000,
+       )
+       weights = ScoringWeights()
+       scorer = JobScorer(profile=profile, weights=weights)
+       # Now test scoring with known, deterministic config
+   ```
+2. For integration tests that must use `get_settings()`, the autouse fixture from Pitfall 2 ensures a clean test config is loaded.
+3. Create factory fixtures for common test objects:
+   ```python
+   @pytest.fixture
+   def make_job():
+       def _make(title="Engineer", company="Acme", **kwargs):
+           return Job(platform="indeed", title=title, company=company,
+                      url="https://example.com", **kwargs)
+       return _make
+   ```
+4. The `dedup.py` module is clean -- it takes `list[Job]` and returns `list[Job]` with no config dependency. Keep it that way. It's the ideal model for testable design.
 
-**Phase:** Ongoing concern. The selector isolation pattern is already in place. Add health checks in Phase 1 and monitoring in Phase 2.
+**Detection (warning signs):**
+- Scorer tests hardcode expected score values that don't match the scoring formula
+- Tests pass only when run from the project root (where `config.yaml` lives)
+- Adding a new tech keyword to `config.yaml` breaks scorer tests
 
-**Confidence:** HIGH -- the MEMORY.md already documents multiple selector updates (Indeed and Dice), confirming this is an active problem.
+**Phase:** Phase 1 (unit tests). Scorer and dedup are the easiest modules to test first, but only if config isolation is handled.
+
+**Confidence:** HIGH -- verified by reading `scorer.py` lines 91-97, `form_filler.py` line 50, `platforms/remoteok.py` line 49.
 
 ---
 
-### Pitfall 8: PDF Resume Generation Fails ATS Parsing
+### Pitfall 8: TestClient and SSE `EventSourceResponse` Incompatibility
 
-**What goes wrong:** The AI tailors the resume content perfectly, but the PDF generation process produces a file that ATS systems cannot parse. Images are embedded instead of text. Complex layouts with columns get scrambled. Headers/footers are invisible to parsers. The tailored resume scores lower in ATS than the original hand-crafted one.
+**What goes wrong:** The `/jobs/{key}/apply/stream` endpoint returns an `EventSourceResponse` from `sse-starlette`. FastAPI's `TestClient` (backed by Starlette's `TestClient` which wraps `httpx`) can make the request, but reading the SSE stream is awkward: the response is a streaming response that requires iterating over chunks. The standard `response.json()` or `response.text` approach reads the entire response, blocking until the stream completes or times out.
 
-**Why it happens:** Most Python PDF libraries (ReportLab, FPDF2, WeasyPrint) are designed for visual output, not ATS compatibility. They can produce beautiful PDFs that are unreadable by ATS parsers. Specific problems:
-- Multi-column layouts are read left-to-right across both columns, scrambling chronology
-- Tables in skills sections are parsed as random text fragments
-- Custom fonts may not embed properly, becoming invisible
-- Headers/footers are in separate PDF content streams that many parsers skip
-- Workday specifically loses "more than half of content" during parsing of complex PDFs (per Resumly research)
+The stream's completion depends on a `done` event being emitted by the background apply task, which is spawned via `asyncio.create_task()` in `trigger_apply`. In tests, the background task never runs because `TestClient` manages its own event loop synchronously.
+
+**Why it happens:** SSE is inherently asynchronous and long-lived. TestClient is synchronous. The two models clash fundamentally. The `sse-starlette` library works correctly in production with uvicorn's async loop but in tests, the async task that feeds events into the queue never gets scheduled.
+
+**Consequences:**
+- SSE tests hang waiting for events that never come
+- Tests succeed vacuously (request returns 200 but stream is empty)
+- Background tasks spawned by `asyncio.create_task` in endpoints silently fail in test context
 
 **Prevention:**
-1. Use single-column layout only. Never generate multi-column resumes.
-2. Use standard system fonts only (Calibri, Arial, Times New Roman). Embed them explicitly.
-3. No tables for skills sections. Use plain text with category labels and comma separation.
-4. No images, logos, or decorative elements. Zero graphical content.
-5. Contact info in body text, not headers/footers.
-6. Generate DOCX as primary format (using `python-docx`), then convert to PDF. DOCX is better parsed by most ATS systems.
-7. Validate generated PDFs: extract text with `PyPDF2` or `pdfminer.six` and verify all content is present and in correct order.
-8. The existing ATS resume (`Patryk_Golabek_Resume_ATS.pdf`) was hand-optimized. Use its structure as the template for generated resumes, not a new design.
+1. Do NOT test the full SSE flow in unit tests. Instead, test the components separately:
+   - Test event generation (`ApplyEvent` models, `_emit_sync`)
+   - Test queue consumption logic in isolation
+   - Test the endpoint returns the correct content type and connects to SSE
+2. For integration testing of the SSE stream, use `httpx.AsyncClient` with `pytest-asyncio` and ASGI transport:
+   ```python
+   @pytest.mark.asyncio
+   async def test_sse_stream():
+       async with httpx.AsyncClient(
+           transport=httpx.ASGITransport(app=app), base_url="http://test"
+       ) as client:
+           # Pre-populate queue, then request stream
+           ...
+   ```
+3. Test the `apply_stream` generator function directly by providing a pre-filled `asyncio.Queue` and a mock request with `is_disconnected()` returning `True` after N events.
+4. Use `sse-starlette`'s built-in test helpers if available (check library docs).
 
-**Phase:** Phase 2 (AI resume tailoring). Build the validation step alongside generation.
+**Detection (warning signs):**
+- SSE test takes exactly the timeout duration to complete (it's waiting, not testing)
+- `response.status_code == 200` but `response.text == ""`
+- Test passes but the code path was never actually exercised
 
-**Confidence:** MEDIUM -- ATS parsing behavior sourced from Resumly and Indeed career advice; specific parser behavior varies by ATS vendor.
+**Phase:** Phase 2 (integration tests) or Phase 3 (E2E). SSE testing is inherently complex.
+
+**Confidence:** HIGH -- verified by reading `webapp/app.py` lines 515-546 and understanding TestClient/EventSourceResponse interaction model.
 
 ---
 
-### Pitfall 9: LLM Cost Explosion from Per-Application Tailoring
+### Pitfall 9: Mocking Playwright for Platform Tests is Harder Than It Looks
 
-**What goes wrong:** The tool calls an LLM to tailor the resume for every single application. At 10 applications/day with a 5-page resume + 2-page job description, each call is ~4K tokens input + ~2K tokens output. With GPT-4-class models at ~$30/1M input tokens, this seems cheap ($0.12/day). But then you add: cover letter generation, custom question answering (3-5 per application), retry logic for poor outputs, and the cost multiplies. More importantly, LLM latency (2-5 seconds per call) adds up when applying to 10 jobs with 5 custom questions each = 60 LLM calls = 2-5 minutes of just waiting.
+**What goes wrong:** Someone writes tests for `IndeedPlatform.search()` by mocking `BrowserContext`, `Page`, `Locator`, `ElementHandle`, etc. The mock chain becomes 5+ levels deep: `mock_context.pages.__getitem__.return_value.query_selector_all.return_value.__getitem__.return_value.get_attribute.return_value = "data-jk-value"`. Each test is 50+ lines of mock setup for 5 lines of assertion. When the implementation changes (e.g., switches from `query_selector_all` to `locator().all()`), every test breaks even though the behavior is identical.
 
-**Why it happens:** Naive implementation calls the LLM for every piece of text that needs generation. No caching, no batching, no tiered model strategy.
+**Why it happens:** Playwright's API is deeply nested and imperative. Browser automation code is inherently coupled to the page interaction sequence. Mocking at the Playwright API level tests the mock, not the code.
+
+**Consequences:**
+- Platform test maintenance cost exceeds the value of the tests
+- Tests pass with mocks but the real platform interactions fail (false confidence)
+- Developers avoid changing platform code because it breaks too many tests
 
 **Prevention:**
-1. Use a tiered model strategy: fast/cheap model (GPT-4o-mini, Claude Haiku) for custom question answers and field classification. Expensive model (GPT-4o, Claude Sonnet) only for resume tailoring.
-2. Cache resume tailoring results by job-description-cluster, not individual job. If 5 jobs at different companies all want "Kubernetes platform engineer," the tailored resume is the same.
-3. Batch custom questions: collect all questions for a job, send as one LLM call with structured output, not one call per question.
-4. Pre-compute answers to common custom questions ("years of experience with X", "are you authorized to work in Y", "willing to relocate?") and store in a lookup table. Only use LLM for truly novel questions.
-5. Set a per-application LLM budget (max 4 calls: resume tailor, cover letter, custom questions batch, retry). If exceeded, queue for manual review.
+1. Do NOT mock Playwright objects. Instead, separate testable logic from browser interaction:
+   - Extract data parsing into pure functions: `parse_job_card(html: str) -> Job`
+   - Extract URL building into pure functions: `build_search_url(query, page) -> str`
+   - Extract salary parsing (already done: `salary.py`) and dedup (already done: `dedup.py`)
+   - Test these pure functions with simple inputs/outputs
+2. For the actual browser interaction code, use Playwright's own test infrastructure with real (local) HTML fixtures:
+   ```python
+   # Serve a static HTML file that mimics Indeed's structure
+   @pytest.fixture
+   def mock_indeed_page(page):
+       page.set_content(INDEED_RESULTS_HTML)
+       return page
+   ```
+3. Use recorded HTTP responses (via `page.route()`) instead of mocking DOM queries:
+   ```python
+   await page.route("**/indeed.com/jobs*", lambda route: route.fulfill(
+       body=Path("tests/fixtures/indeed_results.html").read_text(),
+       content_type="text/html",
+   ))
+   ```
+4. Accept that platform modules are "adapters" in the hexagonal architecture sense. Test the ports (pure logic), not the adapters (browser interaction). The adapters get tested by E2E tests, not unit tests.
 
-**Phase:** Phase 2 (AI integration). Design the caching and tiering strategy before implementing any LLM calls.
+**Detection (warning signs):**
+- Test file is longer than the module it tests (mock setup > test logic)
+- Changing a `query_selector` call to a `locator` call breaks 20 tests
+- Every test starts with 30+ lines of mock configuration
 
-**Confidence:** MEDIUM -- cost estimates based on published pricing; actual costs depend on model choice and volume.
+**Phase:** Phase 1 (architecture decision). Decide the testing boundary before writing any platform tests.
+
+**Confidence:** HIGH -- well-established testing pattern for adapter/port architecture. Verified against the platform code structure.
 
 ---
 
-### Pitfall 10: Pluggable Architecture Becomes Plugin Graveyard
+### Pitfall 10: Missing Test Config Files Cause Silent Failures
 
-**What goes wrong:** The team builds an elaborate plugin system with abstract base classes, plugin discovery via `importlib`, registration decorators, and configuration YAML. Then only 3 plugins are ever written (Indeed, Dice, RemoteOK) -- the same three that existed before the refactor. The plugin infrastructure adds complexity without providing value. New contributors are confused by the indirection. Bug fixes require understanding 4 layers of abstraction instead of 1.
+**What goes wrong:** `AppSettings` has `model_config = SettingsConfigDict(yaml_file="config.yaml", env_file=".env")`. In CI, neither file exists. `pydantic-settings` will look for `config.yaml` in the current working directory. If not found, the YAML source returns empty, and required fields (`search.queries`, `scoring.target_titles`) fail validation with a `ValidationError`. But this error only occurs when `get_settings()` is first called -- if no test calls it (e.g., all unit tests mock their dependencies), the tests pass. Then someone adds one integration test that triggers the settings load, and the entire CI pipeline breaks.
 
-**Why it happens:** Over-engineering driven by "what if we need to add 20 platforms later." In practice, job search platforms are few, each requires deep customization, and the interfaces between them are not as uniform as imagined. Scrapy's architecture provides a good counter-example: it uses a signal/event system for loose coupling rather than deep class hierarchies.
+**Why it happens:** The `settings_customise_sources` override on `AppSettings` makes YAML loading explicit. If the YAML file is missing, pydantic-settings raises at construction time, not at field access time.
+
+**Consequences:**
+- CI pipeline works for months, then breaks when the first integration test is added
+- The error message (`validation error for AppSettings: search -> queries: field required`) doesn't mention the missing YAML file
+- Developers copy `config.yaml` into CI as a workaround, accidentally including production search queries
 
 **Prevention:**
-1. Start with simple, explicit code. Three concrete implementations with shared utility functions beats an abstract plugin framework that serves three implementations.
-2. The right abstraction is a protocol (Python `Protocol`), not an abstract base class. Define `SearchPlatform` and `ApplyHandler` as Protocols. Implementations don't need to inherit -- they just need to match the interface.
-3. Only introduce plugin discovery (importlib, entry_points) when there are more than 5 implementations. Until then, an explicit registry dict is fine: `{"indeed": IndeedPlatform, "dice": DicePlatform}`.
-4. The real extension point is `ApplyHandler` for ATS systems, not `SearchPlatform` for job boards. Focus pluggability effort there.
-5. Keep the configuration simple: platform configs in a single YAML/TOML file, not per-plugin config files.
+1. Create `tests/fixtures/test_config.yaml` with minimal valid data:
+   ```yaml
+   search:
+     min_salary: 100000
+     queries:
+       - title: "test engineer"
+         keywords: []
+   scoring:
+     target_titles: ["Test Engineer"]
+     tech_keywords: ["python", "testing"]
+   platforms:
+     indeed: { enabled: false }
+     dice: { enabled: false }
+     remoteok: { enabled: false }
+   ```
+2. Create `tests/fixtures/test.env` with empty/dummy credentials:
+   ```env
+   INDEED_EMAIL=test@example.com
+   DICE_EMAIL=test@example.com
+   DICE_PASSWORD=test
+   CANDIDATE_FIRST_NAME=Test
+   CANDIDATE_LAST_NAME=User
+   ```
+3. In `conftest.py`, set the config path before any import of config:
+   ```python
+   os.environ["JOBFLOW_TEST_DB"] = "1"
+   # Then in fixture:
+   AppSettings.model_config["yaml_file"] = "tests/fixtures/test_config.yaml"
+   ```
+4. Add a CI smoke test that ONLY tests `get_settings()` initialization -- this catches config issues immediately rather than buried in unrelated test failures.
 
-**Phase:** Phase 1 (architecture). Make the architecture decision before building apply handlers. Err on the side of simplicity.
+**Detection (warning signs):**
+- `ValidationError` in CI that doesn't occur locally
+- Tests pass when run from project root but fail from a different directory
+- `.env` credentials appear in CI logs
 
-**Confidence:** HIGH -- common software engineering anti-pattern, well-documented in plugin architecture literature.
+**Phase:** Phase 1 (test infrastructure). This is part of the `conftest.py` foundation.
+
+**Confidence:** HIGH -- verified by reading `config.py` lines 135-213 and the `settings_customise_sources` override.
 
 ---
 
 ## Minor Pitfalls
 
-Mistakes that cause annoyance but are recoverable.
+Mistakes that cause annoyance, slow tests, or minor gaps in coverage.
 
 ---
 
-### Pitfall 11: Config Drift Between .env, CLAUDE.md, and CandidateProfile
+### Pitfall 11: Anthropic SDK Calls in Tests Cost Real Money
 
-**What goes wrong:** Candidate information lives in three places: `.env` (credentials), `CLAUDE.md` (full profile reference), and `models.py` `CandidateProfile` (runtime defaults). When the phone number changes, it gets updated in `CandidateProfile` but not in `CLAUDE.md`. When a new skill is added, it goes in `CLAUDE.md` but not in `tech_keywords`. The tool fills forms with stale data.
+**What goes wrong:** A test for `tailor_resume` or `generate_cover_letter` runs without mocking the Anthropic client. The test makes a real API call to Claude, which costs ~$0.03-0.10 per call. At 50 test runs/day during development, this adds up. Worse, the API call takes 3-10 seconds, making the test suite slow. Even worse, if `ANTHROPIC_API_KEY` is in `.env` locally but not in CI, the test passes locally and fails in CI.
 
 **Prevention:**
-1. Single source of truth for candidate data: a `candidate.yaml` or `candidate.toml` file that `CandidateProfile` loads at runtime. `CLAUDE.md` references it, not duplicates it.
-2. Add a validation step in Phase 0 that compares the loaded profile against the resume file (extract text, check that name/email/phone match).
-3. Version the candidate profile: include a `last_updated` date field.
+1. Always mock `anthropic.Anthropic` in tests. Create a fixture that provides a pre-built `TailoredResume` or `CoverLetter` response.
+2. Add a `conftest.py` safety net that patches `anthropic.Anthropic.__init__` to raise if called without explicit opt-in:
+   ```python
+   @pytest.fixture(autouse=True)
+   def block_real_api_calls(monkeypatch):
+       def blocked(*args, **kwargs):
+           raise RuntimeError("Real API call blocked in tests. Use mock_anthropic fixture.")
+       monkeypatch.setattr("anthropic.Anthropic.__init__", blocked)
+   ```
+3. For the few integration tests that need real API calls, use a marker: `@pytest.mark.api` and skip in CI: `pytest -m "not api"`.
 
-**Phase:** Phase 1 (externalized config). Low effort, high value.
+**Phase:** Phase 1 (conftest safety net). The API blocker should be autouse.
 
 ---
 
-### Pitfall 12: Screenshot Debug Folder Grows Unbounded
+### Pitfall 12: `time.sleep()` in Mixin Methods Slows Tests
 
-**What goes wrong:** The `debug_screenshots/` directory accumulates PNG files from every failed selector, every CAPTCHA encounter, every form fill verification. After a month of daily runs, it contains thousands of 1-3 MB files consuming gigabytes of disk space.
+**What goes wrong:** `BrowserPlatformMixin.human_delay()` calls `time.sleep(random.uniform(2.0, 5.0))`. If platform tests exercise any code path that includes delays, each test takes 2-5 seconds just waiting. With 50 platform-related tests, the suite takes 4+ minutes on sleep alone.
 
 **Prevention:**
-1. Auto-purge screenshots older than 7 days.
-2. Compress screenshots to JPEG at 60% quality for debug purposes.
-3. Include retention policy in the orchestrator's Phase 0 setup.
+1. Mock `time.sleep` in all platform tests:
+   ```python
+   @pytest.fixture(autouse=True)
+   def no_sleep(monkeypatch):
+       monkeypatch.setattr("time.sleep", lambda _: None)
+   ```
+2. Better: since platform tests shouldn't exercise browser code anyway (Pitfall 9), this is only relevant for integration tests that test the mixin methods directly.
 
-**Phase:** Minor housekeeping. Address in Phase 1 setup.
+**Phase:** Phase 1 (conftest fixture). Trivial to add, big impact on test speed.
 
 ---
 
-### Pitfall 13: Timezone and Date Format Mismatches in Application Forms
+### Pitfall 13: `datetime.now()` Makes Test Assertions Fragile
 
-**What goes wrong:** Application forms ask "When can you start?" with a date picker expecting MM/DD/YYYY format. The tool fills "2026-02-15" (ISO format). Or a form asks "Available Date" and the current `start_date` value ("Available immediately / 2 weeks notice") doesn't match the expected date input type. Date pickers implemented as custom JavaScript widgets fail with `elem.fill()`.
+**What goes wrong:** Multiple modules use `datetime.now().isoformat()` for timestamps (`webapp/db.py` line 242, `orchestrator.py` line 56, etc.). Tests that assert on these values are inherently flaky because the timestamp changes between the action and the assertion. A test like `assert job["created_at"] == "2026-02-08T10:30:00"` will fail one second later.
 
 **Prevention:**
-1. Detect input type before filling: `type="date"` needs ISO format, text inputs need human-readable format, custom date pickers need click-based interaction.
-2. For "start date" fields, compute an actual date (today + 14 days) rather than using the free-text value.
-3. Test date filling against the three most common date picker libraries (native HTML, Flatpickr, Material UI).
+1. Use `freezegun` or `time-machine` to freeze time in tests that need deterministic timestamps:
+   ```python
+   from freezegun import freeze_time
 
-**Phase:** Phase 2 (form filling improvements).
+   @freeze_time("2026-02-08T10:00:00")
+   def test_upsert_sets_timestamp():
+       db.upsert_job({"title": "Test", ...})
+       job = db.get_job("acme::test")
+       assert job["created_at"].startswith("2026-02-08")
+   ```
+2. Alternatively, assert on timestamp format or ordering rather than exact values:
+   ```python
+   assert job["created_at"] is not None
+   assert job["updated_at"] >= job["created_at"]
+   ```
+3. Add `freezegun` or `time-machine` to dev dependencies.
+
+**Phase:** Phase 1 (dev dependencies). Add the library early.
 
 ---
 
-### Pitfall 14: Cover Letter Tone Mismatch Across Roles
+### Pitfall 14: httpx Client in RemoteOK Tests Makes Real HTTP Calls
 
-**What goes wrong:** The LLM generates a cover letter optimized for a "Principal Engineer" role with heavy technical emphasis. The same template is used for an "Engineering Manager" role, which needs leadership/people emphasis. Both use identical tone, making applications feel generic.
+**What goes wrong:** `RemoteOKPlatform.search()` uses `self.client.get(self.API_URL)` where `self.client` is an `httpx.Client`. If tests instantiate `RemoteOKPlatform` and call `.init()` + `.search()` without mocking, they hit the real RemoteOK API. This makes tests slow (network latency), flaky (API may be down), and non-deterministic (API returns different jobs each time).
 
 **Prevention:**
-1. Classify the role type before generating the cover letter: IC (individual contributor) vs. management vs. hybrid. Adjust emphasis accordingly.
-2. Maintain 2-3 cover letter templates as prompts (technical IC, people leader, hybrid) and select based on job title classification.
-3. Include specific company/role details in every cover letter (not just skills matching). "I noticed Company X recently launched Y" shows genuine interest.
+1. Use `respx` (the httpx equivalent of `responses`) to mock HTTP calls:
+   ```python
+   import respx
 
-**Phase:** Phase 2 (AI resume/cover letter generation).
+   @respx.mock
+   def test_remoteok_search():
+       respx.get("https://remoteok.com/api").respond(
+           json=[{}, {"position": "Engineer", "company": "Test", ...}]
+       )
+       platform = RemoteOKPlatform()
+       platform.init()
+       jobs = platform.search(SearchQuery(query="python", platform="remoteok"))
+       assert len(jobs) == 1
+   ```
+2. Store a sample API response in `tests/fixtures/remoteok_api_response.json` for consistent test data.
+3. Add `respx` to dev dependencies.
+
+**Phase:** Phase 1 (dev dependencies and fixtures).
+
+---
+
+### Pitfall 15: No Test for the Database Migration Chain
+
+**What goes wrong:** The database has 6 migration versions with ALTER TABLE, CREATE TABLE, CREATE VIRTUAL TABLE, CREATE TRIGGER, and data backfill statements. Nobody tests that applying migrations 1-through-6 on an empty database produces the same schema as applying the full `SCHEMA` SQL. A migration bug (e.g., wrong column type, missing INDEX) goes undetected until it hits production data.
+
+**Prevention:**
+1. Write a migration test that:
+   - Creates a fresh in-memory database
+   - Applies ONLY the `SCHEMA` SQL (no migrations)
+   - Creates another fresh in-memory database
+   - Applies `SCHEMA` then runs `migrate_db()` from version 0 to 6
+   - Compares the schemas (table definitions, indexes, triggers)
+2. Write a test for each migration version that starts with version N-1 schema and applies version N migration.
+3. Test idempotency: running `migrate_db()` twice should not raise errors (the existing code has `IF NOT EXISTS` and ignores "duplicate column" errors, but verify).
+
+**Phase:** Phase 2 (integration tests). After basic database fixtures are working.
 
 ---
 
@@ -327,36 +578,34 @@ Mistakes that cause annoyance but are recoverable.
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|---------------|------------|
-| Apply infrastructure (Phase 1) | Account ban from aggressive apply rate | Daily budget (5-10/day), session-level behavioral variation |
-| Apply infrastructure (Phase 1) | Duplicate applications across runs | Pre-apply DB check, idempotent apply with status tracking |
-| Apply infrastructure (Phase 1) | Session expiry mid-application | Pre-apply login check, post-submit confirmation verification |
-| Architecture refactor (Phase 1) | Over-engineered plugin system | Use Protocols, explicit registry, defer plugin discovery |
-| Architecture refactor (Phase 1) | God object platform classes | Separate SearchPlatform from ApplyHandler |
-| AI resume tailoring (Phase 2) | Fabricated experience/skills | Source-of-truth constraint, post-generation diff, human review |
-| AI resume tailoring (Phase 2) | PDF fails ATS parsing | Single-column, standard fonts, no tables/images, validation |
-| AI resume tailoring (Phase 2) | LLM cost/latency explosion | Tiered models, caching by job cluster, batch custom questions |
-| ATS form handlers (Phase 2-3) | Form diversity overwhelms generic filler | API-first (Greenhouse, Lever), then ATS-specific handlers |
-| Ongoing | Selector rot (DOM changes) | Health checks, fallback selectors, monitoring |
-| Ongoing | Config drift between profile sources | Single source of truth in YAML, validation in Phase 0 |
+| Test infrastructure (Phase 1) | `webapp.db` import-time `init_db()` | Set `JOBFLOW_TEST_DB=1` before any imports in conftest |
+| Test infrastructure (Phase 1) | Config singleton poisons test state | `reset_settings()` autouse fixture + test config YAML |
+| Test infrastructure (Phase 1) | Platform imports require Playwright | Layer tests: unit/integration/e2e with import guards |
+| Test infrastructure (Phase 1) | Missing config files in CI | Ship `tests/fixtures/test_config.yaml` and `test.env` |
+| Unit tests (Phase 1-2) | Scorer/dedup depend on global config | Always pass explicit dependencies, never rely on `get_settings()` |
+| Unit tests (Phase 1-2) | Lazy imports defeat mock.patch | Patch at source module, not import site |
+| Integration tests (Phase 2) | asyncio.to_thread hangs in tests | Mock the sync function, don't let real threads spawn |
+| Integration tests (Phase 2) | SSE stream tests hang or timeout | Test components separately, use httpx.AsyncClient for SSE |
+| Integration tests (Phase 2) | FTS5 corruption across tests | Fresh in-memory DB per test, never `DELETE FROM jobs` |
+| Integration tests (Phase 2) | Real API calls cost money/fail in CI | Autouse fixture blocks `anthropic.Anthropic` and httpx |
+| Platform tests (Phase 3) | Deep Playwright mock chains | Don't mock Playwright. Extract pure functions, test those |
+| CI pipeline (Phase 3) | Playwright browser download slows CI | Skip browser tests in fast CI; separate E2E job with caching |
+| All phases | `datetime.now()` makes assertions fragile | Use freezegun/time-machine or assert on format/ordering |
 
 ---
 
 ## Sources
 
 ### Verified (HIGH confidence)
-- [Greenhouse Job Board API](https://developers.greenhouse.io/job-board.html) -- application submission endpoints and custom question structure
-- [Lever Postings API](https://github.com/lever/postings-api) -- public application submission API
-- [Playwright persistent context issues](https://github.com/microsoft/playwright/issues/36139) -- session cookie persistence bugs
-- Direct codebase analysis: `base.py`, `models.py`, `orchestrator.py`, `form_filler.py`, `db.py`, `stealth.py`
+- Direct codebase analysis of all 20+ Python modules in the JobFlow project
+- [FastAPI Testing documentation](https://fastapi.tiangolo.com/tutorial/testing/) -- TestClient behavior
+- [pytest fixtures documentation](https://docs.pytest.org/en/stable/how-to/fixtures.html) -- fixture scoping and teardown
+- [SQLite FTS5 Extension documentation](https://www.sqlite.org/fts5.html) -- integrity-check command, content sync triggers
+- [sse-starlette PyPI](https://pypi.org/project/sse-starlette/) -- test helpers and reset fixtures
 
 ### Cross-referenced (MEDIUM confidence)
-- [GrackerAI: AI Job Hunting Automation 2025](https://gracker.ai/blog/ai-job-apply-bots-2025) -- Wonsulting shutdown, application rate data
-- [Scale.jobs: ATS Rejects Most AI-Applied Resumes](https://scale.jobs/blog/ats-rejects-most-ai-applied-resumes) -- ATS parsing failure modes
-- [Resumly: Formatting Resume PDFs](https://www.resumly.ai/blog/formatting-resume-pdfs-best-practices-to-avoid-ats-errors) -- PDF formatting pitfalls including Workday parsing losses
-- [ScrapeOps: Make Playwright Undetectable](https://scrapeops.io/playwright-web-scraping-playbook/nodejs-playwright-make-playwright-undetectable/) -- behavioral fingerprinting detection
-- [The Register: LLM Prompt Injection in Job Applications](https://www.theregister.com/2024/08/13/who_uses_llm_prompt_injection/) -- resume fabrication and ATS gaming risks
-- [Vectara hallucination study](https://medium.com/@markus_brinsa/hallucination-rates-in-2025-accuracy-refusal-and-liability-aa0032019ca1) -- LLM hallucination rate benchmarks (0.7-25%)
-
-### Single-source (LOW confidence -- needs validation)
-- Indeed DSA transparency report claim about "anomaly detection and machine learning" for bot detection -- verified the report exists but specific detection methods are not public
-- Workday "loses more than half of content" during PDF parsing -- single source (Resumly), may be version/config dependent
+- [Be careful of Import-time Side Effects in pytest](https://atsss.medium.com/be-careful-to-import-time-side-effects-in-pytest-7d9c074b0a6f) -- import-time side effects in test collection
+- [Patching pydantic settings in pytest](https://rednafi.com/python/patch-pydantic-settings-in-pytest/) -- pydantic-settings singleton testing patterns
+- [async test patterns for Pytest](https://tonybaloney.github.io/posts/async-test-patterns-for-pytest-and-unittest.html) -- asyncio.to_thread testing strategies
+- [9 Playwright Best Practices and Pitfalls to Avoid](https://betterstack.com/community/guides/testing/playwright-best-practices/) -- test isolation in browser automation
+- [Python 3.13 SQLite ResourceWarning](https://alexwlchan.net/til/2025/python3-13-sqlite-warnings/) -- unclosed connection warnings in tests
