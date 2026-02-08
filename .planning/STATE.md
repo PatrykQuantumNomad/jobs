@@ -47,9 +47,10 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 001 | Fix technical debt: remove Config shim, dead static mount, update arch docs | 2026-02-08 | 9f7f3de | [001-fix-technical-debt](./quick/001-fix-technical-debt/) |
+| 002 | Fix CI: increase test coverage from 62.61% to 80%+ (115 new tests) | 2026-02-08 | bf35a16 | [002-fix-ci-increase-test-coverage-from-62-61](./quick/002-fix-ci-increase-test-coverage-from-62-61/) |
 
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: v1.1 milestone complete. All archives created. Ready for /gsd:new-milestone.
-Resume file: N/A -- milestone boundary
+Stopped at: Quick task 002 complete -- CI coverage at 80.01%, 532 tests passing.
+Resume file: N/A
