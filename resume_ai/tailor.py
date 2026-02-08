@@ -5,8 +5,6 @@ that reorders skills and achievements for a target role while strictly forbiddin
 fabrication of any fact not present in the original resume.
 """
 
-from __future__ import annotations
-
 import anthropic
 
 from resume_ai.models import TailoredResume
@@ -114,9 +112,7 @@ def tailor_resume(
             "ANTHROPIC_API_KEY not set or invalid. Add it to your .env file."
         ) from exc
     except anthropic.APIError as exc:
-        raise RuntimeError(
-            f"Anthropic API error during resume tailoring: {exc}"
-        ) from exc
+        raise RuntimeError(f"Anthropic API error during resume tailoring: {exc}") from exc
 
     parsed = response.parsed_output
     if parsed is None:

@@ -8,13 +8,13 @@ Thread safety: ``loop.call_soon_threadsafe(queue.put_nowait, event)`` bridges
 the synchronous Playwright thread to the asynchronous FastAPI event loop.
 """
 
-from __future__ import annotations
-
 import asyncio
+import contextlib
 import logging
 import threading
+from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from apply_engine.config import ApplyMode
 from apply_engine.dedup import is_already_applied
@@ -69,7 +69,10 @@ class ApplyEngine:
                         queue,
                         ApplyEvent(
                             type=ApplyEventType.ERROR,
-                            message=f"Already applied to this job (status: {already.get('status', 'unknown')})",
+                            message=(
+                                f"Already applied to this job"
+                                f" (status: {already.get('status', 'unknown')})"
+                            ),
                             job_dedup_key=dedup_key,
                         ),
                     )
@@ -106,9 +109,7 @@ class ApplyEngine:
 
     # ── Emitter factory ──────────────────────────────────────────────────
 
-    def _make_emitter(
-        self, queue: asyncio.Queue, loop: asyncio.AbstractEventLoop
-    ) -> Callable:
+    def _make_emitter(self, queue: asyncio.Queue, loop: asyncio.AbstractEventLoop) -> Callable:
         """Return a function that safely emits events from a background thread.
 
         Uses ``loop.call_soon_threadsafe()`` to bridge the sync thread to the
@@ -123,10 +124,8 @@ class ApplyEngine:
     @staticmethod
     def _emit_sync(queue: asyncio.Queue, event: ApplyEvent) -> None:
         """Emit an event from the async context (not from background thread)."""
-        try:
+        with contextlib.suppress(Exception):
             queue.put_nowait(event.model_dump())
-        except Exception:
-            pass
 
     # ── Synchronous apply (runs in background thread) ─────────────────
 
@@ -151,7 +150,10 @@ class ApplyEngine:
             emit(
                 ApplyEvent(
                     type=ApplyEventType.PROGRESS,
-                    message=f"Starting apply for {job.get('title', '?')} at {job.get('company', '?')}...",
+                    message=(
+                        f"Starting apply for {job.get('title', '?')}"
+                        f" at {job.get('company', '?')}..."
+                    ),
                     job_dedup_key=dedup_key,
                 )
             )
@@ -237,9 +239,7 @@ class ApplyEngine:
                 )
             )
 
-            pw, ctx = get_browser_context(
-                platform_info.key, headless=not apply_cfg.headed_mode
-            )
+            pw, ctx = get_browser_context(platform_info.key, headless=not apply_cfg.headed_mode)
 
             # Create platform instance and init
             platform = platform_info.cls()
@@ -308,7 +308,10 @@ class ApplyEngine:
                 emit(
                     ApplyEvent(
                         type=ApplyEventType.AWAITING_CONFIRM,
-                        message=f"Ready to apply for {job.get('title', '?')} at {job.get('company', '?')}. Confirm?",
+                        message=(
+                            f"Ready to apply for {job.get('title', '?')}"
+                            f" at {job.get('company', '?')}. Confirm?"
+                        ),
                         job_dedup_key=dedup_key,
                     )
                 )
@@ -419,7 +422,9 @@ class ApplyEngine:
                 emit(
                     ApplyEvent(
                         type=ApplyEventType.AWAITING_CONFIRM,
-                        message=f"External form filled for {job.get('title', '?')}. Confirm submit?",
+                        message=(
+                            f"External form filled for {job.get('title', '?')}. Confirm submit?"
+                        ),
                         job_dedup_key=dedup_key,
                     )
                 )

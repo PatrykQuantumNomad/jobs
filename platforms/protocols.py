@@ -13,8 +13,6 @@ new platforms to be added without modifying orchestration code.
 Import chain: models -> protocols -> registry (no cycles).
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
@@ -63,7 +61,9 @@ class BrowserPlatform(Protocol):
         """Context manager entry."""
         ...
 
-    def __exit__(self, exc_type: type | None, exc_val: BaseException | None, exc_tb: object) -> None:
+    def __exit__(
+        self, exc_type: type | None, exc_val: BaseException | None, exc_tb: object
+    ) -> None:
         """Context manager exit -- cleanup resources."""
         ...
 
@@ -99,6 +99,8 @@ class APIPlatform(Protocol):
         """Context manager entry."""
         ...
 
-    def __exit__(self, exc_type: type | None, exc_val: BaseException | None, exc_tb: object) -> None:
+    def __exit__(
+        self, exc_type: type | None, exc_val: BaseException | None, exc_tb: object
+    ) -> None:
         """Context manager exit -- cleanup resources."""
         ...

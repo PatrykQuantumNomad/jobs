@@ -10,8 +10,6 @@ Usage::
     python scheduler.py status     # Check whether the agent is loaded
 """
 
-from __future__ import annotations
-
 import argparse
 import os
 import plistlib
@@ -45,8 +43,7 @@ def generate_plist(settings) -> dict:
     # StartCalendarInterval: single dict for daily, list of dicts for weekdays
     if sched.weekdays is not None:
         calendar_interval = [
-            {"Hour": sched.hour, "Minute": sched.minute, "Weekday": day}
-            for day in sched.weekdays
+            {"Hour": sched.hour, "Minute": sched.minute, "Weekday": day} for day in sched.weekdays
         ]
     else:
         calendar_interval = {"Hour": sched.hour, "Minute": sched.minute}

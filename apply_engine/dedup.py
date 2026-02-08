@@ -4,8 +4,6 @@ Queries the jobs table to check if a job has already been applied to,
 avoiding duplicate applications across sessions and restarts.
 """
 
-from __future__ import annotations
-
 
 def is_already_applied(dedup_key: str) -> dict | None:
     """Check if a job has already been applied to.

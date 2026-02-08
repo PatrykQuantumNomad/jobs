@@ -4,8 +4,6 @@ Uses Jinja2 templates with WeasyPrint to produce ATS-friendly PDF documents
 from structured :class:`TailoredResume` and :class:`CoverLetter` model data.
 """
 
-from __future__ import annotations
-
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING

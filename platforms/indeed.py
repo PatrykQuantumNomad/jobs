@@ -3,8 +3,6 @@
 Anti-bot level: HIGH -- Cloudflare Turnstile, fingerprinting, behavioural analysis.
 """
 
-from __future__ import annotations
-
 import re
 from pathlib import Path
 from urllib.parse import urlencode
@@ -14,13 +12,13 @@ from playwright.sync_api import TimeoutError as PwTimeout
 
 from config import PROJECT_ROOT, get_settings
 from models import Job, SearchQuery
-from platforms.mixins import BrowserPlatformMixin
-from platforms.registry import register_platform
 from platforms.indeed_selectors import (
     INDEED_SEARCH_PARAMS,
     INDEED_SELECTORS,
     INDEED_URLS,
 )
+from platforms.mixins import BrowserPlatformMixin
+from platforms.registry import register_platform
 
 
 @register_platform(
@@ -36,7 +34,7 @@ class IndeedPlatform(BrowserPlatformMixin):
 
     def __init__(self) -> None:
         self.context: BrowserContext | None = None
-        self.page = None
+        self.page = None  # type: ignore[assignment]  # set in init()
 
     def init(self, context: BrowserContext) -> None:
         """Receive Playwright BrowserContext from orchestrator."""
@@ -66,7 +64,7 @@ class IndeedPlatform(BrowserPlatformMixin):
         print("  Indeed: no active session -- opening login page for manual auth")
         self.page.goto(INDEED_URLS["login"], timeout=timeout)
 
-        if getattr(self, '_unattended', False):
+        if getattr(self, "_unattended", False):
             raise RuntimeError(
                 "Indeed session expired. Run the pipeline manually "
                 "(without --scheduled) to re-authenticate."
@@ -88,9 +86,7 @@ class IndeedPlatform(BrowserPlatformMixin):
             return True
 
         self.screenshot("login_failed")
-        raise RuntimeError(
-            "Indeed login not detected -- try again or check the browser window"
-        )
+        raise RuntimeError("Indeed login not detected -- try again or check the browser window")
 
     def is_logged_in(self) -> bool:
         return self.element_exists(INDEED_SELECTORS["logged_in_indicator"])
@@ -112,9 +108,7 @@ class IndeedPlatform(BrowserPlatformMixin):
             self._check_challenges(f"search_page_{page_idx + 1}")
 
             try:
-                self.page.wait_for_selector(
-                    INDEED_SELECTORS["job_card"], timeout=10_000
-                )
+                self.page.wait_for_selector(INDEED_SELECTORS["job_card"], timeout=10_000)
             except PwTimeout:
                 print(f"    page {page_idx + 1}: no results, stopping")
                 break
@@ -172,9 +166,7 @@ class IndeedPlatform(BrowserPlatformMixin):
 
             if not job.description:
                 self.screenshot(f"no_desc_{job.id[:8]}")
-                print(
-                    f"    Indeed: no description found for {job.title} -- screenshot saved"
-                )
+                print(f"    Indeed: no description found for {job.title} -- screenshot saved")
         except Exception as exc:
             print(f"    Indeed: error fetching details for {job.title} -- {exc}")
         return job
@@ -204,16 +196,13 @@ class IndeedPlatform(BrowserPlatformMixin):
             )
             if resp.lower() != "yes":
                 return False
-            self.page.set_input_files(
-                INDEED_SELECTORS["resume_upload"], str(resume_path)
-            )
+            self.page.set_input_files(INDEED_SELECTORS["resume_upload"], str(resume_path))
             self.human_delay("form")
 
         # Final confirmation
         self.screenshot("before_submit")
         resp = self.wait_for_human(
-            f"Ready to submit to {job.company} -- {job.title}\n"
-            "  Type 'SUBMIT' to confirm:"
+            f"Ready to submit to {job.company} -- {job.title}\n  Type 'SUBMIT' to confirm:"
         )
         if resp != "SUBMIT":
             print("    Indeed: cancelled by user")

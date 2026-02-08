@@ -4,8 +4,6 @@ Persists metadata about tailored resumes and cover letters generated for
 specific job postings, enabling version history and deduplication.
 """
 
-from __future__ import annotations
-
 from webapp.db import get_conn
 
 
@@ -45,10 +43,9 @@ def save_resume_version(
                (job_dedup_key, resume_type, file_path, original_resume_path,
                 model_used, prompt_hash)
                VALUES (?, ?, ?, ?, ?, ?)""",
-            (job_dedup_key, resume_type, file_path, original_resume_path,
-             model_used, prompt_hash),
+            (job_dedup_key, resume_type, file_path, original_resume_path, model_used, prompt_hash),
         )
-        return cursor.lastrowid
+        return cursor.lastrowid or 0
 
 
 def get_versions_for_job(job_dedup_key: str) -> list[dict]:

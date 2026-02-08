@@ -16,14 +16,14 @@ Usage::
     ensure_directories()
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import ClassVar
 
 from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic_settings.main import YamlConfigSettingsSource
+from pydantic_settings.main import (
+    YamlConfigSettingsSource,  # pyright: ignore[reportPrivateImportUsage]
+)
 
 from apply_engine.config import ApplyConfig
 from models import CandidateProfile, SearchQuery
@@ -259,7 +259,7 @@ class AppSettings(BaseSettings):
             result.append(
                 SearchQuery(
                     query=query_str,
-                    platform=platform,
+                    platform=platform,  # type: ignore[arg-type]
                     location=qcfg.location or "",
                     max_pages=qcfg.max_pages,
                 )
@@ -307,7 +307,7 @@ def get_settings(config_path: str = "config.yaml") -> AppSettings:
         if config_path != "config.yaml":
             # Override yaml_file before creating the instance
             AppSettings.model_config["yaml_file"] = config_path
-        _settings = AppSettings()
+        _settings = AppSettings()  # type: ignore[call-arg]  # search/scoring come from YAML
     return _settings
 
 

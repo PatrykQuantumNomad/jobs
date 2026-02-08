@@ -5,8 +5,6 @@ tailoring a resume or generating a cover letter.  Each field includes a
 ``description`` to guide the LLM toward the desired output format.
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, Field
 
 
@@ -17,7 +15,9 @@ class SkillSection(BaseModel):
         description="Skill category name, e.g. 'Platform & Cloud', 'AI/ML', 'Backend'."
     )
     skills: list[str] = Field(
-        description="Individual skills within this category, ordered by relevance to the target role."
+        description=(
+            "Individual skills within this category, ordered by relevance to the target role."
+        )
     )
 
 
@@ -68,9 +68,7 @@ class TailoredResume(BaseModel):
             "Each entry is a concise one-liner with project name and key impact."
         ),
     )
-    education: str = Field(
-        description="Education section text, unchanged from original resume."
-    )
+    education: str = Field(description="Education section text, unchanged from original resume.")
     tailoring_notes: str = Field(
         description=(
             "Brief explanation of what was changed and why -- which skills were "
@@ -114,6 +112,4 @@ class CoverLetter(BaseModel):
             "to discuss...')."
         ),
     )
-    sign_off: str = Field(
-        description="Professional sign-off, e.g. 'Sincerely,\\nPatryk Golabek'."
-    )
+    sign_off: str = Field(description="Professional sign-off, e.g. 'Sincerely,\\nPatryk Golabek'.")

@@ -5,8 +5,6 @@ headings, bullet points, and formatting -- suitable for feeding into an LLM
 as context for resume tailoring.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import pymupdf4llm
@@ -33,4 +31,7 @@ def extract_resume_text(pdf_path: str | Path) -> str:
     path = Path(pdf_path)
     if not path.exists():
         raise FileNotFoundError(f"Resume PDF not found: {path}")
-    return pymupdf4llm.to_markdown(str(path))
+    result = pymupdf4llm.to_markdown(str(path))
+    if isinstance(result, list):
+        return "\n".join(str(page) for page in result)
+    return result

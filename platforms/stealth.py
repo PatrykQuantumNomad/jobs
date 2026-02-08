@@ -1,10 +1,9 @@
 """Playwright stealth configuration and persistent browser context factory."""
 
-from __future__ import annotations
-
+import contextlib
 from pathlib import Path
 
-from playwright.sync_api import BrowserContext, Playwright, sync_playwright
+from playwright.sync_api import BrowserContext, Playwright, ViewportSize, sync_playwright
 from playwright_stealth import Stealth
 
 _stealth = Stealth()
@@ -13,7 +12,7 @@ _stealth = Stealth()
 def get_browser_context(
     platform: str,
     headless: bool = True,
-    viewport: dict | None = None,
+    viewport: ViewportSize | None = None,
 ) -> tuple[Playwright, BrowserContext]:
     """Launch a persistent browser context with stealth patches.
 
@@ -26,7 +25,7 @@ def get_browser_context(
         (Playwright instance, BrowserContext) — caller must close both.
     """
     if viewport is None:
-        viewport = {"width": 1280, "height": 720}
+        viewport = ViewportSize(width=1280, height=720)
 
     user_data_dir = Path(f"./browser_sessions/{platform.lower()}")
     user_data_dir.mkdir(parents=True, exist_ok=True)
@@ -61,11 +60,7 @@ def get_browser_context(
 
 def close_browser(pw: Playwright, context: BrowserContext) -> None:
     """Gracefully close browser context and Playwright instance."""
-    try:
+    with contextlib.suppress(Exception):
         context.close()
-    except Exception:
-        pass
-    try:
+    with contextlib.suppress(Exception):
         pw.stop()
-    except Exception:
-        pass

@@ -1,7 +1,5 @@
 """Platform modules -- auto-discovers and registers all platform implementations."""
 
-from __future__ import annotations
-
 import importlib
 import logging
 import pkgutil
@@ -12,13 +10,15 @@ from platforms.registry import get_all_platforms, get_platform, get_platforms_by
 logger = logging.getLogger(__name__)
 
 # Modules that are infrastructure, not platform implementations
-_INFRASTRUCTURE_MODULES = frozenset({
-    "protocols",
-    "registry",
-    "mixins",
-    "stealth",
-    "base",
-})
+_INFRASTRUCTURE_MODULES = frozenset(
+    {
+        "protocols",
+        "registry",
+        "mixins",
+        "stealth",
+        "base",
+    }
+)
 
 
 def _auto_discover() -> None:

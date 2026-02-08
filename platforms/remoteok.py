@@ -1,7 +1,5 @@
 """RemoteOK platform -- pure HTTP API, no browser needed."""
 
-from __future__ import annotations
-
 import re
 from datetime import UTC, datetime
 from pathlib import Path
@@ -50,6 +48,7 @@ class RemoteOKPlatform:
         """Fetch all jobs from the API and filter by tag overlap."""
         settings = get_settings()
         try:
+            assert self.client is not None, "Call init() before search()"
             resp = self.client.get(self.API_URL)
             resp.raise_for_status()
             data = resp.json()
@@ -119,9 +118,7 @@ class RemoteOKPlatform:
 
         posted_date: str | None = None
         if epoch := entry.get("epoch"):
-            posted_date = datetime.fromtimestamp(
-                int(epoch), tz=UTC
-            ).isoformat()
+            posted_date = datetime.fromtimestamp(int(epoch), tz=UTC).isoformat()
 
         return Job(
             id=str(entry.get("id", "")),

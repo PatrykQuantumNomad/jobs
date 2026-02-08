@@ -17,8 +17,6 @@ Usage::
 Import chain: models -> protocols -> registry (no cycles).
 """
 
-from __future__ import annotations
-
 import inspect
 from dataclasses import dataclass, field
 from typing import Any
@@ -82,13 +80,15 @@ def _validate_against_protocol(cls: type, protocol: type) -> None:
             proto_required = sum(
                 1
                 for p in proto_sig.parameters.values()
-                if p.name != "self" and p.default is inspect.Parameter.empty
+                if p.name != "self"
+                and p.default is inspect.Parameter.empty
                 and p.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
             )
             impl_required = sum(
                 1
                 for p in impl_sig.parameters.values()
-                if p.name != "self" and p.default is inspect.Parameter.empty
+                if p.name != "self"
+                and p.default is inspect.Parameter.empty
                 and p.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
             )
 
@@ -97,7 +97,7 @@ def _validate_against_protocol(cls: type, protocol: type) -> None:
                     f"{method_name} (requires {impl_required} params, "
                     f"protocol allows {proto_required})"
                 )
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             # Some builtins/descriptors are not introspectable -- skip check
             pass
 
@@ -150,8 +150,7 @@ def register_platform(
             protocol = APIPlatform
         else:
             raise ValueError(
-                f"Unknown platform_type {platform_type!r}. "
-                f"Expected 'browser' or 'api'."
+                f"Unknown platform_type {platform_type!r}. Expected 'browser' or 'api'."
             )
 
         # Fail-fast validation
@@ -178,9 +177,7 @@ def get_platform(key: str) -> PlatformInfo:
     """
     if key not in _REGISTRY:
         available = ", ".join(sorted(_REGISTRY.keys())) or "(none)"
-        raise KeyError(
-            f"Platform {key!r} not registered. Available: {available}"
-        )
+        raise KeyError(f"Platform {key!r} not registered. Available: {available}")
     return _REGISTRY[key]
 
 
@@ -191,6 +188,4 @@ def get_all_platforms() -> dict[str, PlatformInfo]:
 
 def get_platforms_by_type(platform_type: str) -> dict[str, PlatformInfo]:
     """Return platforms filtered by type (``'browser'`` or ``'api'``)."""
-    return {
-        k: v for k, v in _REGISTRY.items() if v.platform_type == platform_type
-    }
+    return {k: v for k, v in _REGISTRY.items() if v.platform_type == platform_type}

@@ -1,7 +1,6 @@
 """Main job search pipeline -- coordinates search, scoring, and application."""
 
-from __future__ import annotations
-
+import contextlib
 import json
 import sys
 import time as _time
@@ -16,9 +15,9 @@ from config import (
 )
 from dedup import fuzzy_deduplicate
 from models import Job, JobStatus
-from platforms import get_all_platforms, get_browser_context, close_browser
-from platforms.registry import get_platform, PlatformInfo
-from salary import parse_salary, parse_salary_ints, NormalizedSalary
+from platforms import close_browser, get_all_platforms, get_browser_context
+from platforms.registry import PlatformInfo, get_platform
+from salary import parse_salary, parse_salary_ints
 from scorer import JobScorer
 from webapp import db as webdb
 
@@ -72,9 +71,7 @@ class Orchestrator:
 
             # Delta cleanup: remove stale jobs from searched platforms
             if self.searched_platforms:
-                stale_count = webdb.remove_stale_jobs(
-                    self.searched_platforms, self.run_timestamp
-                )
+                stale_count = webdb.remove_stale_jobs(self.searched_platforms, self.run_timestamp)
                 if stale_count:
                     print(f"  Removed {stale_count} stale jobs")
 
@@ -97,17 +94,12 @@ class Orchestrator:
             for name in get_all_platforms():
                 raw_path = JOB_PIPELINE_DIR / f"raw_{name}.json"
                 if raw_path.exists():
-                    try:
+                    with contextlib.suppress(json.JSONDecodeError, OSError):
                         total_raw += len(json.loads(raw_path.read_text()))
-                    except (json.JSONDecodeError, OSError):
-                        pass
 
             run_status = "success"
             if self._run_errors:
-                if self.discovered_jobs:
-                    run_status = "partial"
-                else:
-                    run_status = "failed"
+                run_status = "partial" if self.discovered_jobs else "failed"
 
             try:
                 webdb.record_run(
@@ -198,7 +190,9 @@ class Orchestrator:
                 print(f"  Skipping {info.name} (login failed)")
                 continue
             info = get_platform(name)
-            if info.platform_type == "browser" and not self.settings.validate_platform_credentials(name):
+            if info.platform_type == "browser" and not self.settings.validate_platform_credentials(
+                name
+            ):
                 continue
             jobs = self._search_platform(name, info)
             self._save_raw(name, jobs)
@@ -279,30 +273,32 @@ class Orchestrator:
 
         # Persist to DB with new fields
         for job, breakdown in scored_pairs:
-            webdb.upsert_job({
-                "id": job.id,
-                "platform": job.platform,
-                "title": job.title,
-                "company": job.company,
-                "location": job.location,
-                "url": job.url,
-                "salary": job.salary,
-                "salary_min": job.salary_min,
-                "salary_max": job.salary_max,
-                "apply_url": job.apply_url,
-                "description": job.description,
-                "posted_date": job.posted_date,
-                "tags": job.tags,
-                "easy_apply": job.easy_apply,
-                "score": job.score,
-                "status": job.status.value if isinstance(job.status, JobStatus) else job.status,
-                "applied_date": job.applied_date,
-                "notes": job.notes,
-                "score_breakdown": breakdown.to_dict(),
-                "company_aliases": job.company_aliases,
-                "salary_display": job.salary_display,
-                "salary_currency": job.salary_currency,
-            })
+            webdb.upsert_job(
+                {
+                    "id": job.id,
+                    "platform": job.platform,
+                    "title": job.title,
+                    "company": job.company,
+                    "location": job.location,
+                    "url": job.url,
+                    "salary": job.salary,
+                    "salary_min": job.salary_min,
+                    "salary_max": job.salary_max,
+                    "apply_url": job.apply_url,
+                    "description": job.description,
+                    "posted_date": job.posted_date,
+                    "tags": job.tags,
+                    "easy_apply": job.easy_apply,
+                    "score": job.score,
+                    "status": job.status.value if isinstance(job.status, JobStatus) else job.status,
+                    "applied_date": job.applied_date,
+                    "notes": job.notes,
+                    "score_breakdown": breakdown.to_dict(),
+                    "company_aliases": job.company_aliases,
+                    "salary_display": job.salary_display,
+                    "salary_currency": job.salary_currency,
+                }
+            )
 
         scored_jobs = [job for job, _ in scored_pairs]
         filtered = [j for j in scored_jobs if (j.score or 0) >= 3]
@@ -378,7 +374,7 @@ class Orchestrator:
             "| Score | Company | Title | Location | Salary | Platform | Status |\n",
             "|-------|---------|-------|----------|--------|----------|--------|\n",
         ]
-        for j in sorted(jobs, key=lambda x: (x.score or 0), reverse=True):
+        for j in sorted(jobs, key=lambda x: x.score or 0, reverse=True):
             sal = j.salary_display if j.salary_display else "N/A"
             lines.append(
                 f"| {j.score} | {j.company} | {j.title} | "
@@ -392,9 +388,11 @@ class Orchestrator:
 
     def _backfill_breakdowns(self) -> None:
         """One-time backfill: add score breakdowns to legacy scored jobs."""
+
         def _scorer_fn(job_dict: dict) -> tuple[int, dict]:
-            job = Job(**{k: v for k, v in job_dict.items()
-                         if k in Job.model_fields and v is not None})
+            job = Job(
+                **{k: v for k, v in job_dict.items() if k in Job.model_fields and v is not None}
+            )
             score, breakdown = self.scorer.score_job_with_breakdown(job)
             return score, breakdown.to_dict()
 
@@ -432,7 +430,7 @@ class Orchestrator:
         try:
             indices = [int(x.strip()) - 1 for x in resp.split(",")]
             selected = [top[i] for i in indices if 0 <= i < len(top)]
-        except (ValueError, IndexError):
+        except ValueError, IndexError:
             print("  Invalid input. Skipping.")
             return
 

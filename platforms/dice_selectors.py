@@ -18,9 +18,7 @@ DICE_SELECTORS: dict[str, str] = {
     "apply_button": "[data-testid='apply-button']",
     # Application flow
     "resume_upload": "input[type='file']",
-    "submit_application": (
-        "button:has-text('Submit Application'), button[type='submit']"
-    ),
+    "submit_application": ("button:has-text('Submit Application'), button[type='submit']"),
 }
 
 DICE_URLS: dict[str, str] = {

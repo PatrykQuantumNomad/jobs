@@ -26,8 +26,7 @@ INDEED_SELECTORS: dict[str, str] = {
     # Application flow
     "resume_upload": "input[type='file'][accept*='pdf']",
     "submit_application": (
-        "button:has-text('Submit application'), "
-        "button[type='submit']:has-text('Submit')"
+        "button:has-text('Submit application'), button[type='submit']:has-text('Submit')"
     ),
     # Error / challenge detection
     "captcha_frame": "iframe[title*='recaptcha'], iframe[src*='captcha']",

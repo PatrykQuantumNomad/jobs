@@ -1,14 +1,12 @@
 """Pydantic v2 data models for job search automation."""
 
-from __future__ import annotations
-
-from enum import Enum
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     # Pipeline-managed (set by orchestrator)
     DISCOVERED = "discovered"
     SCORED = "scored"
@@ -63,9 +61,12 @@ class Job(BaseModel):
     @field_validator("salary_max")
     @classmethod
     def salary_max_gte_min(cls, v: int | None, info) -> int | None:
-        if v is not None and info.data.get("salary_min") is not None:
-            if v < info.data["salary_min"]:
-                raise ValueError("salary_max must be >= salary_min")
+        if (
+            v is not None
+            and info.data.get("salary_min") is not None
+            and v < info.data["salary_min"]
+        ):
+            raise ValueError("salary_max must be >= salary_min")
         return v
 
     def dedup_key(self) -> str:

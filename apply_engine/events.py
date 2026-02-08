@@ -4,14 +4,12 @@ Events are emitted by the apply engine during application submission and
 consumed by the web dashboard via Server-Sent Events for real-time progress.
 """
 
-from __future__ import annotations
-
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class ApplyEventType(str, Enum):
+class ApplyEventType(StrEnum):
     """Types of events emitted during an apply flow."""
 
     PROGRESS = "progress"
@@ -32,16 +30,12 @@ class ApplyEvent(BaseModel):
     type: ApplyEventType = Field(description="Event type discriminator")
     message: str = Field(default="", description="Human-readable status message")
     html: str = Field(default="", description="Optional HTML fragment for dashboard rendering")
-    screenshot_path: str | None = Field(
-        default=None, description="Path to screenshot if captured"
-    )
+    screenshot_path: str | None = Field(default=None, description="Path to screenshot if captured")
     fields_filled: dict[str, str] = Field(
         default_factory=dict,
         description="Map of form field names to filled values",
     )
-    job_dedup_key: str = Field(
-        default="", description="Dedup key of the job being applied to"
-    )
+    job_dedup_key: str = Field(default="", description="Dedup key of the job being applied to")
 
 
 def make_progress_event(

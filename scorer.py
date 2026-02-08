@@ -5,13 +5,10 @@ Provides both a backward-compatible ``score_job() -> int`` and a new
 per-factor points and matched keywords.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 
 from config import ScoringWeights, get_settings
 from models import CandidateProfile, Job, JobStatus
-
 
 # ---------------------------------------------------------------------------
 # Score breakdown
@@ -115,12 +112,10 @@ class JobScorer:
         for job in jobs:
             job.score = self.score_job(job)
             job.status = JobStatus.SCORED
-        jobs.sort(key=lambda j: (j.score or 0), reverse=True)
+        jobs.sort(key=lambda j: j.score or 0, reverse=True)
         return jobs
 
-    def score_batch_with_breakdown(
-        self, jobs: list[Job]
-    ) -> list[tuple[Job, ScoreBreakdown]]:
+    def score_batch_with_breakdown(self, jobs: list[Job]) -> list[tuple[Job, ScoreBreakdown]]:
         """Score all jobs and return ``(job, breakdown)`` pairs, sorted descending."""
         results: list[tuple[Job, ScoreBreakdown]] = []
         for job in jobs:
@@ -128,7 +123,7 @@ class JobScorer:
             job.score = score
             job.status = JobStatus.SCORED
             results.append((job, breakdown))
-        results.sort(key=lambda pair: (pair[0].score or 0), reverse=True)
+        results.sort(key=lambda pair: pair[0].score or 0, reverse=True)
         return results
 
     # -- Internal computation ----------------------------------------------

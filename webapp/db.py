@@ -1,7 +1,5 @@
 """SQLite database layer for job tracker."""
 
-from __future__ import annotations
-
 import json
 import os
 import sqlite3
@@ -385,7 +383,11 @@ def backfill_score_breakdowns(scorer_fn) -> int:
                 score, breakdown = scorer_fn(job_dict)
                 conn.execute(
                     "UPDATE jobs SET score = ?, score_breakdown = ? WHERE dedup_key = ?",
-                    (score, json.dumps(breakdown) if isinstance(breakdown, dict) else breakdown, job_dict["dedup_key"]),
+                    (
+                        score,
+                        json.dumps(breakdown) if isinstance(breakdown, dict) else breakdown,
+                        job_dict["dedup_key"],
+                    ),
                 )
                 count += 1
             except Exception:
@@ -451,9 +453,7 @@ def get_jobs(
 
 def get_job(dedup_key: str) -> dict | None:
     with get_conn() as conn:
-        row = conn.execute(
-            "SELECT * FROM jobs WHERE dedup_key = ?", (dedup_key,)
-        ).fetchone()
+        row = conn.execute("SELECT * FROM jobs WHERE dedup_key = ?", (dedup_key,)).fetchone()
     return dict(row) if row else None
 
 
@@ -529,14 +529,10 @@ def get_stats() -> dict:
         ):
             by_score[row["score"]] = row["cnt"]
         by_status = {}
-        for row in conn.execute(
-            "SELECT status, COUNT(*) as cnt FROM jobs GROUP BY status"
-        ):
+        for row in conn.execute("SELECT status, COUNT(*) as cnt FROM jobs GROUP BY status"):
             by_status[row["status"]] = row["cnt"]
         by_platform = {}
-        for row in conn.execute(
-            "SELECT platform, COUNT(*) as cnt FROM jobs GROUP BY platform"
-        ):
+        for row in conn.execute("SELECT platform, COUNT(*) as cnt FROM jobs GROUP BY platform"):
             by_platform[row["platform"]] = row["cnt"]
     return {
         "total": total,
@@ -565,8 +561,7 @@ def get_enhanced_stats() -> dict:
                GROUP BY date
                ORDER BY date"""
         ).fetchall()
-        jobs_per_day = [{"date": row["date"], "count": row["count"]}
-                        for row in jobs_per_day_rows]
+        jobs_per_day = [{"date": row["date"], "count": row["count"]} for row in jobs_per_day_rows]
 
         # -- By platform --
         by_platform_rows = conn.execute(
@@ -639,9 +634,17 @@ def get_enhanced_stats() -> dict:
 
         # -- Status funnel (ordered by pipeline progression) --
         status_order = {
-            "discovered": 1, "scored": 2, "saved": 3, "applied": 4,
-            "phone_screen": 5, "technical": 6, "final_interview": 7,
-            "offer": 8, "rejected": 9, "withdrawn": 10, "ghosted": 11,
+            "discovered": 1,
+            "scored": 2,
+            "saved": 3,
+            "applied": 4,
+            "phone_screen": 5,
+            "technical": 6,
+            "final_interview": 7,
+            "offer": 8,
+            "rejected": 9,
+            "withdrawn": 10,
+            "ghosted": 11,
         }
         funnel_rows = conn.execute(
             "SELECT status, COUNT(*) AS count FROM jobs GROUP BY status"
@@ -692,10 +695,16 @@ def record_run(
                 total_raw, total_scored, new_jobs, errors, status, duration_seconds)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                started_at, finished_at, mode,
+                started_at,
+                finished_at,
+                mode,
                 json.dumps(platforms_searched),
-                total_raw, total_scored, new_jobs,
-                json.dumps(errors), status, duration_seconds,
+                total_raw,
+                total_scored,
+                new_jobs,
+                json.dumps(errors),
+                status,
+                duration_seconds,
             ),
         )
 

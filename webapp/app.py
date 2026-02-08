@@ -1,7 +1,5 @@
 """Job Tracker Web Dashboard — FastAPI + htmx + SQLite."""
 
-from __future__ import annotations
-
 import asyncio
 import csv
 import io
@@ -13,7 +11,13 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import FastAPI, Form, Query, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -27,13 +31,23 @@ BASE_DIR = Path(__file__).parent
 RESUMES_TAILORED_DIR = Path("resumes/tailored")
 DEFAULT_RESUME_PATH = "resumes/Patryk_Golabek_Resume_ATS.pdf"
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-templates.env.filters["parse_json"] = lambda s: json.loads(s) if isinstance(s, str) and s else (s if s else {})
+templates.env.filters["parse_json"] = lambda s: (
+    json.loads(s) if isinstance(s, str) and s else (s or {})
+)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 STATUSES = [
-    "discovered", "scored", "saved", "applied",
-    "phone_screen", "technical", "final_interview",
-    "offer", "rejected", "withdrawn", "ghosted",
+    "discovered",
+    "scored",
+    "saved",
+    "applied",
+    "phone_screen",
+    "technical",
+    "final_interview",
+    "offer",
+    "rejected",
+    "withdrawn",
+    "ghosted",
 ]
 
 
@@ -102,7 +116,7 @@ async def search_jobs(
 @app.post("/bulk/status", response_class=HTMLResponse)
 async def bulk_status_update(
     request: Request,
-    job_keys: Annotated[list[str], Form()] = [],
+    job_keys: Annotated[list[str] | None, Form()] = None,
     bulk_status: str = Form(""),
     q: str = Form(""),
     score: int | None = Form(None),
@@ -111,6 +125,8 @@ async def bulk_status_update(
     sort: str = Form("score"),
     dir: str = Form("desc"),
 ):
+    if job_keys is None:
+        job_keys = []
     if bulk_status and job_keys:
         for key in job_keys:
             db.update_job_status(key, bulk_status)
@@ -148,8 +164,16 @@ async def export_csv(
     )
     output = io.StringIO()
     fields = [
-        "title", "company", "location", "salary_display", "platform",
-        "status", "score", "url", "posted_date", "created_at",
+        "title",
+        "company",
+        "location",
+        "salary_display",
+        "platform",
+        "status",
+        "score",
+        "url",
+        "posted_date",
+        "created_at",
     ]
     writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
     writer.writeheader()
@@ -182,9 +206,18 @@ async def export_json(
         sort_dir=dir,
     )
     fields = [
-        "title", "company", "location", "salary_display", "platform",
-        "status", "score", "url", "apply_url", "posted_date",
-        "created_at", "notes",
+        "title",
+        "company",
+        "location",
+        "salary_display",
+        "platform",
+        "status",
+        "score",
+        "url",
+        "apply_url",
+        "posted_date",
+        "created_at",
+        "notes",
     ]
     export_data = [{k: job.get(k) for k in fields} for job in jobs]
     output = json.dumps(export_data, indent=2)
@@ -209,10 +242,10 @@ async def tailor_resume_endpoint(request: Request, dedup_key: str):
         return HTMLResponse("<h1>Job not found</h1>", status_code=404)
 
     try:
-        from resume_ai.extractor import extract_resume_text
-        from resume_ai.tailor import tailor_resume, format_resume_as_text
         from resume_ai.diff import generate_resume_diff_html, wrap_diff_html
+        from resume_ai.extractor import extract_resume_text
         from resume_ai.renderer import render_resume_pdf as _render_resume_pdf
+        from resume_ai.tailor import format_resume_as_text, tailor_resume
         from resume_ai.tracker import save_resume_version as _save_resume_version
         from resume_ai.validator import validate_no_fabrication
 
@@ -220,6 +253,7 @@ async def tailor_resume_endpoint(request: Request, dedup_key: str):
         resume_path = DEFAULT_RESUME_PATH
         try:
             from config import get_settings
+
             settings = get_settings()
             if settings.candidate_resume_path:
                 resume_path = settings.candidate_resume_path
@@ -265,7 +299,9 @@ async def tailor_resume_endpoint(request: Request, dedup_key: str):
         )
 
         # Log activity
-        db.log_activity(dedup_key, "resume_tailored", detail=f"Generated tailored resume: {filename}")
+        db.log_activity(
+            dedup_key, "resume_tailored", detail=f"Generated tailored resume: {filename}"
+        )
 
         return templates.TemplateResponse(
             "partials/resume_diff.html",
@@ -298,8 +334,8 @@ async def cover_letter_endpoint(request: Request, dedup_key: str):
         return HTMLResponse("<h1>Job not found</h1>", status_code=404)
 
     try:
-        from resume_ai.extractor import extract_resume_text
         from resume_ai.cover_letter import generate_cover_letter
+        from resume_ai.extractor import extract_resume_text
         from resume_ai.renderer import render_cover_letter_pdf as _render_cover_letter_pdf
         from resume_ai.tracker import save_resume_version as _save_cover_version
 
@@ -307,6 +343,7 @@ async def cover_letter_endpoint(request: Request, dedup_key: str):
         resume_path = DEFAULT_RESUME_PATH
         try:
             from config import get_settings
+
             settings = get_settings()
             if settings.candidate_resume_path:
                 resume_path = settings.candidate_resume_path
@@ -349,14 +386,20 @@ async def cover_letter_endpoint(request: Request, dedup_key: str):
         )
 
         # Log activity
-        db.log_activity(dedup_key, "cover_letter_generated", detail=f"Generated cover letter: {filename}")
+        db.log_activity(
+            dedup_key, "cover_letter_generated", detail=f"Generated cover letter: {filename}"
+        )
 
         return HTMLResponse(
-            f'<div class="bg-green-50 border border-green-400 text-green-800 px-4 py-3 rounded mb-4">'
-            f'<p class="text-sm font-medium">Cover letter generated successfully</p>'
-            f"</div>"
+            '<div class="bg-green-50 border border-green-400'
+            ' text-green-800 px-4 py-3 rounded mb-4">'
+            '<p class="text-sm font-medium">'
+            "Cover letter generated successfully</p>"
+            "</div>"
             f'<a href="/resumes/tailored/{filename}" '
-            f'class="inline-block bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700" '
+            'class="inline-block bg-emerald-600 text-white'
+            " px-4 py-2 rounded text-sm"
+            ' hover:bg-emerald-700" '
             f"download>Download Cover Letter ({filename})</a>"
         )
 
@@ -383,6 +426,7 @@ async def serve_tailored_resume(filename: str):
 async def resume_versions_endpoint(request: Request, dedup_key: str):
     """Return a partial listing resume versions for a job."""
     from resume_ai.tracker import get_versions_for_job as _get_versions
+
     versions = _get_versions(dedup_key)
     return templates.TemplateResponse(
         "partials/resume_versions.html",
@@ -402,6 +446,7 @@ def _get_apply_engine():
     global _apply_engine
     if _apply_engine is None:
         from apply_engine.engine import ApplyEngine
+
         _apply_engine = ApplyEngine()
     return _apply_engine
 
@@ -413,6 +458,7 @@ async def _run_apply(job: dict, mode: str, queue: asyncio.Queue):
         await engine.apply(job, mode, queue)
     except Exception as exc:
         from apply_engine.events import ApplyEvent, ApplyEventType
+
         await queue.put(ApplyEvent(type=ApplyEventType.ERROR, message=str(exc)).model_dump())
         await queue.put(ApplyEvent(type=ApplyEventType.DONE, message="Apply failed").model_dump())
 
@@ -424,12 +470,14 @@ async def trigger_apply(request: Request, dedup_key: str, mode: str = Form("")):
     if not mode:
         try:
             from config import get_settings
+
             mode = get_settings().apply.default_mode.value
         except Exception:
             mode = "semi_auto"
 
     # Check duplicate
     from apply_engine.dedup import is_already_applied
+
     already = is_already_applied(dedup_key)
     if already:
         status_label = already.get("status", "unknown").replace("_", " ").title()
@@ -437,7 +485,7 @@ async def trigger_apply(request: Request, dedup_key: str, mode: str = Form("")):
             f'<div class="bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-3 rounded">'
             f'<p class="text-sm font-medium">Already applied</p>'
             f'<p class="text-sm">This job has status: {status_label}</p>'
-            f'</div>'
+            f"</div>"
         )
 
     # Get job
@@ -462,8 +510,8 @@ async def trigger_apply(request: Request, dedup_key: str, mode: str = Form("")):
         f' sse-close="done">'
         f'  <div id="apply-live-status">'
         f'    <p class="text-sm text-gray-500">Connecting to apply engine...</p>'
-        f'  </div>'
-        f'</div>'
+        f"  </div>"
+        f"</div>"
     )
 
 
@@ -475,7 +523,9 @@ async def apply_stream(request: Request, dedup_key: str):
     engine = _get_apply_engine()
     queue = engine.get_session_queue(dedup_key)
     if queue is None:
-        return HTMLResponse("<p class='text-red-600 text-sm'>No active apply session</p>", status_code=404)
+        return HTMLResponse(
+            "<p class='text-red-600 text-sm'>No active apply session</p>", status_code=404
+        )
 
     async def event_generator():
         try:
@@ -491,7 +541,7 @@ async def apply_stream(request: Request, dedup_key: str):
                     yield {"event": event_type, "data": html}
                     if event_type == "done":
                         break
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     yield {"event": "ping", "data": ""}
         except asyncio.CancelledError:
             pass
@@ -503,7 +553,9 @@ async def apply_stream(request: Request, dedup_key: str):
 async def apply_confirm(dedup_key: str):
     """Confirm an apply that is awaiting user confirmation."""
     _get_apply_engine().confirm(dedup_key)
-    return HTMLResponse('<p class="text-sm text-green-600">Confirmed -- submitting application...</p>')
+    return HTMLResponse(
+        '<p class="text-sm text-green-600">Confirmed -- submitting application...</p>'
+    )
 
 
 @app.post("/jobs/{dedup_key:path}/apply/cancel", response_class=HTMLResponse)
@@ -541,9 +593,7 @@ async def job_detail(request: Request, dedup_key: str):
 async def update_status(dedup_key: str, status: str = Form(...)):
     db.update_job_status(dedup_key, status)
     label = status.replace("_", " ").title()
-    response = HTMLResponse(
-        f'<span class="status-badge status-{status}">{label}</span>'
-    )
+    response = HTMLResponse(f'<span class="status-badge status-{status}">{label}</span>')
     response.headers["HX-Trigger"] = "statsChanged"
     return response
 
@@ -606,8 +656,15 @@ async def analytics_api():
 
 
 KANBAN_STATUSES = [
-    "saved", "applied", "phone_screen", "technical",
-    "final_interview", "offer", "rejected", "withdrawn", "ghosted",
+    "saved",
+    "applied",
+    "phone_screen",
+    "technical",
+    "final_interview",
+    "offer",
+    "rejected",
+    "withdrawn",
+    "ghosted",
 ]
 
 

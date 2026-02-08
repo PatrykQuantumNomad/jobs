@@ -8,8 +8,6 @@ When merging, the most recent posting (by ``posted_date``) is kept and
 aliases are recorded in ``job.company_aliases``.
 """
 
-from __future__ import annotations
-
 from rapidfuzz import fuzz
 
 from models import Job
@@ -68,9 +66,8 @@ def fuzzy_deduplicate(jobs: list[Job]) -> list[Job]:
                 by_key[key] = job
             else:
                 # Record the new one as an alias on the existing winner
-                if job.company != existing.company:
-                    if job.company not in existing.company_aliases:
-                        existing.company_aliases.append(job.company)
+                if job.company != existing.company and job.company not in existing.company_aliases:
+                    existing.company_aliases.append(job.company)
         else:
             by_key[key] = job
 
@@ -115,10 +112,7 @@ def _prefer(candidate: Job, existing: Job) -> bool:
         return True
 
     # Has salary wins
-    if candidate.salary_min is not None and existing.salary_min is None:
-        return True
-
-    return False
+    return candidate.salary_min is not None and existing.salary_min is None
 
 
 def _fuzzy_merge_group(jobs: list[Job]) -> list[Job]:

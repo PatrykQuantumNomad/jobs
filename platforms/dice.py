@@ -1,7 +1,5 @@
 """Dice.com automation using Playwright."""
 
-from __future__ import annotations
-
 import re
 from pathlib import Path
 from urllib.parse import urlencode
@@ -11,9 +9,9 @@ from playwright.sync_api import TimeoutError as PwTimeout
 
 from config import PROJECT_ROOT, get_settings
 from models import Job, SearchQuery
+from platforms.dice_selectors import DICE_SEARCH_PARAMS, DICE_SELECTORS, DICE_URLS
 from platforms.mixins import BrowserPlatformMixin
 from platforms.registry import register_platform
-from platforms.dice_selectors import DICE_SEARCH_PARAMS, DICE_SELECTORS, DICE_URLS
 
 
 @register_platform(
@@ -32,7 +30,7 @@ class DicePlatform(BrowserPlatformMixin):
 
     def __init__(self) -> None:
         self.context: BrowserContext | None = None
-        self.page = None
+        self.page = None  # type: ignore[assignment]  # set in init()
 
     def init(self, context: BrowserContext) -> None:
         """Receive Playwright BrowserContext from orchestrator."""
@@ -66,15 +64,15 @@ class DicePlatform(BrowserPlatformMixin):
 
         try:
             # Step 1: enter email and click Continue
+            assert settings.dice_email is not None
             self.page.fill(DICE_SELECTORS["login_email"], settings.dice_email)
             self.human_delay("form")
             self.page.click(DICE_SELECTORS["login_continue"])
             self.human_delay("nav")
 
             # Step 2: wait for password field, fill it, submit
-            self.page.wait_for_selector(
-                DICE_SELECTORS["login_password"], timeout=15_000
-            )
+            self.page.wait_for_selector(DICE_SELECTORS["login_password"], timeout=15_000)
+            assert settings.dice_password is not None
             self.page.fill(DICE_SELECTORS["login_password"], settings.dice_password)
             self.human_delay("form")
             self.page.click(DICE_SELECTORS["login_submit"])
@@ -131,9 +129,7 @@ class DicePlatform(BrowserPlatformMixin):
         try:
             self.page.goto(str(job.url), timeout=get_settings().timing.page_load_timeout)
             self.human_delay("nav")
-            self.page.wait_for_selector(
-                DICE_SELECTORS["job_description"], timeout=10_000
-            )
+            self.page.wait_for_selector(DICE_SELECTORS["job_description"], timeout=10_000)
             elem = self.page.query_selector(DICE_SELECTORS["job_description"])
             if elem:
                 job.description = elem.inner_text()
@@ -172,8 +168,7 @@ class DicePlatform(BrowserPlatformMixin):
         # Final confirmation
         self.screenshot("before_submit")
         resp = self.wait_for_human(
-            f"Ready to submit to {job.company} -- {job.title}\n"
-            f"  Type 'SUBMIT' to confirm:"
+            f"Ready to submit to {job.company} -- {job.title}\n  Type 'SUBMIT' to confirm:"
         )
         if resp != "SUBMIT":
             print("    Dice: cancelled by user")
@@ -279,9 +274,7 @@ def _parse_card_text(card_text: str, title: str) -> tuple[str, str | None]:
 
     # Look for salary pattern anywhere in the text
     for line in lines:
-        if re.search(r"USD\s+[\d,.]", line) or re.search(
-            r"\$\d[\d,]+.*per\s+(year|hour)", line
-        ):
+        if re.search(r"USD\s+[\d,.]", line) or re.search(r"\$\d[\d,]+.*per\s+(year|hour)", line):
             salary = line
             break
         if re.match(r"^\$\d[\d,]+$", line):

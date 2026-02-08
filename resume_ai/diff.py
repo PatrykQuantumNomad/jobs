@@ -5,8 +5,6 @@ did not fabricate experience or qualifications -- a key anti-fabrication
 guardrail for the resume tailoring pipeline.
 """
 
-from __future__ import annotations
-
 import difflib
 
 

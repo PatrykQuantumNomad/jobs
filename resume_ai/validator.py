@@ -5,12 +5,9 @@ detect any fabricated companies, skills, or metrics that the LLM may have
 introduced despite system prompt constraints.
 """
 
-from __future__ import annotations
-
 import re
 
 from pydantic import BaseModel, Field
-
 
 # ---------------------------------------------------------------------------
 # Validation result model
@@ -20,9 +17,7 @@ from pydantic import BaseModel, Field
 class ValidationResult(BaseModel):
     """Result of comparing a tailored document against the original resume."""
 
-    is_valid: bool = Field(
-        description="True if no fabricated entities were detected."
-    )
+    is_valid: bool = Field(description="True if no fabricated entities were detected.")
     new_companies: list[str] = Field(
         default_factory=list,
         description="Company names found in tailored output but not in original.",
@@ -47,32 +42,131 @@ class ValidationResult(BaseModel):
 
 _TECH_KEYWORDS: set[str] = {
     # Cloud & infrastructure
-    "kubernetes", "k8s", "docker", "aws", "gcp", "azure", "terraform",
-    "terragrunt", "atlantis", "helm", "devspace", "calico", "linkerd",
-    "gke", "eks", "aks", "lambda", "sqs", "ec2", "s3", "cloudformation",
-    "pulumi", "vagrant", "ansible", "chef", "puppet",
+    "kubernetes",
+    "k8s",
+    "docker",
+    "aws",
+    "gcp",
+    "azure",
+    "terraform",
+    "terragrunt",
+    "atlantis",
+    "helm",
+    "devspace",
+    "calico",
+    "linkerd",
+    "gke",
+    "eks",
+    "aks",
+    "lambda",
+    "sqs",
+    "ec2",
+    "s3",
+    "cloudformation",
+    "pulumi",
+    "vagrant",
+    "ansible",
+    "chef",
+    "puppet",
     # AI/ML
-    "langraph", "langchain", "langflow", "openai", "anthropic", "gemini",
-    "ollama", "crawl4ai", "tensorflow", "keras", "pytorch", "scikit-learn",
-    "huggingface", "rag", "llm", "cnn", "lstm", "bert", "gpt",
+    "langraph",
+    "langchain",
+    "langflow",
+    "openai",
+    "anthropic",
+    "gemini",
+    "ollama",
+    "crawl4ai",
+    "tensorflow",
+    "keras",
+    "pytorch",
+    "scikit-learn",
+    "huggingface",
+    "rag",
+    "llm",
+    "cnn",
+    "lstm",
+    "bert",
+    "gpt",
     # Data
-    "airflow", "postgresql", "postgres", "redis", "elasticsearch", "kafka",
-    "mongodb", "mysql", "sqlite", "cassandra", "dynamodb", "bigquery",
-    "snowflake", "spark", "hadoop", "flink",
+    "airflow",
+    "postgresql",
+    "postgres",
+    "redis",
+    "elasticsearch",
+    "kafka",
+    "mongodb",
+    "mysql",
+    "sqlite",
+    "cassandra",
+    "dynamodb",
+    "bigquery",
+    "snowflake",
+    "spark",
+    "hadoop",
+    "flink",
     # Backend
-    "python", "fastapi", "flask", "django", "celery", "sqlalchemy",
-    "java", "spring", "go", "golang", "typescript", "javascript", "node",
-    "express", "rust", "ruby", "rails", "php", "laravel", "scala",
+    "python",
+    "fastapi",
+    "flask",
+    "django",
+    "celery",
+    "sqlalchemy",
+    "java",
+    "spring",
+    "go",
+    "golang",
+    "typescript",
+    "javascript",
+    "node",
+    "express",
+    "rust",
+    "ruby",
+    "rails",
+    "php",
+    "laravel",
+    "scala",
     # DevSecOps
-    "gitops", "github", "gitlab", "jenkins", "circleci", "prometheus",
-    "grafana", "loki", "falco", "vault", "keycloak", "datadog",
-    "newrelic", "splunk", "pagerduty", "bats", "pytest", "testcontainers",
+    "gitops",
+    "github",
+    "gitlab",
+    "jenkins",
+    "circleci",
+    "prometheus",
+    "grafana",
+    "loki",
+    "falco",
+    "vault",
+    "keycloak",
+    "datadog",
+    "newrelic",
+    "splunk",
+    "pagerduty",
+    "bats",
+    "pytest",
+    "testcontainers",
     # Frontend
-    "react", "nextjs", "angular", "vue", "svelte", "tailwindcss",
-    "typescript", "webpack", "vite", "storybook",
+    "react",
+    "nextjs",
+    "angular",
+    "vue",
+    "svelte",
+    "tailwindcss",
+    "webpack",
+    "vite",
+    "storybook",
     # Misc
-    "graphql", "grpc", "rest", "oauth", "saml", "sso", "ci/cd",
-    "microservices", "etl", "iot", "blockchain",
+    "graphql",
+    "grpc",
+    "rest",
+    "oauth",
+    "saml",
+    "sso",
+    "ci/cd",
+    "microservices",
+    "etl",
+    "iot",
+    "blockchain",
 }
 
 
@@ -108,18 +202,97 @@ def _extract_entities(text: str) -> dict[str, set[str]]:
     # Common English words that start sentences but are not company names.
     # Used to filter false positives from capitalized-word patterns.
     _STOP_WORDS = {
-        "the", "a", "an", "and", "or", "but", "in", "on", "at", "to",
-        "for", "of", "with", "by", "from", "as", "is", "was", "are",
-        "were", "be", "been", "being", "have", "has", "had", "do", "does",
-        "did", "will", "would", "shall", "should", "may", "might", "can",
-        "could", "i", "my", "me", "we", "our", "you", "your", "he", "she",
-        "it", "they", "them", "their", "this", "that", "these", "those",
-        "using", "including", "such", "also", "each", "every", "all",
-        "both", "any", "some", "no", "not", "only", "into", "about",
-        "after", "before", "between", "through", "during", "under",
-        "above", "led", "built", "managed", "developed", "created",
-        "designed", "implemented", "achieved", "delivered", "established",
-        "maintained", "supported", "worked", "focused", "responsible",
+        "the",
+        "a",
+        "an",
+        "and",
+        "or",
+        "but",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "with",
+        "by",
+        "from",
+        "as",
+        "is",
+        "was",
+        "are",
+        "were",
+        "be",
+        "been",
+        "being",
+        "have",
+        "has",
+        "had",
+        "do",
+        "does",
+        "did",
+        "will",
+        "would",
+        "shall",
+        "should",
+        "may",
+        "might",
+        "can",
+        "could",
+        "i",
+        "my",
+        "me",
+        "we",
+        "our",
+        "you",
+        "your",
+        "he",
+        "she",
+        "it",
+        "they",
+        "them",
+        "their",
+        "this",
+        "that",
+        "these",
+        "those",
+        "using",
+        "including",
+        "such",
+        "also",
+        "each",
+        "every",
+        "all",
+        "both",
+        "any",
+        "some",
+        "no",
+        "not",
+        "only",
+        "into",
+        "about",
+        "after",
+        "before",
+        "between",
+        "through",
+        "during",
+        "under",
+        "above",
+        "led",
+        "built",
+        "managed",
+        "developed",
+        "created",
+        "designed",
+        "implemented",
+        "achieved",
+        "delivered",
+        "established",
+        "maintained",
+        "supported",
+        "worked",
+        "focused",
+        "responsible",
     }
 
     def _is_stop_word(word: str) -> bool:
@@ -136,9 +309,7 @@ def _extract_entities(text: str) -> dict[str, set[str]]:
 
     # Words/phrases following "at " or "for " (common company reference patterns).
     # Only capture words that start with uppercase (proper nouns = company names).
-    at_for_pattern = re.compile(
-        r"(?i:at|for)\s+([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)*)"
-    )
+    at_for_pattern = re.compile(r"(?i:at|for)\s+([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)*)")
     for match in at_for_pattern.finditer(text):
         captured = match.group(1).strip()
         # Filter: first word must not be a stop word
@@ -223,29 +394,17 @@ def validate_no_fabrication(
     original_entities = _extract_entities(original_text)
     tailored_entities = _extract_entities(tailored_text)
 
-    new_companies = sorted(
-        tailored_entities["companies"] - original_entities["companies"]
-    )
-    new_skills = sorted(
-        tailored_entities["skills"] - original_entities["skills"]
-    )
-    new_metrics = sorted(
-        tailored_entities["metrics"] - original_entities["metrics"]
-    )
+    new_companies = sorted(tailored_entities["companies"] - original_entities["companies"])
+    new_skills = sorted(tailored_entities["skills"] - original_entities["skills"])
+    new_metrics = sorted(tailored_entities["metrics"] - original_entities["metrics"])
 
     warnings: list[str] = []
     for company in new_companies:
-        warnings.append(
-            f"New company detected: '{company}' not found in original resume"
-        )
+        warnings.append(f"New company detected: '{company}' not found in original resume")
     for skill in new_skills:
-        warnings.append(
-            f"New skill/technology detected: '{skill}' not found in original resume"
-        )
+        warnings.append(f"New skill/technology detected: '{skill}' not found in original resume")
     for metric in new_metrics:
-        warnings.append(
-            f"New metric detected: '{metric}' not found in original resume"
-        )
+        warnings.append(f"New metric detected: '{metric}' not found in original resume")
 
     is_valid = len(new_companies) == 0 and len(new_skills) == 0 and len(new_metrics) == 0
 

@@ -1,7 +1,5 @@
 """Generic form-filling logic with heuristic field matching and ATS iframe detection."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -197,7 +195,7 @@ class FormFiller:
 
     def _value_for(self, key: str) -> str | None:
         p = self.profile
-        mapping: dict[str, str] = {
+        mapping: dict[str, str | None] = {
             "first_name": p.first_name,
             "last_name": p.last_name,
             "email": p.email,

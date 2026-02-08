@@ -22,8 +22,6 @@ Usage::
         ...
 """
 
-from __future__ import annotations
-
 import random
 import time
 from datetime import datetime
@@ -81,10 +79,8 @@ class BrowserPlatformMixin:
         Raises ``RuntimeError`` if the platform is running in unattended mode
         (``_unattended`` flag set by the orchestrator in ``--scheduled`` mode).
         """
-        if getattr(self, '_unattended', False):
-            raise RuntimeError(
-                f"Human input required but running in unattended mode: {message}"
-            )
+        if getattr(self, "_unattended", False):
+            raise RuntimeError(f"Human input required but running in unattended mode: {message}")
         print(f"\n{'=' * 60}")
         print(f"  HUMAN INPUT REQUIRED — {self.platform_name.upper()}")
         print(f"{'=' * 60}")

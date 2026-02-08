@@ -4,8 +4,6 @@ Uses the Anthropic ``messages.parse()`` API to produce a :class:`CoverLetter`
 that connects the candidate's real experience to a specific role and company.
 """
 
-from __future__ import annotations
-
 import anthropic
 
 from resume_ai.models import CoverLetter
@@ -112,9 +110,7 @@ def generate_cover_letter(
             "ANTHROPIC_API_KEY not set or invalid. Add it to your .env file."
         ) from exc
     except anthropic.APIError as exc:
-        raise RuntimeError(
-            f"Anthropic API error during cover letter generation: {exc}"
-        ) from exc
+        raise RuntimeError(f"Anthropic API error during cover letter generation: {exc}") from exc
 
     parsed = response.parsed_output
     if parsed is None:

@@ -4,14 +4,12 @@ Defines the operational modes and settings for the one-click apply engine.
 Loaded as a sub-model of ``AppSettings`` via ``config.yaml``.
 """
 
-from __future__ import annotations
-
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class ApplyMode(str, Enum):
+class ApplyMode(StrEnum):
     """Operational mode for the apply engine."""
 
     FULL_AUTO = "full_auto"

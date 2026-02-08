@@ -16,8 +16,6 @@ Handles formats:
   - None/empty -> NormalizedSalary with all None
 """
 
-from __future__ import annotations
-
 import re
 from dataclasses import dataclass
 
