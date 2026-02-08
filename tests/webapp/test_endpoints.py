@@ -96,6 +96,13 @@ class TestDashboardEndpoint:
         assert response.status_code == 200
         assert "Principal Engineer" in response.text
 
+    def test_invalid_score_param_treated_as_no_filter(self, client):
+        """GET /?score=abc treats non-numeric score as no filter (returns all)."""
+        db_module.upsert_job(_make_job_dict("AlphaCo", "Any Score Role", score=3))
+        response = client.get("/?score=abc")
+        assert response.status_code == 200
+        assert "Any Score Role" in response.text
+
     def test_filter_by_score_min(self, client):
         """GET /?score=5 returns only jobs with score >= 5."""
         db_module.upsert_job(_make_job_dict("AlphaCo", "Low Score Role", score=3))
