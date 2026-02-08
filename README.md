@@ -23,7 +23,7 @@ uv run jobs-scrape
 ## Requirements
 
 - [UV](https://docs.astral.sh/uv/) (package manager)
-- Python 3.11+ (UV installs and manages this automatically via `.python-version`)
+- Python 3.14 (UV installs this automatically from `.python-version` — run `uv python install` if needed)
 - Google Chrome installed (used via `channel="chrome"` for stealth)
 
 ## Usage
@@ -151,8 +151,29 @@ uv run ruff format .       # format
 ### Testing
 
 ```bash
+# All unit + integration tests (default, E2E excluded)
 uv run pytest
+
+# Unit tests only (pure logic, no I/O)
+uv run pytest -m unit
+
+# Integration tests only (database, FastAPI, config)
+uv run pytest -m integration
+
+# E2E browser tests (requires Playwright)
+uv run pytest -m e2e -p no:socket -o addopts=
+
+# With coverage report
+uv run pytest --cov --cov-report=term-missing
+
+# Specific test file
+uv run pytest tests/test_scorer.py -v
 ```
+
+The test suite has 428 tests across three layers:
+- **Unit** (204): models, scoring, salary normalization, deduplication, anti-fabrication, delta detection
+- **Integration** (213): SQLite CRUD/FTS5, FastAPI endpoints, RemoteOK parsing, platform registry, config loading
+- **E2E** (11): Playwright browser tests for dashboard, filtering, kanban drag-and-drop, CSV/JSON export
 
 ### Adding a dependency
 
