@@ -50,8 +50,8 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 **Plans**: 2 plans
 
 Plans:
-- [x] 09-01-PLAN.md — Dependencies, pytest/coverage config, test directory structure, test config YAML
-- [x] 09-02-PLAN.md — Root conftest with isolation fixtures, factories, sub-directory conftest files, smoke tests
+- [x] 09-01-PLAN.md -- Dependencies, pytest/coverage config, test directory structure, test config YAML
+- [x] 09-02-PLAN.md -- Root conftest with isolation fixtures, factories, sub-directory conftest files, smoke tests
 
 ### Phase 10: Unit Tests
 **Goal**: All pure logic modules (models, scoring, salary, dedup, anti-fabrication, delta detection) have passing tests that verify correctness without any I/O
@@ -66,9 +66,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [x] 10-01-PLAN.md — Pydantic model validation (UNIT-01) and salary normalization (UNIT-02)
-- [x] 10-02-PLAN.md — Job scoring correctness and score breakdown (UNIT-03, UNIT-04)
-- [x] 10-03-PLAN.md — Deduplication (UNIT-05, UNIT-06), anti-fabrication (UNIT-07), delta detection (UNIT-08)
+- [x] 10-01-PLAN.md -- Pydantic model validation (UNIT-01) and salary normalization (UNIT-02)
+- [x] 10-02-PLAN.md -- Job scoring correctness and score breakdown (UNIT-03, UNIT-04)
+- [x] 10-03-PLAN.md -- Deduplication (UNIT-05, UNIT-06), anti-fabrication (UNIT-07), delta detection (UNIT-08)
 
 ### Phase 11: Database Integration Tests
 **Goal**: All database operations (CRUD lifecycle, FTS5 search, activity log, bulk updates, schema initialization) work correctly against an in-memory SQLite instance
@@ -83,8 +83,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [x] 11-01-PLAN.md — CRUD lifecycle, bulk operations, stats, run history, backfill, and schema initialization (DB-01, DB-04, DB-05)
-- [x] 11-02-PLAN.md — FTS5 full-text search and activity log recording (DB-02, DB-03)
+- [x] 11-01-PLAN.md -- CRUD lifecycle, bulk operations, stats, run history, backfill, and schema initialization (DB-01, DB-04, DB-05)
+- [x] 11-02-PLAN.md -- FTS5 full-text search and activity log recording (DB-02, DB-03)
 
 ### Phase 12: Web & API Integration Tests
 **Goal**: All FastAPI endpoints return correct responses, and platform integration code (RemoteOK parsing, platform registry) works correctly with mocked external dependencies
@@ -96,12 +96,12 @@ Plans:
   3. Status update and bulk action endpoints change job states, log activity, and return updated data to the client
   4. RemoteOK API response parser correctly extracts all fields from mocked JSON and gracefully handles malformed or empty responses
   5. Platform registry discovers all registered platform modules and each one satisfies the Platform protocol contract
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 12-01: TBD
-- [ ] 12-02: TBD
-- [ ] 12-03: TBD
+- [ ] 12-01-PLAN.md -- Dashboard, detail, status/notes, and search endpoint tests (WEB-01, WEB-02, WEB-03, WEB-08)
+- [ ] 12-02-PLAN.md -- CSV/JSON export, bulk status, and import endpoint tests (WEB-04, WEB-05, WEB-06, WEB-07)
+- [ ] 12-03-PLAN.md -- RemoteOK parsing/error handling and platform registry/protocol tests (API-01, API-02, API-03, API-04)
 
 ### Phase 13: Config Integration Tests
 **Goal**: YAML configuration loading, validation, defaults, and environment variable overrides all work correctly
