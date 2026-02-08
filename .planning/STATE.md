@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 Phase: 15 of 15 complete
 Plan: All complete
 Status: v1.0 MVP + v1.1 Test Web App shipped. Ready for next milestone.
-Last activity: 2026-02-08 - Completed quick task 002: Fix CI: increase test coverage from 62.61% to meet 80% threshold
+Last activity: 2026-02-08 - Completed quick task 003: Fix kanban drag-and-drop destroying board
 
 Progress: [########################################] 100% (38 total plans -- 24 v1.0 + 14 v1.1 complete)
 
@@ -48,9 +48,10 @@ None.
 |---|-------------|------|--------|-----------|
 | 001 | Fix technical debt: remove Config shim, dead static mount, update arch docs | 2026-02-08 | 9f7f3de | [001-fix-technical-debt](./quick/001-fix-technical-debt/) |
 | 002 | Fix CI: increase test coverage from 62.61% to 80%+ (115 new tests) | 2026-02-08 | bf35a16 | [002-fix-ci-increase-test-coverage-from-62-61](./quick/002-fix-ci-increase-test-coverage-from-62-61/) |
+| 003 | Fix kanban drag-and-drop destroying board (htmx.ajax swap bug) | 2026-02-08 | 31dc69b | [003-fix-kanban-drag-and-drop-status-switchin](./quick/003-fix-kanban-drag-and-drop-status-switchin/) |
 
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Quick task 002 complete -- CI coverage at 80.01%, 532 tests passing.
+Stopped at: Quick task 003 complete -- Kanban drag-and-drop fixed (fetch replaces htmx.ajax).
 Resume file: N/A
