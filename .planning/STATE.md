@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 11 -- Database Integration Tests (v1.1 Test Web App)
+**Current focus:** Phase 12 -- Web & API Integration Tests (v1.1 Test Web App)
 
 ## Current Position
 
-Phase: 11 of 15 (Database Integration Tests)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-08 -- Completed 11-01-PLAN.md (CRUD lifecycle, bulk ops, schema tests)
+Phase: 12 of 15 (Web & API Integration Tests)
+Plan: 0 of 3 in current phase
+Status: Ready to start
+Last activity: 2026-02-08 -- Completed 11-02-PLAN.md (FTS5 search + activity log tests). Phase 11 complete.
 
-Progress: [##############################......] 85% (30/39 total plans -- 24 v1.0 + 6 v1.1 complete, 9 v1.1 TBD)
+Progress: [##############################......] 87% (31/39 total plans -- 24 v1.0 + 7 v1.1 complete, 8 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -42,7 +42,7 @@ Progress: [##############################......] 85% (30/39 total plans -- 24 v1
 |-------|-------|-------|----------|
 | 09-test-infrastructure | 2/2 | -- | -- |
 | 10-unit-tests | 3/3 | 11 min | 3.7 min |
-| 11-database-integration-tests | 1/2 | 4 min | 4.0 min |
+| 11-database-integration-tests | 2/2 | 8 min | 4.0 min |
 
 ## Accumulated Context
 
@@ -91,6 +91,12 @@ From 11-01:
 - Schema tests use set comparison against sqlite_master for order-independent verification
 - 46 new tests in 1 file, 85% webapp/db.py coverage
 
+From 11-02:
+- Fixed get_activity_log ORDER BY to use id DESC tiebreaker for same-second events
+- Special character FTS5 tests use try/except for known sqlite3.OperationalError limitation
+- FTS sync test uses short-then-long description to trigger LENGTH comparison in ON CONFLICT
+- 22 new tests (12 FTS5 + 10 activity log), 91% webapp/db.py coverage, 68 total in file
+
 ### Pending Todos
 
 None.
@@ -109,5 +115,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 11-01-PLAN.md (CRUD lifecycle, bulk ops, schema tests). Ready for 11-02.
-Resume file: .planning/phases/11-database-integration-tests/11-02-PLAN.md
+Stopped at: Completed 11-02-PLAN.md (FTS5 search + activity log tests). Phase 11 complete. Ready for Phase 12.
+Resume file: .planning/phases/12-web-api-integration-tests/
