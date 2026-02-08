@@ -31,7 +31,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 10: Unit Tests** - Pure logic modules with zero I/O dependencies -- completed 2026-02-08
 - [x] **Phase 11: Database Integration Tests** - SQLite CRUD, FTS5, migrations -- completed 2026-02-08
 - [x] **Phase 12: Web & API Integration Tests** - FastAPI routes, RemoteOK mocking, platform registry -- completed 2026-02-08
-- [ ] **Phase 13: Config Integration Tests** - YAML loading, validation, env overrides
+- [x] **Phase 13: Config Integration Tests** - YAML loading, validation, env overrides -- completed 2026-02-08
 - [ ] **Phase 14: CI Pipeline** - GitHub Actions workflow, coverage gates, linting
 - [ ] **Phase 15: E2E Tests** - Playwright browser tests for critical dashboard flows
 
@@ -115,7 +115,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 13-01-PLAN.md -- YAML loading, validation, defaults, and env var override tests (CFG-01, CFG-02, CFG-03, CFG-04)
+- [x] 13-01-PLAN.md -- YAML loading, validation, defaults, and env var override tests (CFG-01, CFG-02, CFG-03, CFG-04)
 
 ### Phase 14: CI Pipeline
 **Goal**: All tests run automatically on every push and PR via GitHub Actions, with coverage enforcement and fast feedback
@@ -169,6 +169,6 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
 | 10. Unit Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
 | 11. Database Integration Tests | v1.1 | 2/2 | Complete | 2026-02-08 |
 | 12. Web & API Integration Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
-| 13. Config Integration Tests | v1.1 | 0/1 | Planned | - |
+| 13. Config Integration Tests | v1.1 | 1/1 | Complete | 2026-02-08 |
 | 14. CI Pipeline | v1.1 | 0/2 | Not started | - |
 | 15. E2E Tests | v1.1 | 0/2 | Not started | - |
