@@ -74,9 +74,15 @@ document.querySelectorAll('.kanban-list').forEach(function(list) {
             updateColumnCount(newStatus, 1);
 
             try {
-                await htmx.ajax('POST', '/jobs/' + encodeURIComponent(dedupKey) + '/status', {
-                    values: { status: newStatus }
+                var formData = new FormData();
+                formData.append('status', newStatus);
+                var response = await fetch('/jobs/' + encodeURIComponent(dedupKey) + '/status', {
+                    method: 'POST',
+                    body: formData
                 });
+                if (!response.ok) throw new Error('Status ' + response.status);
+                // Trigger statsChanged so the stats cards partial refreshes
+                document.body.dispatchEvent(new Event('statsChanged'));
             } catch (err) {
                 // Rollback: move card back to original column at original index
                 var fromCol = evt.from;
