@@ -103,57 +103,57 @@ Requirements for automated test suite and CI pipeline. Each maps to roadmap phas
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | — | Pending |
-| INFRA-02 | — | Pending |
-| INFRA-03 | — | Pending |
-| INFRA-04 | — | Pending |
-| INFRA-05 | — | Pending |
-| INFRA-06 | — | Pending |
-| UNIT-01 | — | Pending |
-| UNIT-02 | — | Pending |
-| UNIT-03 | — | Pending |
-| UNIT-04 | — | Pending |
-| UNIT-05 | — | Pending |
-| UNIT-06 | — | Pending |
-| UNIT-07 | — | Pending |
-| UNIT-08 | — | Pending |
-| DB-01 | — | Pending |
-| DB-02 | — | Pending |
-| DB-03 | — | Pending |
-| DB-04 | — | Pending |
-| DB-05 | — | Pending |
-| WEB-01 | — | Pending |
-| WEB-02 | — | Pending |
-| WEB-03 | — | Pending |
-| WEB-04 | — | Pending |
-| WEB-05 | — | Pending |
-| WEB-06 | — | Pending |
-| WEB-07 | — | Pending |
-| WEB-08 | — | Pending |
-| API-01 | — | Pending |
-| API-02 | — | Pending |
-| API-03 | — | Pending |
-| API-04 | — | Pending |
-| CFG-01 | — | Pending |
-| CFG-02 | — | Pending |
-| CFG-03 | — | Pending |
-| CFG-04 | — | Pending |
-| CI-01 | — | Pending |
-| CI-02 | — | Pending |
-| CI-03 | — | Pending |
-| CI-04 | — | Pending |
-| CI-05 | — | Pending |
-| E2E-01 | — | Pending |
-| E2E-02 | — | Pending |
-| E2E-03 | — | Pending |
-| E2E-04 | — | Pending |
-| E2E-05 | — | Pending |
+| INFRA-01 | Phase 9 | Pending |
+| INFRA-02 | Phase 9 | Pending |
+| INFRA-03 | Phase 9 | Pending |
+| INFRA-04 | Phase 9 | Pending |
+| INFRA-05 | Phase 9 | Pending |
+| INFRA-06 | Phase 9 | Pending |
+| UNIT-01 | Phase 10 | Pending |
+| UNIT-02 | Phase 10 | Pending |
+| UNIT-03 | Phase 10 | Pending |
+| UNIT-04 | Phase 10 | Pending |
+| UNIT-05 | Phase 10 | Pending |
+| UNIT-06 | Phase 10 | Pending |
+| UNIT-07 | Phase 10 | Pending |
+| UNIT-08 | Phase 10 | Pending |
+| DB-01 | Phase 11 | Pending |
+| DB-02 | Phase 11 | Pending |
+| DB-03 | Phase 11 | Pending |
+| DB-04 | Phase 11 | Pending |
+| DB-05 | Phase 11 | Pending |
+| WEB-01 | Phase 12 | Pending |
+| WEB-02 | Phase 12 | Pending |
+| WEB-03 | Phase 12 | Pending |
+| WEB-04 | Phase 12 | Pending |
+| WEB-05 | Phase 12 | Pending |
+| WEB-06 | Phase 12 | Pending |
+| WEB-07 | Phase 12 | Pending |
+| WEB-08 | Phase 12 | Pending |
+| API-01 | Phase 12 | Pending |
+| API-02 | Phase 12 | Pending |
+| API-03 | Phase 12 | Pending |
+| API-04 | Phase 12 | Pending |
+| CFG-01 | Phase 13 | Pending |
+| CFG-02 | Phase 13 | Pending |
+| CFG-03 | Phase 13 | Pending |
+| CFG-04 | Phase 13 | Pending |
+| CI-01 | Phase 14 | Pending |
+| CI-02 | Phase 14 | Pending |
+| CI-03 | Phase 14 | Pending |
+| CI-04 | Phase 14 | Pending |
+| CI-05 | Phase 14 | Pending |
+| E2E-01 | Phase 15 | Pending |
+| E2E-02 | Phase 15 | Pending |
+| E2E-03 | Phase 15 | Pending |
+| E2E-04 | Phase 15 | Pending |
+| E2E-05 | Phase 15 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 45 total
-- Mapped to phases: 0
-- Unmapped: 45
+- Mapped to phases: 45
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-08*
-*Last updated: 2026-02-08 after initial definition*
+*Last updated: 2026-02-08 after roadmap creation (all 45 requirements mapped to phases 9-15)*
