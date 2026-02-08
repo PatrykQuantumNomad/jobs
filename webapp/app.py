@@ -80,9 +80,9 @@ async def dashboard(
     )
     stats = db.get_stats()
     return templates.TemplateResponse(
+        request,
         "dashboard.html",
         {
-            "request": request,
             "jobs": jobs,
             "stats": stats,
             "statuses": STATUSES,
@@ -117,8 +117,9 @@ async def search_jobs(
         sort_dir=dir,
     )
     return templates.TemplateResponse(
+        request,
         "partials/job_rows.html",
-        {"request": request, "jobs": jobs, "statuses": STATUSES},
+        {"jobs": jobs, "statuses": STATUSES},
     )
 
 
@@ -149,8 +150,9 @@ async def bulk_status_update(
         sort_dir=dir,
     )
     return templates.TemplateResponse(
+        request,
         "partials/job_rows.html",
-        {"request": request, "jobs": jobs, "statuses": STATUSES},
+        {"jobs": jobs, "statuses": STATUSES},
     )
 
 
@@ -313,9 +315,9 @@ async def tailor_resume_endpoint(request: Request, dedup_key: str):
         )
 
         return templates.TemplateResponse(
+            request,
             "partials/resume_diff.html",
             {
-                "request": request,
                 "diff_html": diff_styled,
                 "download_url": f"/resumes/tailored/{filename}",
                 "tailoring_notes": tailored.tailoring_notes,
@@ -438,8 +440,9 @@ async def resume_versions_endpoint(request: Request, dedup_key: str):
 
     versions = _get_versions(dedup_key)
     return templates.TemplateResponse(
+        request,
         "partials/resume_versions.html",
-        {"request": request, "versions": versions},
+        {"versions": versions},
     )
 
 
@@ -588,9 +591,9 @@ async def job_detail(request: Request, dedup_key: str):
     activity = db.get_activity_log(dedup_key)
 
     return templates.TemplateResponse(
+        request,
         "job_detail.html",
         {
-            "request": request,
             "job": job,
             "statuses": STATUSES,
             "activity": activity,
@@ -638,8 +641,9 @@ async def import_jobs():
 async def run_history(request: Request):
     runs = db.get_run_history(limit=50)
     return templates.TemplateResponse(
+        request,
         "run_history.html",
-        {"request": request, "runs": runs},
+        {"runs": runs},
     )
 
 
@@ -648,9 +652,9 @@ async def analytics_page(request: Request):
     stats = db.get_stats()
     enhanced = db.get_enhanced_stats()
     return templates.TemplateResponse(
+        request,
         "analytics.html",
         {
-            "request": request,
             "stats": stats,
             "enhanced_stats": enhanced,
             "analytics_json": json.dumps(enhanced),
@@ -685,9 +689,9 @@ async def kanban_page(request: Request):
     stats = db.get_stats()
     enhanced = db.get_enhanced_stats()
     return templates.TemplateResponse(
+        request,
         "kanban.html",
         {
-            "request": request,
             "kanban_statuses": KANBAN_STATUSES,
             "columns": columns,
             "stats": stats,
@@ -702,9 +706,9 @@ async def stats_cards(request: Request):
     stats = db.get_stats()
     enhanced = db.get_enhanced_stats()
     return templates.TemplateResponse(
+        request,
         "partials/stats_cards.html",
         {
-            "request": request,
             "stats": stats,
             "enhanced_stats": enhanced,
         },

@@ -5,8 +5,6 @@ Covers:
 - E2E-03: Status change is reflected when filtering on the dashboard
 """
 
-from __future__ import annotations
-
 import pytest
 from playwright.sync_api import expect
 

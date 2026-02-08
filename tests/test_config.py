@@ -67,10 +67,14 @@ FULL_YAML = {
 
 
 @pytest.fixture
-def config_from_yaml(tmp_path):
+def config_from_yaml(tmp_path, monkeypatch):
     """Load AppSettings from a temp YAML, isolated from real .env."""
     original_yaml = AppSettings.model_config.get("yaml_file")
     original_env = AppSettings.model_config.get("env_file")
+
+    # Clear credential env vars that IDEs (e.g. Cursor) may auto-load from .env
+    for var in ("DICE_EMAIL", "DICE_PASSWORD", "INDEED_EMAIL"):
+        monkeypatch.delenv(var, raising=False)
 
     def _load(yaml_data: dict) -> AppSettings:
         yaml_path = tmp_path / "test.yaml"

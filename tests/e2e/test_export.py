@@ -6,8 +6,6 @@ Covers:
 - E2E-05: Filtered export contains only the filtered subset of jobs
 """
 
-from __future__ import annotations
-
 import csv
 import io
 import json

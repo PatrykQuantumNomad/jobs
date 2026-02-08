@@ -12,8 +12,6 @@ CDN dependency note:
     before interacting with htmx-powered elements.
 """
 
-from __future__ import annotations
-
 import socket
 import threading
 import time

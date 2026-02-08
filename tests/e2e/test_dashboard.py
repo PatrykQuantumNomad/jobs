@@ -5,8 +5,6 @@ Covers:
 - E2E-02: Filtering by platform, score, and status returns correct subsets
 """
 
-from __future__ import annotations
-
 import pytest
 from playwright.sync_api import expect
 
