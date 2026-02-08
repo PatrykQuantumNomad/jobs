@@ -613,3 +613,256 @@ class TestJsonExport:
         response = client.get("/export/json")
         data = json.loads(response.text)
         assert data == []
+
+
+# ---------------------------------------------------------------------------
+# WEB-06: Bulk Status Endpoint
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+class TestBulkStatusEndpoint:
+    """Verify POST /bulk/status changes target job statuses selectively."""
+
+    def test_bulk_status_returns_200(self, client):
+        """POST /bulk/status returns 200."""
+        db_module.upsert_job(_make_job_dict("AlphaCo", "Bulk Test A"))
+        db_module.upsert_job(_make_job_dict("BetaCo", "Bulk Test B"))
+        key1 = _compute_dedup_key("AlphaCo", "Bulk Test A")
+        key2 = _compute_dedup_key("BetaCo", "Bulk Test B")
+
+        response = client.post(
+            "/bulk/status",
+            data={"job_keys": [key1, key2], "bulk_status": "saved"},
+        )
+        assert response.status_code == 200
+
+    def test_bulk_status_changes_target_jobs(self, client):
+        """POST /bulk/status changes exactly the specified jobs and no others."""
+        db_module.upsert_job(_make_job_dict("AlphaCo", "Bulk Target A"))
+        db_module.upsert_job(_make_job_dict("BetaCo", "Bulk Target B"))
+        db_module.upsert_job(_make_job_dict("GammaCo", "Bulk Bystander"))
+        key1 = _compute_dedup_key("AlphaCo", "Bulk Target A")
+        key2 = _compute_dedup_key("BetaCo", "Bulk Target B")
+        key3 = _compute_dedup_key("GammaCo", "Bulk Bystander")
+
+        client.post(
+            "/bulk/status",
+            data={"job_keys": [key1, key2], "bulk_status": "saved"},
+        )
+
+        job1 = db_module.get_job(key1)
+        job2 = db_module.get_job(key2)
+        job3 = db_module.get_job(key3)
+        assert job1 is not None
+        assert job2 is not None
+        assert job3 is not None
+        assert job1["status"] == "saved"
+        assert job2["status"] == "saved"
+        assert job3["status"] == "discovered"
+
+    def test_bulk_status_returns_html(self, client):
+        """POST /bulk/status returns HTML table body content."""
+        db_module.upsert_job(_make_job_dict("AlphaCo", "Bulk HTML Test"))
+        key = _compute_dedup_key("AlphaCo", "Bulk HTML Test")
+
+        response = client.post(
+            "/bulk/status",
+            data={"job_keys": [key], "bulk_status": "applied"},
+        )
+        assert "text/html" in response.headers["content-type"]
+        assert "Bulk HTML Test" in response.text
+
+    def test_bulk_status_no_keys_is_noop(self, client):
+        """POST /bulk/status without job_keys changes nothing."""
+        db_module.upsert_job(_make_job_dict("AlphaCo", "NoKey Test A"))
+        db_module.upsert_job(_make_job_dict("BetaCo", "NoKey Test B"))
+        key1 = _compute_dedup_key("AlphaCo", "NoKey Test A")
+        key2 = _compute_dedup_key("BetaCo", "NoKey Test B")
+
+        response = client.post("/bulk/status", data={"bulk_status": "saved"})
+        assert response.status_code == 200
+        noop1 = db_module.get_job(key1)
+        noop2 = db_module.get_job(key2)
+        assert noop1 is not None
+        assert noop2 is not None
+        assert noop1["status"] == "discovered"
+        assert noop2["status"] == "discovered"
+
+    def test_bulk_status_empty_keys_is_noop(self, client):
+        """POST /bulk/status with empty job_keys list changes nothing."""
+        db_module.upsert_job(_make_job_dict("AlphaCo", "EmptyKey Test"))
+        key = _compute_dedup_key("AlphaCo", "EmptyKey Test")
+
+        response = client.post(
+            "/bulk/status",
+            data={"job_keys": [], "bulk_status": "saved"},
+        )
+        assert response.status_code == 200
+        empty_job = db_module.get_job(key)
+        assert empty_job is not None
+        assert empty_job["status"] == "discovered"
+
+    def test_bulk_status_logs_activity(self, client):
+        """Bulk status change produces activity log entries for each job."""
+        db_module.upsert_job(_make_job_dict("AlphaCo", "Activity Bulk Test"))
+        key = _compute_dedup_key("AlphaCo", "Activity Bulk Test")
+
+        client.post(
+            "/bulk/status",
+            data={"job_keys": [key], "bulk_status": "applied"},
+        )
+
+        log = db_module.get_activity_log(key)
+        status_changes = [e for e in log if e["event_type"] == "status_change"]
+        assert len(status_changes) >= 1
+        assert status_changes[0]["new_value"] == "applied"
+
+
+# ---------------------------------------------------------------------------
+# WEB-07: Import Endpoint
+# ---------------------------------------------------------------------------
+
+
+from pathlib import Path as _Path  # noqa: E402
+
+
+def _pipeline_dir() -> _Path:
+    """Return the real pipeline directory path used by import_jobs."""
+    return _Path(__file__).resolve().parents[2] / "job_pipeline"
+
+
+def _make_import_job_dict(company: str, title: str, **kwargs) -> dict:
+    """Build a minimal job dict for import testing (mimics pipeline output)."""
+    defaults = {
+        "id": f"{company.lower()}-{title.lower().replace(' ', '-')}",
+        "platform": "indeed",
+        "title": title,
+        "company": company,
+        "url": f"https://example.com/{company.lower()}",
+        "location": "Remote",
+        "description": f"{title} at {company}",
+        "score": 4,
+        "status": "scored",
+    }
+    defaults.update(kwargs)
+    return defaults
+
+
+@pytest.mark.integration
+class TestImportEndpoint:
+    """Verify POST /import reads pipeline JSON and upserts into database."""
+
+    def test_import_no_files_redirects(self, client):
+        """POST /import with no pipeline files returns 303 redirect with imported=0."""
+        pipeline_dir = _pipeline_dir()
+        pipeline_dir.mkdir(exist_ok=True)
+
+        # Ensure no pipeline files exist (back up and remove if they do)
+        files_to_check = [
+            "discovered_jobs.json",
+            "raw_indeed.json",
+            "raw_dice.json",
+            "raw_remoteok.json",
+        ]
+        backups = {}
+        for name in files_to_check:
+            path = pipeline_dir / name
+            if path.exists():
+                backups[name] = path.read_text()
+                path.unlink()
+
+        try:
+            response = client.post("/import", follow_redirects=False)
+            assert response.status_code == 303
+            assert "imported=0" in response.headers["location"]
+        finally:
+            for name, content in backups.items():
+                (pipeline_dir / name).write_text(content)
+
+    def test_import_with_discovered_jobs(self, client):
+        """POST /import reads discovered_jobs.json and upserts jobs into DB."""
+        pipeline_dir = _pipeline_dir()
+        pipeline_dir.mkdir(exist_ok=True)
+        scored_path = pipeline_dir / "discovered_jobs.json"
+
+        # Back up existing file
+        backup = scored_path.read_text() if scored_path.exists() else None
+
+        try:
+            jobs = [
+                _make_import_job_dict("ImportCo", "Import Engineer"),
+                _make_import_job_dict("ImportCorp", "Import Lead"),
+            ]
+            scored_path.write_text(json.dumps(jobs))
+
+            response = client.post("/import", follow_redirects=False)
+            assert response.status_code == 303
+            assert "imported=" in response.headers["location"]
+
+            # Verify jobs were upserted into the database
+            key1 = _compute_dedup_key("ImportCo", "Import Engineer")
+            key2 = _compute_dedup_key("ImportCorp", "Import Lead")
+            assert db_module.get_job(key1) is not None
+            assert db_module.get_job(key2) is not None
+        finally:
+            if backup is not None:
+                scored_path.write_text(backup)
+            elif scored_path.exists():
+                scored_path.unlink()
+
+    def test_import_with_raw_platform_files(self, client):
+        """POST /import also reads raw_indeed.json and imports those jobs."""
+        pipeline_dir = _pipeline_dir()
+        pipeline_dir.mkdir(exist_ok=True)
+        raw_path = pipeline_dir / "raw_indeed.json"
+
+        # Back up existing files to avoid interference
+        backup_raw = raw_path.read_text() if raw_path.exists() else None
+        scored_path = pipeline_dir / "discovered_jobs.json"
+        backup_scored = scored_path.read_text() if scored_path.exists() else None
+        if scored_path.exists():
+            scored_path.unlink()
+
+        try:
+            jobs = [_make_import_job_dict("RawCo", "Raw Platform Engineer")]
+            raw_path.write_text(json.dumps(jobs))
+
+            response = client.post("/import", follow_redirects=False)
+            assert response.status_code == 303
+            location = response.headers["location"]
+            assert "imported=" in location
+            # Extract count -- should be at least 1
+            count_str = location.split("imported=")[1].split("&")[0]
+            assert int(count_str) >= 1
+
+            key = _compute_dedup_key("RawCo", "Raw Platform Engineer")
+            assert db_module.get_job(key) is not None
+        finally:
+            if backup_raw is not None:
+                raw_path.write_text(backup_raw)
+            elif raw_path.exists():
+                raw_path.unlink()
+            if backup_scored is not None:
+                scored_path.write_text(backup_scored)
+
+    def test_import_follows_redirect_to_dashboard(self, client):
+        """POST /import with follow_redirects=True ends at the dashboard."""
+        pipeline_dir = _pipeline_dir()
+        pipeline_dir.mkdir(exist_ok=True)
+        scored_path = pipeline_dir / "discovered_jobs.json"
+
+        backup = scored_path.read_text() if scored_path.exists() else None
+
+        try:
+            jobs = [_make_import_job_dict("RedirectCo", "Redirect Engineer")]
+            scored_path.write_text(json.dumps(jobs))
+
+            response = client.post("/import")
+            assert response.status_code == 200
+            assert "text/html" in response.headers["content-type"]
+        finally:
+            if backup is not None:
+                scored_path.write_text(backup)
+            elif scored_path.exists():
+                scored_path.unlink()
