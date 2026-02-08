@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 Phase: 10 of 15 (Unit Tests)
-Plan: 1 of 3 in current phase
-Status: Plan 01 complete
-Last activity: 2026-02-08 -- Completed 10-01-PLAN.md (models and salary unit tests)
+Plan: 2 of 3 in current phase
+Status: Plan 02 complete
+Last activity: 2026-02-08 -- Completed 10-02-PLAN.md (scorer unit tests)
 
-Progress: [###########################.........] 77% (27/39 total plans -- 24 v1.0 + 3 v1.1 complete, 12 v1.1 TBD)
+Progress: [############################........] 79% (28/39 total plans -- 24 v1.0 + 4 v1.1 complete, 11 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -41,7 +41,7 @@ Progress: [###########################.........] 77% (27/39 total plans -- 24 v1
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 09-test-infrastructure | 2/2 | -- | -- |
-| 10-unit-tests | 1/3 | 3 min | 3.0 min |
+| 10-unit-tests | 2/3 | 6 min | 3.0 min |
 
 ## Accumulated Context
 
@@ -72,6 +72,12 @@ From 10-01:
 - Parametrize tables use explicit IDs for readable output
 - 100% coverage on models.py and salary.py (141 statements, 0 missed)
 
+From 10-02:
+- Scorer tests use explicit CandidateProfile/ScoringWeights (no config.yaml dependency)
+- Default weights formula: raw = title_pts + tech_pts + remote_pts + salary_pts
+- 92% coverage of scorer.py (uncovered: score_batch_with_breakdown only)
+- Tags concatenated into search text for tech keyword matching
+
 ### Pending Todos
 
 None.
@@ -90,5 +96,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 10-01-PLAN.md (models and salary unit tests). Ready for 10-02.
-Resume file: .planning/phases/10-unit-tests/10-02-PLAN.md
+Stopped at: Completed 10-02-PLAN.md (scorer unit tests). Ready for 10-03.
+Resume file: .planning/phases/10-unit-tests/10-03-PLAN.md
