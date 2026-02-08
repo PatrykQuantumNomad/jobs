@@ -127,11 +127,10 @@ Plans:
   3. Ruff linting runs alongside tests and blocks merge on lint errors
   4. Python dependencies and Playwright browsers are cached between CI runs, keeping total CI time reasonable
   5. E2E tests run as a separate optional job that does not block the main test/lint workflow
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 14-01: TBD
-- [ ] 14-02: TBD
+- [ ] 14-01-PLAN.md -- GitHub Actions CI workflow (test-lint + e2e jobs) and coverage threshold (CI-01, CI-02, CI-03, CI-04, CI-05)
 
 ### Phase 15: E2E Tests
 **Goal**: Critical dashboard user flows are verified end-to-end in a real browser, confirming that the full stack (FastAPI + SQLite + Jinja2 + htmx + JS) works together
@@ -170,5 +169,5 @@ Phases execute in numeric order: 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
 | 11. Database Integration Tests | v1.1 | 2/2 | Complete | 2026-02-08 |
 | 12. Web & API Integration Tests | v1.1 | 3/3 | Complete | 2026-02-08 |
 | 13. Config Integration Tests | v1.1 | 1/1 | Complete | 2026-02-08 |
-| 14. CI Pipeline | v1.1 | 0/2 | Not started | - |
+| 14. CI Pipeline | v1.1 | 0/1 | Not started | - |
 | 15. E2E Tests | v1.1 | 0/2 | Not started | - |
