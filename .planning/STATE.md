@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 ## Current Position
 
-Phase: 12 of 15 (Web & API Integration Tests) -- COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase 12 complete
-Last activity: 2026-02-08 -- Completed 12-02-PLAN.md (export, bulk, import tests). Phase 12 complete.
+Phase: 13 of 15 (Config Integration Tests) -- COMPLETE
+Plan: 1 of 1 in current phase
+Status: Phase 13 complete
+Last activity: 2026-02-08 -- Completed 13-01-PLAN.md (config integration tests). Phase 13 complete.
 
-Progress: [###################################.] 90% (35/39 total plans -- 24 v1.0 + 11 v1.1 complete, 4 v1.1 TBD)
+Progress: [####################################] 92% (36/39 total plans -- 24 v1.0 + 12 v1.1 complete, 3 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Progress: [###################################.] 90% (35/39 total plans -- 24 v1
 | 10-unit-tests | 3/3 | 11 min | 3.7 min |
 | 11-database-integration-tests | 2/2 | 8 min | 4.0 min |
 | 12-web-api-integration-tests | 3/3 | 15 min | 5.0 min |
+| 13-config-integration-tests | 1/1 | 4 min | 4.0 min |
 
 ## Accumulated Context
 
@@ -117,6 +118,12 @@ From 12-02:
 - Explicit None-check assertions before dict subscript for pyright strict mode
 - 26 new tests (8 CSV + 8 JSON + 6 bulk status + 4 import), 56 total endpoint tests
 
+From 13-01:
+- config_from_yaml fixture: temp YAML + /dev/null env_file for full config isolation
+- Parametrized sub-model validation with 10 cases and explicit test IDs
+- Underscore delimiter limitation documented as test (no env_nested_delimiter configured)
+- 34 new tests (9 loading + 14 validation + 4 defaults + 7 env overrides), 417 total suite
+
 ### Pending Todos
 
 None.
@@ -135,5 +142,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 12-02-PLAN.md (export, bulk, import tests). Phase 12 complete. Ready for Phase 13.
-Resume file: .planning/phases/12-web-api-integration-tests/
+Stopped at: Completed 13-01-PLAN.md (config integration tests). Phase 13 complete. Ready for Phase 14.
+Resume file: .planning/phases/13-config-integration-tests/
