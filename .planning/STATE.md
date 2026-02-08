@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 Phase: All complete (8 of 8)
 Plan: Not started (next milestone)
 Status: Ready to plan
-Last activity: 2026-02-08 -- v1.0 milestone complete
+Last activity: 2026-02-08 -- Completed quick/001-fix-technical-debt
 
 Progress: [##############################] 30/30 (100%) -- v1.0
 
@@ -49,8 +49,14 @@ None.
 
 None -- milestone complete.
 
+## Quick Tasks
+
+| Task | Description | Status | Date |
+|------|-------------|--------|------|
+| 001 | Fix technical debt: remove Config shim, dead static mount, update arch docs | Complete | 2026-02-08 |
+
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: v1.0 milestone archived. Ready for next milestone.
+Stopped at: Quick task 001 complete. Ready for next milestone or quick task.
 Resume file: None
