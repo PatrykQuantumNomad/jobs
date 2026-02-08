@@ -1,0 +1,40 @@
+sequenceDiagram
+    actor User
+    participant HTMX as htmx Dashboard
+    participant API as FastAPI
+    participant Engine as ApplyEngine
+    participant SSE as SSE Stream
+    participant Stealth as Browser Context
+    participant Platform as Platform Adapter
+    participant DB as SQLite
+
+    User->>HTMX: Click "Apply" on job card
+    HTMX->>API: POST /jobs/{key}/apply (mode=semi_auto)
+
+    API->>Engine: Check is_already_applied()
+    API->>Engine: Create asyncio.Queue + threading.Event
+    API->>Engine: asyncio.create_task(apply)
+    API-->>HTMX: SSE connection HTML
+
+    HTMX->>API: GET /jobs/{key}/apply/stream
+    API->>SSE: EventSourceResponse
+
+    Engine->>SSE: PROGRESS: "Starting apply..."
+    Engine->>Stealth: get_browser_context(headed=true)
+    Engine->>Platform: login() if needed
+    Engine->>SSE: PROGRESS: "Navigating to job..."
+    Engine->>Platform: screenshot("pre_apply")
+    Engine->>SSE: PROGRESS: screenshot captured
+
+    Engine->>SSE: AWAITING_CONFIRM: "Ready to apply?"
+    SSE-->>HTMX: Show confirm/cancel buttons
+    User->>HTMX: Click "Confirm"
+    HTMX->>API: POST /jobs/{key}/apply/confirm
+    API->>Engine: threading.Event.set()
+
+    Engine->>SSE: CONFIRMED: "Submitting..."
+    Engine->>Platform: apply(job, resume_path)
+    Platform-->>Engine: success=True
+    Engine->>DB: log_activity("apply_completed")
+    Engine->>SSE: DONE: "Application submitted!"
+    SSE-->>HTMX: Close SSE connection

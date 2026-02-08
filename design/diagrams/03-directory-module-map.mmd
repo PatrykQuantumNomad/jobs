@@ -1,0 +1,81 @@
+graph TD
+    subgraph Root["Project Root (6,852 lines Python)"]
+        direction TB
+
+        subgraph CoreModules["Core Pipeline Modules"]
+            orchestrator["orchestrator.py (566L)<br/>5-phase pipeline coordinator"]
+            config_py["config.py (410L)<br/>Pydantic settings:<br/>YAML + .env merger"]
+            models["models.py (124L)<br/>Job, SearchQuery,<br/>CandidateProfile"]
+            scorer_py["scorer.py (220L)<br/>Weighted scoring<br/>with breakdowns"]
+            dedup_py["dedup.py (171L)<br/>2-pass fuzzy dedup:<br/>exact + rapidfuzz"]
+            salary_py["salary.py (204L)<br/>Multi-format parser:<br/>hourly, K, USD/CAD"]
+            form_filler_py["form_filler.py (218L)<br/>Heuristic form fill<br/>+ ATS iframe detect"]
+            scheduler_py["scheduler.py (167L)<br/>launchd plist<br/>generation + install"]
+        end
+
+        subgraph PlatformsDir["platforms/ (Scraper Layer)"]
+            plat_init["__init__.py<br/>Auto-discovery"]
+            protocols["protocols.py<br/>BrowserPlatform /<br/>APIPlatform contracts"]
+            registry["registry.py<br/>@register_platform<br/>decorator + validation"]
+            mixins["mixins.py<br/>Shared browser utils:<br/>delay, screenshot, human"]
+            stealth["stealth.py<br/>Playwright stealth<br/>context factory"]
+            indeed["indeed.py (355L)<br/>Indeed scraper"]
+            dice["dice.py (308L)<br/>Dice scraper"]
+            remoteok["remoteok.py (136L)<br/>RemoteOK API client"]
+            ind_sel["indeed_selectors.py<br/>DOM selectors"]
+            dice_sel["dice_selectors.py<br/>DOM selectors"]
+        end
+
+        subgraph WebappDir["webapp/ (Dashboard)"]
+            app_py["app.py (712L)<br/>FastAPI routes + SSE"]
+            db_py["db.py (723L)<br/>SQLite CRUD + migrations<br/>+ FTS5 search"]
+            templates["templates/<br/>8 Jinja2 templates<br/>+ 6 partials"]
+        end
+
+        subgraph ResumeAIDir["resume_ai/ (AI Layer)"]
+            tailor["tailor.py<br/>Resume tailoring<br/>via Claude API"]
+            cover["cover_letter.py<br/>Cover letter gen<br/>via Claude API"]
+            ai_models["models.py<br/>TailoredResume,<br/>CoverLetter schemas"]
+            extractor["extractor.py<br/>PDF -> Markdown<br/>(pymupdf4llm)"]
+            renderer["renderer.py<br/>HTML -> PDF<br/>(WeasyPrint)"]
+            validator["validator.py (417L)<br/>Entity extraction +<br/>anti-fabrication check"]
+            diff["diff.py<br/>Side-by-side<br/>HTML diff"]
+            tracker["tracker.py<br/>Version tracking<br/>in SQLite"]
+        end
+
+        subgraph ApplyDir["apply_engine/ (Apply Flow)"]
+            ae_engine["engine.py (554L)<br/>Background thread +<br/>SSE event emission"]
+            ae_config["config.py<br/>ApplyMode enum +<br/>settings model"]
+            ae_events["events.py<br/>ApplyEvent types<br/>for SSE streaming"]
+            ae_dedup["dedup.py<br/>Prevent duplicate<br/>applications"]
+        end
+
+        subgraph ConfigFiles["Configuration"]
+            config_yaml["config.yaml<br/>22 search queries,<br/>scoring, timing"]
+            env[".env<br/>Credentials +<br/>candidate profile"]
+        end
+    end
+
+    style orchestrator fill:#F39C12,color:#fff
+    style config_py fill:#F39C12,color:#fff
+    style models fill:#F39C12,color:#fff
+    style scorer_py fill:#F39C12,color:#fff
+    style dedup_py fill:#F39C12,color:#fff
+    style salary_py fill:#F39C12,color:#fff
+    style form_filler_py fill:#F39C12,color:#fff
+    style scheduler_py fill:#27AE60,color:#fff
+    style indeed fill:#7B68EE,color:#fff
+    style dice fill:#7B68EE,color:#fff
+    style remoteok fill:#7B68EE,color:#fff
+    style stealth fill:#7B68EE,color:#fff
+    style protocols fill:#7B68EE,color:#fff
+    style registry fill:#7B68EE,color:#fff
+    style mixins fill:#7B68EE,color:#fff
+    style app_py fill:#4A90D9,color:#fff
+    style db_py fill:#E67E22,color:#fff
+    style tailor fill:#E91E63,color:#fff
+    style cover fill:#E91E63,color:#fff
+    style validator fill:#E91E63,color:#fff
+    style ae_engine fill:#4A90D9,color:#fff
+    style config_yaml fill:#27AE60,color:#fff
+    style env fill:#27AE60,color:#fff

@@ -1,0 +1,53 @@
+graph TB
+    subgraph Contracts["Protocol Layer (protocols.py)"]
+        BP["BrowserPlatform Protocol<br/>init(ctx) | login() | is_logged_in()<br/>search(q) | get_job_details(j)<br/>apply(j, resume) | __enter__/__exit__"]
+        AP["APIPlatform Protocol<br/>init() | search(q)<br/>get_job_details(j) | apply(j, resume)<br/>__enter__/__exit__"]
+    end
+
+    subgraph Registry["Registry (registry.py)"]
+        REG["@register_platform decorator<br/>Validates protocol compliance<br/>at import time (fail-fast)"]
+        INFO["PlatformInfo<br/>key, name, type, cls,<br/>capabilities"]
+    end
+
+    subgraph Mixin["Shared Utilities (mixins.py)"]
+        BPM["BrowserPlatformMixin<br/>human_delay(nav/form)<br/>screenshot(name)<br/>wait_for_human(msg)<br/>element_exists(sel)<br/>wait_for_confirmation(msg)"]
+    end
+
+    subgraph Stealth["Anti-Detection (stealth.py)"]
+        CTX["get_browser_context(platform)<br/>- channel='chrome' (system Chrome)<br/>- --disable-blink-features=AutomationControlled<br/>- ignore_default_args=['--enable-automation']<br/>- playwright-stealth 2.0.1 patches<br/>- Persistent user data dir per platform"]
+    end
+
+    subgraph Adapters["Platform Adapters"]
+        IND["IndeedPlatform<br/>@register_platform('indeed', type='browser')<br/>- Google OAuth login (manual first run)<br/>- Sponsored card filtering<br/>- CAPTCHA/Cloudflare detection<br/>- 404 page detection (bogus IDs)<br/>- Salary parser (hourly->annual)"]
+
+        DICE["DicePlatform<br/>@register_platform('dice', type='browser')<br/>- Two-step login (email->password)<br/>- URL-based is_logged_in()<br/>- Card text parsing (no dedicated elements)<br/>- Easy Apply detection<br/>- data-testid selectors"]
+
+        ROK["RemoteOKPlatform<br/>@register_platform('remoteok', type='api')<br/>- GET /api (JSON array)<br/>- Skip index 0 (metadata)<br/>- Tag + position + description matching<br/>- salary_max=0 quirk handling<br/>- No apply (external ATS redirect)"]
+    end
+
+    subgraph Selectors["Isolated Selectors"]
+        IS["indeed_selectors.py<br/>INDEED_URLS<br/>INDEED_SELECTORS<br/>INDEED_SEARCH_PARAMS"]
+        DS["dice_selectors.py<br/>DICE_URLS<br/>DICE_SELECTORS<br/>DICE_SEARCH_PARAMS"]
+    end
+
+    BP -.->|validates| REG
+    AP -.->|validates| REG
+    REG --> INFO
+    BPM --> IND & DICE
+    CTX --> IND & DICE
+    IS --> IND
+    DS --> DICE
+    IND -.->|implements| BP
+    DICE -.->|implements| BP
+    ROK -.->|implements| AP
+
+    style BP fill:#7B68EE,color:#fff
+    style AP fill:#7B68EE,color:#fff
+    style REG fill:#7B68EE,color:#fff
+    style BPM fill:#7B68EE,color:#fff
+    style CTX fill:#7B68EE,color:#fff
+    style IND fill:#7B68EE,color:#fff
+    style DICE fill:#7B68EE,color:#fff
+    style ROK fill:#95A5A6,color:#fff
+    style IS fill:#F39C12,color:#fff
+    style DS fill:#F39C12,color:#fff

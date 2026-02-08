@@ -1,0 +1,76 @@
+erDiagram
+    jobs {
+        TEXT dedup_key PK "company::title normalized"
+        TEXT id "Platform-specific ID"
+        TEXT platform "indeed | dice | remoteok"
+        TEXT title "Job title"
+        TEXT company "Company name"
+        TEXT location "Location string"
+        TEXT url "Job listing URL"
+        TEXT salary "Raw salary string"
+        INTEGER salary_min "Annual min (normalized)"
+        INTEGER salary_max "Annual max (normalized)"
+        TEXT salary_display "Formatted: $150K-$200K USD/yr"
+        TEXT salary_currency "USD | CAD | EUR | GBP"
+        TEXT apply_url "External apply URL"
+        TEXT description "Full job description"
+        TEXT posted_date "ISO date"
+        TEXT tags "JSON array of tags"
+        BOOLEAN easy_apply "Platform Easy Apply"
+        INTEGER score "1-5 weighted score"
+        TEXT score_breakdown "JSON: title/tech/remote/salary points"
+        TEXT status "Pipeline status enum"
+        TEXT company_aliases "JSON array of merged names"
+        TEXT notes "User notes"
+        TEXT applied_date "ISO date"
+        TEXT first_seen_at "First discovery timestamp"
+        TEXT last_seen_at "Latest seen timestamp"
+        TEXT viewed_at "First dashboard view"
+        TEXT created_at "Row creation"
+        TEXT updated_at "Last update"
+    }
+
+    run_history {
+        INTEGER id PK "Auto-increment"
+        TEXT started_at "ISO timestamp"
+        TEXT finished_at "ISO timestamp"
+        TEXT mode "manual | scheduled"
+        TEXT platforms_searched "JSON array"
+        INTEGER total_raw "Raw jobs found"
+        INTEGER total_scored "After dedup + score"
+        INTEGER new_jobs "Score 3+ count"
+        TEXT errors "JSON array of errors"
+        TEXT status "success | partial | failed"
+        REAL duration_seconds "Run duration"
+    }
+
+    activity_log {
+        INTEGER id PK "Auto-increment"
+        TEXT dedup_key FK "References jobs"
+        TEXT event_type "discovered | status_change | viewed | note_added | resume_tailored | apply_started | apply_completed"
+        TEXT old_value "Previous value"
+        TEXT new_value "New value"
+        TEXT detail "Additional context"
+        TEXT created_at "ISO timestamp"
+    }
+
+    resume_versions {
+        INTEGER id PK "Auto-increment"
+        TEXT job_dedup_key FK "References jobs"
+        TEXT resume_type "resume | cover_letter"
+        TEXT file_path "Generated PDF path"
+        TEXT original_resume_path "Source resume path"
+        TEXT model_used "LLM model ID"
+        TEXT prompt_hash "Optional dedup hash"
+        TEXT created_at "ISO timestamp"
+    }
+
+    jobs_fts {
+        TEXT title "FTS5 indexed"
+        TEXT company "FTS5 indexed"
+        TEXT description "FTS5 indexed"
+    }
+
+    jobs ||--o{ activity_log : "tracks events"
+    jobs ||--o{ resume_versions : "has versions"
+    jobs ||--|| jobs_fts : "FTS5 sync via triggers"

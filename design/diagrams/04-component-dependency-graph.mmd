@@ -1,0 +1,86 @@
+graph TD
+    subgraph HighFanIn["Core (High Fan-In)"]
+        models["models.py<br/>Job, SearchQuery,<br/>CandidateProfile"]
+        config["config.py<br/>AppSettings singleton"]
+        db["webapp/db.py<br/>SQLite layer"]
+    end
+
+    subgraph HighFanOut["Orchestrators (High Fan-Out)"]
+        orch["orchestrator.py"]
+        app["webapp/app.py"]
+        engine["apply_engine/<br/>engine.py"]
+    end
+
+    subgraph Platforms["Platform Layer"]
+        plat_init["platforms/__init__"]
+        registry["platforms/registry"]
+        protocols["platforms/protocols"]
+        mixins["platforms/mixins"]
+        stealth["platforms/stealth"]
+        indeed["platforms/indeed"]
+        dice["platforms/dice"]
+        remoteok["platforms/remoteok"]
+    end
+
+    subgraph Processing["Processing"]
+        scorer["scorer.py"]
+        dedup["dedup.py"]
+        salary["salary.py"]
+        form_filler["form_filler.py"]
+    end
+
+    subgraph AI["Resume AI"]
+        tailor["resume_ai/tailor"]
+        cover["resume_ai/cover_letter"]
+        ai_models["resume_ai/models"]
+        extractor["resume_ai/extractor"]
+        renderer["resume_ai/renderer"]
+        validator["resume_ai/validator"]
+        diff["resume_ai/diff"]
+        tracker["resume_ai/tracker"]
+    end
+
+    %% Orchestrator dependencies (fan-out = 9)
+    orch --> config & models & dedup & salary & scorer & plat_init & db
+
+    %% Web app dependencies (fan-out = 7)
+    app --> db & config
+    app -.->|lazy| tailor & cover & extractor & renderer & validator & diff & tracker & engine
+
+    %% Engine dependencies (fan-out = 6)
+    engine --> config & models & stealth & form_filler & db
+    engine -.->|lazy| registry
+
+    %% Platform imports
+    plat_init --> registry & stealth
+    indeed --> config & models & mixins & registry
+    dice --> config & models & mixins & registry
+    remoteok --> config & models & registry
+    protocols --> models
+    mixins --> config
+
+    %% Processing
+    scorer --> config & models
+    dedup --> models
+    form_filler --> config & models
+
+    %% AI layer
+    tailor --> ai_models
+    cover --> ai_models
+    renderer --> ai_models
+    tracker --> db
+
+    %% Selector isolation (no dependencies)
+
+    style models fill:#E74C3C,color:#fff
+    style config fill:#E74C3C,color:#fff
+    style db fill:#E74C3C,color:#fff
+    style orch fill:#F39C12,color:#fff
+    style app fill:#F39C12,color:#fff
+    style engine fill:#F39C12,color:#fff
+    style indeed fill:#7B68EE,color:#fff
+    style dice fill:#7B68EE,color:#fff
+    style remoteok fill:#7B68EE,color:#fff
+    style tailor fill:#E91E63,color:#fff
+    style cover fill:#E91E63,color:#fff
+    style validator fill:#E91E63,color:#fff

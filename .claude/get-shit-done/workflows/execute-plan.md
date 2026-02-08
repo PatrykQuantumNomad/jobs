@@ -11,27 +11,27 @@ Read config.json for planning behavior settings.
 
 <process>
 
-<step name="resolve_model_profile" priority="first">
-```bash
-EXECUTOR_MODEL=$(node ./.claude/get-shit-done/bin/gsd-tools.js resolve-model gsd-executor --raw)
-```
-</step>
-
-<step name="load_project_state">
-```bash
-cat .planning/STATE.md 2>/dev/null
-```
-
-Parse current position, decisions, blockers, alignment. If missing but .planning/ exists: offer reconstruct or continue. If .planning/ missing: error.
+<step name="init_context" priority="first">
+Load execution context (uses `init execute-phase` for full context, including file contents):
 
 ```bash
-COMMIT_PLANNING_DOCS=$(node ./.claude/get-shit-done/bin/gsd-tools.js state load --raw | grep '^commit_docs=' | cut -d= -f2)
+INIT=$(node ./.claude/get-shit-done/bin/gsd-tools.js init execute-phase "${PHASE}" --include state,config)
 ```
+
+Extract from init JSON: `executor_model`, `commit_docs`, `phase_dir`, `phase_number`, `plans`, `summaries`, `incomplete_plans`.
+
+**File contents (from --include):** `state_content`, `config_content`. Access with:
+```bash
+STATE_CONTENT=$(echo "$INIT" | jq -r '.state_content // empty')
+CONFIG_CONTENT=$(echo "$INIT" | jq -r '.config_content // empty')
+```
+
+If `.planning/` missing: error.
 </step>
 
 <step name="identify_plan">
 ```bash
-cat .planning/ROADMAP.md
+# Use plans/summaries from INIT JSON, or list files
 ls .planning/phases/XX-name/*-PLAN.md 2>/dev/null | sort
 ls .planning/phases/XX-name/*-SUMMARY.md 2>/dev/null | sort
 ```
@@ -40,7 +40,7 @@ Find first PLAN without matching SUMMARY. Decimal phases supported (`01.1-hotfix
 
 ```bash
 PHASE=$(echo "$PLAN_PATH" | grep -oE '[0-9]+(\.[0-9]+)?-[0-9]+')
-cat .planning/config.json 2>/dev/null
+# config_content already loaded via --include config in init_context
 ```
 
 <if mode="yolo">

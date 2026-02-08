@@ -1,0 +1,35 @@
+graph TB
+    subgraph Config["Schedule Configuration"]
+        YAML["config.yaml<br/>schedule:<br/>  enabled: true<br/>  hour: 8<br/>  minute: 0<br/>  weekdays: [1,2,3,4,5]"]
+    end
+
+    subgraph CLI["Scheduler CLI"]
+        INSTALL["python scheduler.py install<br/>1. Validate schedule.enabled=true<br/>2. Generate plist dict<br/>3. Write to ~/Library/LaunchAgents/<br/>4. launchctl bootstrap gui/{uid}"]
+        STATUS["python scheduler.py status<br/>launchctl list com.jobflow.pipeline"]
+        REMOVE["python scheduler.py uninstall<br/>launchctl bootout + rm plist"]
+    end
+
+    subgraph Plist["Generated Plist"]
+        PLIST["com.jobflow.pipeline.plist<br/>Label: com.jobflow.pipeline<br/>ProgramArguments: [python, orchestrator.py, --scheduled]<br/>WorkingDirectory: /project/root<br/>StartCalendarInterval: {Hour: 8, Minute: 0}<br/>StdOut: job_pipeline/logs/pipeline.log<br/>StdErr: job_pipeline/logs/pipeline.err<br/>ProcessType: Background"]
+    end
+
+    subgraph RunFlow["Scheduled Run Flow"]
+        TRIGGER["launchd triggers<br/>at configured time"]
+        HEADLESS["orchestrator.py --scheduled<br/>Forces headless=True<br/>Skips Phase 4 (no human)"]
+        LOGIN["Phase 1: Login<br/>Uses cached browser sessions<br/>Raises RuntimeError if<br/>session expired"]
+        SEARCH["Phases 2-3<br/>Search + Score<br/>(unattended)"]
+        RECORD["Record run in<br/>run_history table"]
+        LOG["Write to<br/>pipeline.log / .err"]
+    end
+
+    YAML --> INSTALL
+    INSTALL --> PLIST
+    PLIST --> TRIGGER
+    TRIGGER --> HEADLESS
+    HEADLESS --> LOGIN --> SEARCH --> RECORD --> LOG
+
+    style YAML fill:#27AE60,color:#fff
+    style PLIST fill:#27AE60,color:#fff
+    style TRIGGER fill:#27AE60,color:#fff
+    style HEADLESS fill:#F39C12,color:#fff
+    style LOGIN fill:#7B68EE,color:#fff

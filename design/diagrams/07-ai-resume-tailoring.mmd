@@ -1,0 +1,38 @@
+sequenceDiagram
+    actor User
+    participant HTMX as htmx Dashboard
+    participant API as FastAPI
+    participant Extract as PDF Extractor
+    participant Tailor as Resume Tailor
+    participant Claude as Claude API
+    participant Valid as Validator
+    participant Render as PDF Renderer
+    participant Track as Version Tracker
+    participant DB as SQLite
+
+    User->>HTMX: Click "Tailor Resume"
+    HTMX->>API: POST /jobs/{key}/tailor-resume
+
+    API->>DB: get_job(dedup_key)
+    API->>Extract: extract_resume_text(pdf_path)
+    Extract-->>API: resume_text (Markdown)
+
+    API->>Tailor: tailor_resume(resume, job_desc, title, company)
+    Note over Tailor: System prompt with<br/>anti-fabrication rules
+    Tailor->>Claude: messages.parse(output_format=TailoredResume)
+    Claude-->>Tailor: TailoredResume (structured JSON)
+    Tailor-->>API: TailoredResume model
+
+    API->>Valid: validate_no_fabrication(original, tailored)
+    Note over Valid: Extract entities from both texts<br/>Compare companies, skills, metrics
+    Valid-->>API: ValidationResult (is_valid, warnings)
+
+    API->>Render: render_resume_pdf(tailored, output_path)
+    Note over Render: Jinja2 template -> WeasyPrint
+    Render-->>API: PDF file path
+
+    API->>Track: save_resume_version(key, path, model)
+    Track->>DB: INSERT into resume_versions
+
+    API->>DB: log_activity("resume_tailored")
+    API-->>HTMX: resume_diff.html partial (diff + download link)

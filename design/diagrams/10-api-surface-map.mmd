@@ -1,0 +1,54 @@
+graph TD
+    subgraph Pages["Page Routes"]
+        GET_DASH["GET /<br/>Dashboard - job table<br/>with filters + stats"]
+        GET_DETAIL["GET /jobs/{key}<br/>Job detail view<br/>+ activity log"]
+        GET_KANBAN["GET /kanban<br/>Kanban board<br/>by status columns"]
+        GET_ANALYTICS["GET /analytics<br/>Charts, funnel,<br/>platform comparison"]
+        GET_RUNS["GET /runs<br/>Pipeline run history"]
+    end
+
+    subgraph Search["Search & Filter"]
+        GET_SEARCH["GET /search<br/>htmx partial: filtered<br/>job rows (FTS5 search)"]
+        GET_STATS["GET /api/stats-cards<br/>htmx partial: live stats"]
+    end
+
+    subgraph JobActions["Job Actions"]
+        POST_STATUS["POST /jobs/{key}/status<br/>Update job status<br/>(htmx inline swap)"]
+        POST_NOTES["POST /jobs/{key}/notes<br/>Update job notes"]
+        POST_BULK["POST /bulk/status<br/>Bulk status update<br/>for selected jobs"]
+    end
+
+    subgraph AI_Routes["AI Generation"]
+        POST_TAILOR["POST /jobs/{key}/tailor-resume<br/>LLM resume tailoring<br/>Returns diff + PDF"]
+        POST_COVER["POST /jobs/{key}/cover-letter<br/>LLM cover letter gen<br/>Returns PDF download"]
+        GET_VERSIONS["GET /jobs/{key}/resume-versions<br/>List generated versions"]
+        GET_PDF["GET /resumes/tailored/{file}<br/>Serve generated PDF"]
+    end
+
+    subgraph ApplyRoutes["Apply Engine (SSE)"]
+        POST_APPLY["POST /jobs/{key}/apply<br/>Trigger apply flow<br/>Returns SSE HTML"]
+        GET_STREAM["GET /jobs/{key}/apply/stream<br/>SSE event stream<br/>(progress, confirm, done)"]
+        POST_CONFIRM["POST /jobs/{key}/apply/confirm<br/>User confirms submit"]
+        POST_CANCEL["POST /jobs/{key}/apply/cancel<br/>Cancel active apply"]
+    end
+
+    subgraph Export["Data Export"]
+        GET_CSV["GET /export/csv<br/>Filtered jobs as CSV"]
+        GET_JSON["GET /export/json<br/>Filtered jobs as JSON"]
+        GET_API_ANALYTICS["GET /api/analytics<br/>Enhanced stats JSON"]
+    end
+
+    subgraph Import["Data Import"]
+        POST_IMPORT["POST /import<br/>Import pipeline JSON<br/>into SQLite"]
+    end
+
+    style GET_DASH fill:#4A90D9,color:#fff
+    style GET_DETAIL fill:#4A90D9,color:#fff
+    style GET_KANBAN fill:#4A90D9,color:#fff
+    style GET_ANALYTICS fill:#4A90D9,color:#fff
+    style GET_RUNS fill:#4A90D9,color:#fff
+    style POST_TAILOR fill:#E91E63,color:#fff
+    style POST_COVER fill:#E91E63,color:#fff
+    style POST_APPLY fill:#3498DB,color:#fff
+    style GET_STREAM fill:#3498DB,color:#fff
+    style POST_CONFIRM fill:#3498DB,color:#fff

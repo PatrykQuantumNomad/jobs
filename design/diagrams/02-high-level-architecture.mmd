@@ -1,0 +1,110 @@
+graph TB
+    subgraph Config["Configuration Sources"]
+        YAML["config.yaml<br/>Queries, scoring weights,<br/>platform toggles, timing"]
+        ENV[".env<br/>Credentials,<br/>candidate profile"]
+    end
+
+    subgraph Scheduler["Scheduler Layer"]
+        direction LR
+        LAUNCHD["macOS launchd<br/>com.jobflow.pipeline"]
+        CRON_CFG["Schedule Config<br/>Hour, minute, weekdays"]
+    end
+
+    subgraph PipelineMode["Pipeline Mode (CLI)"]
+        direction TB
+        P0["Phase 0: Setup<br/>Validate env, dirs"]
+        P1["Phase 1: Login<br/>Browser sessions"]
+        P2["Phase 2: Search<br/>Multi-platform scrape"]
+        P3["Phase 3: Score<br/>Dedup + score 1-5"]
+        P4["Phase 4: Apply<br/>Human-in-the-loop"]
+        P0 --> P1 --> P2 --> P3 --> P4
+    end
+
+    subgraph BrowserLayer["Browser Automation"]
+        direction LR
+        STEALTH["Stealth Context<br/>Chrome channel,<br/>anti-detection"]
+        SESSIONS["Persistent Sessions<br/>Per-platform dirs"]
+    end
+
+    subgraph Platforms["Platform Adapters"]
+        INDEED["Indeed<br/>BrowserPlatform"]
+        DICEP["Dice<br/>BrowserPlatform"]
+        REMOTEOK["RemoteOK<br/>APIPlatform"]
+    end
+
+    subgraph Processing["Processing Pipeline"]
+        SALARY["Salary Parser<br/>Multi-currency,<br/>hourly/annual"]
+        FDEDUP["Fuzzy Deduplicator<br/>Exact + rapidfuzz"]
+        SCORER["Job Scorer<br/>Title + Tech +<br/>Remote + Salary"]
+    end
+
+    subgraph DashboardMode["Dashboard Mode (Web)"]
+        direction TB
+        FASTAPI["FastAPI Server<br/>:8000"]
+        KANBAN["Kanban Board"]
+        ANALYTICS["Analytics<br/>Charts + Funnel"]
+        DETAIL["Job Detail<br/>+ Activity Log"]
+    end
+
+    subgraph AIServices["AI Services (Claude API)"]
+        RESUME_TAILOR["Resume Tailoring<br/>Structured Output"]
+        COVER_GEN["Cover Letter Gen<br/>Structured Output"]
+        FABRICATION["Anti-Fabrication<br/>3-Layer Validation"]
+        PDF_RENDER["PDF Renderer<br/>WeasyPrint"]
+    end
+
+    subgraph ApplyEngine["Apply Engine"]
+        AE_CORE["ApplyEngine<br/>Background thread"]
+        AE_SSE["SSE Events<br/>Real-time progress"]
+        AE_CONFIRM["Confirmation<br/>threading.Event"]
+        FORM_FILL["FormFiller<br/>ATS iframe detection"]
+    end
+
+    subgraph DataLayer["Data Layer"]
+        SQLITE[("SQLite + FTS5<br/>jobs, run_history,<br/>activity_log,<br/>resume_versions")]
+        RAW_JSON["Raw JSON<br/>Per-platform files"]
+    end
+
+    YAML & ENV --> P0
+    LAUNCHD --> P0
+    P1 --> STEALTH --> SESSIONS
+    SESSIONS --> INDEED & DICEP
+    P2 --> INDEED & DICEP & REMOTEOK
+    REMOTEOK -.->|httpx| P2
+    P3 --> SALARY --> FDEDUP --> SCORER
+    SCORER --> SQLITE
+    P2 --> RAW_JSON
+
+    FASTAPI --> KANBAN & ANALYTICS & DETAIL
+    FASTAPI --> RESUME_TAILOR & COVER_GEN
+    RESUME_TAILOR --> FABRICATION --> PDF_RENDER
+    COVER_GEN --> PDF_RENDER
+
+    FASTAPI --> AE_CORE
+    AE_CORE --> AE_SSE
+    AE_CORE --> AE_CONFIRM
+    AE_CORE --> FORM_FILL
+
+    SQLITE --> FASTAPI
+
+    style YAML fill:#27AE60,color:#fff
+    style ENV fill:#27AE60,color:#fff
+    style LAUNCHD fill:#27AE60,color:#fff
+    style STEALTH fill:#7B68EE,color:#fff
+    style SESSIONS fill:#7B68EE,color:#fff
+    style INDEED fill:#7B68EE,color:#fff
+    style DICEP fill:#7B68EE,color:#fff
+    style REMOTEOK fill:#95A5A6,color:#fff
+    style SQLITE fill:#E67E22,color:#fff
+    style RAW_JSON fill:#E67E22,color:#fff
+    style FASTAPI fill:#4A90D9,color:#fff
+    style RESUME_TAILOR fill:#E91E63,color:#fff
+    style COVER_GEN fill:#E91E63,color:#fff
+    style FABRICATION fill:#E91E63,color:#fff
+    style PDF_RENDER fill:#E91E63,color:#fff
+    style SCORER fill:#F39C12,color:#fff
+    style FDEDUP fill:#F39C12,color:#fff
+    style SALARY fill:#F39C12,color:#fff
+    style AE_CORE fill:#4A90D9,color:#fff
+    style AE_SSE fill:#4A90D9,color:#fff
+    style FORM_FILL fill:#F39C12,color:#fff

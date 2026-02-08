@@ -1,0 +1,41 @@
+graph LR
+    subgraph Inputs["Scoring Inputs"]
+        JOB["Job Listing<br/>title, description,<br/>tags, location,<br/>salary_min/max"]
+        PROFILE["Candidate Profile<br/>target_titles[],<br/>tech_keywords[],<br/>desired_salary_usd"]
+        WEIGHTS["Scoring Weights<br/>(from config.yaml)<br/>title: 2.0<br/>tech: 2.0<br/>remote: 1.0<br/>salary: 1.0"]
+    end
+
+    subgraph Factors["Scoring Factors"]
+        TITLE["Title Match<br/>0-2 points<br/>Exact target title = 2<br/>Senior/Staff/Lead keyword = 1<br/>No match = 0"]
+        TECH["Tech Overlap<br/>0-2 points<br/>5+ keyword matches = 2<br/>2-4 matches = 1<br/>0-1 matches = 0<br/>Searches desc + tags"]
+        REMOTE["Location<br/>0-1 points<br/>Remote/Anywhere = 1<br/>Ontario/Toronto = 1<br/>Other = 0"]
+        SALARY["Salary<br/>0-1 points<br/>max >= $200K = 1<br/>min >= $200K = 1<br/>Below/unknown = 0"]
+    end
+
+    subgraph Calculation["Score Calculation"]
+        WEIGHTED["Weighted Raw Score<br/>= title*2/2 + tech*2/2<br/>+ remote*1 + salary*1<br/>(max = 6.0)"]
+        MAP["Score Mapping<br/>raw >= 5 -> Score 5<br/>raw >= 4 -> Score 4<br/>raw >= 3 -> Score 3<br/>raw >= 2 -> Score 2<br/>raw < 2 -> Score 1"]
+    end
+
+    subgraph Output["Output"]
+        BD["ScoreBreakdown<br/>Per-factor points<br/>Matched tech keywords<br/>display_inline()<br/>display_with_keywords()"]
+        ACTION["Action Routing<br/>Score 4-5: Present for apply<br/>Score 3: Record for review<br/>Score 1-2: Log only"]
+    end
+
+    JOB --> TITLE & TECH & REMOTE & SALARY
+    PROFILE --> TITLE & TECH & SALARY
+    WEIGHTS --> WEIGHTED
+    TITLE & TECH & REMOTE & SALARY --> WEIGHTED
+    WEIGHTED --> MAP --> BD --> ACTION
+
+    style JOB fill:#7B68EE,color:#fff
+    style PROFILE fill:#27AE60,color:#fff
+    style WEIGHTS fill:#27AE60,color:#fff
+    style TITLE fill:#F39C12,color:#fff
+    style TECH fill:#F39C12,color:#fff
+    style REMOTE fill:#F39C12,color:#fff
+    style SALARY fill:#F39C12,color:#fff
+    style WEIGHTED fill:#F39C12,color:#fff
+    style MAP fill:#F39C12,color:#fff
+    style BD fill:#E67E22,color:#fff
+    style ACTION fill:#3498DB,color:#fff

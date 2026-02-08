@@ -1,0 +1,58 @@
+sequenceDiagram
+    actor User
+    participant CLI as CLI / launchd
+    participant Orch as Orchestrator
+    participant Stealth as Stealth Context
+    participant Indeed as Indeed Scraper
+    participant Dice as Dice Scraper
+    participant ROK as RemoteOK API
+    participant Sal as Salary Parser
+    participant Dedup as Fuzzy Deduplicator
+    participant Scorer as Job Scorer
+    participant DB as SQLite
+    participant JSON as JSON Files
+
+    User->>CLI: jobs-scrape [--platforms] [--headed]
+    CLI->>Orch: Orchestrator(headless, scheduled)
+
+    Note over Orch: Phase 0: Validate env + dirs
+
+    Note over Orch: Phase 1: Login
+    Orch->>Stealth: get_browser_context("indeed")
+    Stealth-->>Orch: (pw, ctx) with stealth patches
+    Orch->>Indeed: login() [cached session or manual Google auth]
+
+    Note over Orch: Phase 2: Search (per platform)
+    loop For each search query (22 queries)
+        Orch->>Indeed: search(query)
+        Indeed-->>Orch: list[Job] (cards + details)
+    end
+    Orch->>JSON: raw_indeed.json
+
+    loop For each search query
+        Orch->>Dice: search(query)
+        Dice-->>Orch: list[Job]
+    end
+    Orch->>JSON: raw_dice.json
+
+    loop For each search query
+        Orch->>ROK: search(query) via httpx
+        ROK-->>Orch: list[Job]
+    end
+    Orch->>JSON: raw_remoteok.json
+
+    Note over Orch: Phase 3: Score & Dedup
+    Orch->>Sal: parse_salary() for each job
+    Sal-->>Orch: NormalizedSalary (min, max, display)
+    Orch->>Dedup: fuzzy_deduplicate(all_jobs)
+    Dedup-->>Orch: unique jobs (exact + rapidfuzz)
+    Orch->>Scorer: score_batch_with_breakdown(unique)
+    Scorer-->>Orch: [(Job, ScoreBreakdown), ...]
+    Orch->>DB: upsert_job() for each scored job
+    Orch->>DB: remove_stale_jobs() for searched platforms
+    Orch->>JSON: discovered_jobs.json + tracker.md
+    Orch->>DB: record_run() in run_history
+
+    Note over Orch: Phase 4: Apply (human-in-the-loop)
+    Orch->>User: Present score 4+ jobs
+    User->>Orch: Select jobs to apply

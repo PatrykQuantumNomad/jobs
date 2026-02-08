@@ -10,22 +10,19 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <process>
 
-## 1. Validate Environment and Resolve Model Profile
+## 1. Initialize
+
+Load all context in one call (include file contents to avoid redundant reads):
 
 ```bash
-PLANNING_EXISTS=$(node ./.claude/get-shit-done/bin/gsd-tools.js verify-path-exists .planning --raw)
-echo "$PLANNING_EXISTS"
+INIT=$(node ./.claude/get-shit-done/bin/gsd-tools.js init plan-phase "$PHASE" --include state,roadmap,requirements,context,research,verification,uat)
 ```
 
-**If not found:** Error — run `/gsd:new-project` first.
+Parse JSON for: `researcher_model`, `planner_model`, `checker_model`, `research_enabled`, `plan_checker_enabled`, `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_research`, `has_context`, `has_plans`, `plan_count`, `planning_exists`, `roadmap_exists`.
 
-**Resolve models:**
+**File contents (from --include):** `state_content`, `roadmap_content`, `requirements_content`, `context_content`, `research_content`, `verification_content`, `uat_content`. These are null if files don't exist.
 
-```bash
-RESEARCHER_MODEL=$(node ./.claude/get-shit-done/bin/gsd-tools.js resolve-model gsd-phase-researcher --raw)
-PLANNER_MODEL=$(node ./.claude/get-shit-done/bin/gsd-tools.js resolve-model gsd-planner --raw)
-CHECKER_MODEL=$(node ./.claude/get-shit-done/bin/gsd-tools.js resolve-model gsd-plan-checker --raw)
-```
+**If `planning_exists` is false:** Error — run `/gsd:new-project` first.
 
 ## 2. Parse and Normalize Arguments
 
@@ -33,56 +30,34 @@ Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`-
 
 **If no phase number:** Detect next unplanned phase from roadmap.
 
-**Find phase directory:**
-
+**If `phase_found` is false:** Validate phase exists in ROADMAP.md. If valid, create the directory using `phase_slug` and `padded_phase` from init:
 ```bash
-PHASE_INFO=$(node ./.claude/get-shit-done/bin/gsd-tools.js find-phase "$PHASE")
-PHASE_DIR=$(echo "$PHASE_INFO" | grep -o '"directory":"[^"]*"' | cut -d'"' -f4)
+mkdir -p ".planning/phases/${padded_phase}-${phase_slug}"
 ```
 
-If `found` is false, validate phase exists in ROADMAP.md. If valid, create the directory:
-```bash
-PHASE_NAME=$(grep "Phase ${PHASE}:" .planning/ROADMAP.md | sed 's/.*Phase [0-9]*: //')
-PHASE_SLUG=$(node ./.claude/get-shit-done/bin/gsd-tools.js generate-slug "$PHASE_NAME" --raw)
-PADDED=$(node ./.claude/get-shit-done/bin/gsd-tools.js find-phase "$PHASE" --raw | grep -o '^[0-9]*' || printf "%02d" "$PHASE")
-mkdir -p ".planning/phases/${PADDED}-${PHASE_SLUG}"
-PHASE_DIR=".planning/phases/${PADDED}-${PHASE_SLUG}"
-```
-
-**Check for existing research and plans:**
-
-```bash
-ls ${PHASE_DIR}/*-RESEARCH.md 2>/dev/null
-ls ${PHASE_DIR}/*-PLAN.md 2>/dev/null
-```
+**Existing artifacts from init:** `has_research`, `has_plans`, `plan_count`.
 
 ## 3. Validate Phase
 
 ```bash
-grep -A5 "Phase ${PHASE}:" .planning/ROADMAP.md 2>/dev/null
+PHASE_INFO=$(node ./.claude/get-shit-done/bin/gsd-tools.js roadmap get-phase "${PHASE}")
 ```
 
-**If not found:** Error with available phases. **If found:** Extract phase number, name, description.
+**If `found` is false:** Error with available phases. **If `found` is true:** Extract `phase_number`, `phase_name`, `goal` from JSON.
 
 ## 4. Load CONTEXT.md
 
-```bash
-CONTEXT_CONTENT=$(cat "${PHASE_DIR}"/*-CONTEXT.md 2>/dev/null)
-```
+Use `context_content` from init JSON (already loaded via `--include context`).
 
-**CRITICAL:** Store `CONTEXT_CONTENT` now — pass to researcher, planner, checker, and revision agents.
+**CRITICAL:** Use `context_content` from INIT — pass to researcher, planner, checker, and revision agents.
 
-If CONTEXT.md exists, display: `Using phase context from: ${PHASE_DIR}/*-CONTEXT.md`
+If `context_content` is not null, display: `Using phase context from: ${PHASE_DIR}/*-CONTEXT.md`
 
 ## 5. Handle Research
 
-**Skip if:** `--gaps` flag, `--skip-research` flag, or config `workflow.research=false` (without `--research` override).
+**Skip if:** `--gaps` flag, `--skip-research` flag, or `research_enabled` is false (from init) without `--research` override.
 
-```bash
-WORKFLOW_RESEARCH=$(node ./.claude/get-shit-done/bin/gsd-tools.js state load --raw | grep '^research=' | cut -d= -f2)
-```
-
-**If RESEARCH.md exists AND no `--research` flag:** Use existing, skip to step 6.
+**If `has_research` is true (from init) AND no `--research` flag:** Use existing, skip to step 6.
 
 **If RESEARCH.md missing OR `--research` flag:**
 
@@ -98,9 +73,11 @@ Display banner:
 ### Spawn gsd-phase-researcher
 
 ```bash
-PHASE_DESC=$(grep -A3 "Phase ${PHASE}:" .planning/ROADMAP.md)
-REQUIREMENTS=$(cat .planning/REQUIREMENTS.md 2>/dev/null | grep -A100 "## Requirements" | head -50)
-DECISIONS=$(grep -A20 "### Decisions Made" .planning/STATE.md 2>/dev/null)
+PHASE_DESC=$(node ./.claude/get-shit-done/bin/gsd-tools.js roadmap get-phase "${PHASE}" | jq -r '.section')
+# Use requirements_content from INIT (already loaded via --include requirements)
+REQUIREMENTS=$(echo "$INIT" | jq -r '.requirements_content // empty' | grep -A100 "## Requirements" | head -50)
+STATE_SNAP=$(node ./.claude/get-shit-done/bin/gsd-tools.js state-snapshot)
+# Extract decisions from state-snapshot JSON: jq '.decisions[] | "\(.phase): \(.summary) - \(.rationale)"'
 ```
 
 Research prompt:
@@ -153,17 +130,19 @@ ls "${PHASE_DIR}"/*-PLAN.md 2>/dev/null
 
 **If exists:** Offer: 1) Add more plans, 2) View existing, 3) Replan from scratch.
 
-## 7. Read Context Files
+## 7. Use Context Files from INIT
 
-Read and store for planner agent (`@` syntax doesn't work across Task() boundaries):
+All file contents are already loaded via `--include` in step 1 (`@` syntax doesn't work across Task() boundaries):
 
 ```bash
-STATE_CONTENT=$(cat .planning/STATE.md)
-ROADMAP_CONTENT=$(cat .planning/ROADMAP.md)
-REQUIREMENTS_CONTENT=$(cat .planning/REQUIREMENTS.md 2>/dev/null)
-RESEARCH_CONTENT=$(cat "${PHASE_DIR}"/*-RESEARCH.md 2>/dev/null)
-VERIFICATION_CONTENT=$(cat "${PHASE_DIR}"/*-VERIFICATION.md 2>/dev/null)
-UAT_CONTENT=$(cat "${PHASE_DIR}"/*-UAT.md 2>/dev/null)
+# Extract from INIT JSON (no need to re-read files)
+STATE_CONTENT=$(echo "$INIT" | jq -r '.state_content // empty')
+ROADMAP_CONTENT=$(echo "$INIT" | jq -r '.roadmap_content // empty')
+REQUIREMENTS_CONTENT=$(echo "$INIT" | jq -r '.requirements_content // empty')
+RESEARCH_CONTENT=$(echo "$INIT" | jq -r '.research_content // empty')
+VERIFICATION_CONTENT=$(echo "$INIT" | jq -r '.verification_content // empty')
+UAT_CONTENT=$(echo "$INIT" | jq -r '.uat_content // empty')
+CONTEXT_CONTENT=$(echo "$INIT" | jq -r '.context_content // empty')
 ```
 
 ## 8. Spawn gsd-planner Agent
@@ -229,10 +208,7 @@ Task(
 
 ## 9. Handle Planner Return
 
-- **`## PLANNING COMPLETE`:** Display plan count. If `--skip-verify` or config `workflow.plan_check=false`: skip to step 13. Otherwise: step 10.
-  ```bash
-  WORKFLOW_PLAN_CHECK=$(node ./.claude/get-shit-done/bin/gsd-tools.js state load --raw | grep '^plan_checker=' | cut -d= -f2)
-  ```
+- **`## PLANNING COMPLETE`:** Display plan count. If `--skip-verify` or `plan_checker_enabled` is false (from init): skip to step 13. Otherwise: step 10.
 - **`## CHECKPOINT REACHED`:** Present to user, get response, spawn continuation (step 12)
 - **`## PLANNING INCONCLUSIVE`:** Show attempts, offer: Add context / Retry / Manual
 

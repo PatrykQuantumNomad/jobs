@@ -1,0 +1,53 @@
+graph LR
+    subgraph Trigger["Dashboard Triggers"]
+        BTN_RESUME["Tailor Resume<br/>button"]
+        BTN_COVER["Cover Letter<br/>button"]
+    end
+
+    subgraph Input["Input Preparation"]
+        PDF["PDF Extractor<br/>(pymupdf4llm)<br/>ATS resume -> Markdown"]
+        JOB_DESC["Job Description<br/>from SQLite"]
+    end
+
+    subgraph AntiF1["Layer 1: Prompt Guard"]
+        SYS_PROMPT["System Prompt<br/>ABSOLUTE RULES:<br/>1. No fabricated skills<br/>2. No invented metrics<br/>3. No changed dates/titles<br/>4. No fake certifications<br/>MAY DO:<br/>Reorder, rephrase,<br/>emphasize, expand acronyms"]
+    end
+
+    subgraph LLM["Claude API Call"]
+        PARSE["messages.parse()<br/>output_format=TailoredResume<br/>or CoverLetter<br/>model: claude-sonnet-4-5<br/>temperature: 0 (resume)<br/>temperature: 0.3 (cover)"]
+    end
+
+    subgraph AntiF2["Layer 2: Schema Guard"]
+        SCHEMA["Pydantic Models<br/>TailoredResume: fields enforce<br/>'reordered not invented'<br/>CoverLetter: body_paragraphs<br/>constrained to 2-3"]
+    end
+
+    subgraph AntiF3["Layer 3: Post-Validation"]
+        VALIDATOR["Entity Comparison<br/>Extract from both texts:<br/>- Company names (capitalized)<br/>- Tech keywords (170+ known)<br/>- Metrics ($, %, numbers)<br/>Flag any NEW entities"]
+        RESULT["ValidationResult<br/>is_valid: bool<br/>new_companies: []<br/>new_skills: []<br/>new_metrics: []<br/>warnings: []"]
+    end
+
+    subgraph Output["Output"]
+        DIFF["HTML Diff<br/>Side-by-side comparison<br/>(difflib.HtmlDiff)"]
+        PDF_OUT["PDF Rendering<br/>WeasyPrint<br/>Jinja2 templates"]
+        VERSION["Version Tracking<br/>resume_versions table<br/>file_path, model, date"]
+    end
+
+    BTN_RESUME --> PDF
+    BTN_COVER --> PDF
+    PDF --> SYS_PROMPT
+    JOB_DESC --> SYS_PROMPT
+    SYS_PROMPT --> PARSE
+    PARSE --> SCHEMA
+    SCHEMA --> AntiF3
+    VALIDATOR --> RESULT
+    SCHEMA --> DIFF & PDF_OUT
+    PDF_OUT --> VERSION
+
+    style BTN_RESUME fill:#3498DB,color:#fff
+    style BTN_COVER fill:#3498DB,color:#fff
+    style SYS_PROMPT fill:#E91E63,color:#fff
+    style PARSE fill:#E91E63,color:#fff
+    style SCHEMA fill:#E91E63,color:#fff
+    style VALIDATOR fill:#E91E63,color:#fff
+    style PDF_OUT fill:#E91E63,color:#fff
+    style DIFF fill:#4A90D9,color:#fff

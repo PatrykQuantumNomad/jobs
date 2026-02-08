@@ -1,0 +1,67 @@
+graph LR
+    subgraph Trigger["Trigger Layer"]
+        CLI["CLI<br/>jobs-scrape"]
+        SCHED["launchd<br/>Scheduler"]
+        DASH_BTN["Dashboard<br/>Apply Button"]
+    end
+
+    subgraph Pipeline["Pipeline Core"]
+        ORCH["Orchestrator<br/>5-phase pipeline"]
+        SCORE["Scorer<br/>Weighted 1-5"]
+        DEDUP["Deduplicator<br/>Exact + Fuzzy"]
+        SAL["Salary Parser<br/>Multi-format"]
+    end
+
+    subgraph Scrapers["Platform Scrapers"]
+        IND["Indeed<br/>Playwright"]
+        DICE["Dice<br/>Playwright"]
+        ROK["RemoteOK<br/>HTTP API"]
+    end
+
+    subgraph AI["AI Layer"]
+        TAILOR["Resume<br/>Tailor"]
+        COVER["Cover Letter<br/>Generator"]
+        VALID["Anti-Fabrication<br/>Validator"]
+    end
+
+    subgraph Storage["Storage"]
+        DB[("SQLite<br/>FTS5")]
+        JSON["JSON<br/>Files"]
+    end
+
+    subgraph Dashboard["Web Dashboard"]
+        FAST["FastAPI"]
+        SSE["SSE Stream"]
+        HTMX["htmx UI"]
+    end
+
+    CLI --> ORCH
+    SCHED --> ORCH
+    ORCH --> IND & DICE & ROK
+    ORCH --> DEDUP --> SAL --> SCORE --> DB
+    ORCH --> JSON
+    DB --> FAST --> HTMX
+    FAST --> SSE --> HTMX
+    DASH_BTN --> FAST
+    FAST --> TAILOR & COVER
+    TAILOR --> VALID
+    FAST --> DB
+
+    style CLI fill:#27AE60,color:#fff
+    style SCHED fill:#27AE60,color:#fff
+    style ORCH fill:#F39C12,color:#fff
+    style SCORE fill:#F39C12,color:#fff
+    style DEDUP fill:#F39C12,color:#fff
+    style SAL fill:#F39C12,color:#fff
+    style IND fill:#7B68EE,color:#fff
+    style DICE fill:#7B68EE,color:#fff
+    style ROK fill:#7B68EE,color:#fff
+    style DB fill:#E67E22,color:#fff
+    style JSON fill:#E67E22,color:#fff
+    style FAST fill:#4A90D9,color:#fff
+    style SSE fill:#4A90D9,color:#fff
+    style HTMX fill:#4A90D9,color:#fff
+    style TAILOR fill:#E91E63,color:#fff
+    style COVER fill:#E91E63,color:#fff
+    style VALID fill:#E91E63,color:#fff
+    style DASH_BTN fill:#3498DB,color:#fff
