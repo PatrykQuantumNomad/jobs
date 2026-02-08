@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Phase 9 -- Test Infrastructure (v1.1 Test Web App)
+**Current focus:** Phase 10 -- Unit Tests (v1.1 Test Web App)
 
 ## Current Position
 
-Phase: 9 of 15 (Test Infrastructure)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-02-08 -- Completed 09-02-PLAN.md (conftest.py fixtures, factories, smoke tests)
+Phase: 10 of 15 (Unit Tests)
+Plan: 1 of 3 in current phase
+Status: Plan 01 complete
+Last activity: 2026-02-08 -- Completed 10-01-PLAN.md (models and salary unit tests)
 
-Progress: [##########################........] 74% (26/39 total plans -- 24 v1.0 + 2 v1.1 complete, 13 v1.1 TBD)
+Progress: [###########################.........] 77% (27/39 total plans -- 24 v1.0 + 3 v1.1 complete, 12 v1.1 TBD)
 
 ## Performance Metrics
 
@@ -35,6 +35,13 @@ Progress: [##########################........] 74% (26/39 total plans -- 24 v1.0
 | 06-dashboard-analytics | 2/2 | 8 min | 4.0 min |
 | 07-ai-resume-cover-letter | 4/4 | 22 min | 5.5 min |
 | 08-one-click-apply | 4/4 | 15 min | 3.8 min |
+
+**By Phase (v1.1):**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 09-test-infrastructure | 2/2 | -- | -- |
+| 10-unit-tests | 1/3 | 3 min | 3.0 min |
 
 ## Accumulated Context
 
@@ -59,6 +66,12 @@ From 09-02:
 - salary_max uses LazyAttribute to reference salary_min for cross-field guarantee
 - Anthropic guard patches Messages.create/parse at method level (not constructor)
 
+From 10-01:
+- Unit test files mirror source: tests/test_{module}.py
+- All unit tests marked @pytest.mark.unit at class level
+- Parametrize tables use explicit IDs for readable output
+- 100% coverage on models.py and salary.py (141 statements, 0 missed)
+
 ### Pending Todos
 
 None.
@@ -77,5 +90,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Phase 09 complete (both plans). Ready for Phase 10.
-Resume file: .planning/ROADMAP.md (next phase)
+Stopped at: Completed 10-01-PLAN.md (models and salary unit tests). Ready for 10-02.
+Resume file: .planning/phases/10-unit-tests/10-02-PLAN.md
