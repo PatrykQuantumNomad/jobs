@@ -142,11 +142,11 @@ Plans:
   3. Changing a job's status via the UI persists the change -- reloading the page shows the updated status
   4. Kanban board drag-and-drop moves a job card between columns and the new status persists in the database
   5. Export buttons trigger file downloads that contain valid CSV/JSON data matching the displayed jobs
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 15-01: TBD
-- [ ] 15-02: TBD
+- [ ] 15-01-PLAN.md -- E2E infrastructure (pytest-playwright, live server fixture, seeded DB) + dashboard load, filtering, and status change tests (E2E-01, E2E-02, E2E-03)
+- [ ] 15-02-PLAN.md -- Kanban drag-and-drop, CSV/JSON export download tests, and CI E2E command fix (E2E-04, E2E-05)
 
 ## Progress
 
