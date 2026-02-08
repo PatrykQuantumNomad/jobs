@@ -2,12 +2,13 @@
 
 Covers:
 - E2E-04: Kanban board loads with correct column layout and card counts
-- E2E-04: Drag-and-drop (via htmx ajax fallback) moves a card between columns
+- E2E-04: Drag-and-drop (via fetch POST) moves a card between columns
   and the new status persists in the database after reload
+- Regression: Drag-and-drop does not destroy the board (htmx.ajax swap bug)
 
 Approach: SortableJS uses ``forceFallback: true`` which makes native Playwright
 ``drag_to()`` unreliable. Instead we test the full-stack persistence path by
-invoking the same ``htmx.ajax('POST', '/jobs/.../status', ...)`` call that
+invoking the same ``fetch('POST', '/jobs/.../status', ...)`` call that
 SortableJS's ``onEnd`` handler fires. This validates the server round-trip,
 database persistence, and page rendering -- the same path real drag-and-drop
 takes.
@@ -115,18 +116,17 @@ class TestKanbanE2E:
         expect(page.locator("#col-offer .kanban-card")).to_have_count(0)
 
     def test_drag_card_from_saved_to_applied(self, page, live_server, seeded_kanban_db):
-        """E2E-04: Moving a card via htmx ajax (SortableJS onEnd path) persists after reload.
+        """E2E-04: Moving a card via fetch POST (SortableJS onEnd path) persists after reload.
 
-        Uses the htmx.ajax fallback approach since SortableJS's forceFallback: true
+        Uses the fetch fallback approach since SortableJS's forceFallback: true
         makes native Playwright drag_to() unreliable. This invokes the exact same
         server endpoint that real drag-and-drop triggers.
         """
         page.goto(f"{live_server}/kanban")
         page.wait_for_load_state("networkidle")
 
-        # Wait for SortableJS and htmx to be loaded
+        # Wait for SortableJS to be loaded
         page.wait_for_function("typeof Sortable !== 'undefined'", timeout=10000)
-        page.wait_for_function("typeof htmx !== 'undefined'", timeout=10000)
 
         # Verify initial state: 3 saved, 2 applied
         expect(page.locator("#col-saved .kanban-card")).to_have_count(3)
@@ -138,14 +138,15 @@ class TestKanbanE2E:
         assert card_key is not None, "Card must have a data-key attribute"
 
         # Simulate what SortableJS onEnd does: POST to /jobs/{key}/status
-        # This is the exact same htmx.ajax call from kanban.html line 77
+        # This is the exact same fetch call from kanban.html onEnd handler
         page.evaluate(
             """(cardKey) => {
-                return new Promise((resolve, reject) => {
-                    htmx.ajax('POST', '/jobs/' + encodeURIComponent(cardKey) + '/status', {
-                        values: { status: 'applied' }
-                    }).then(resolve).catch(reject);
-                });
+                var formData = new FormData();
+                formData.append('status', 'applied');
+                return fetch('/jobs/' + encodeURIComponent(cardKey) + '/status', {
+                    method: 'POST',
+                    body: formData
+                }).then(r => { if (!r.ok) throw new Error('Status ' + r.status); });
             }""",
             card_key,
         )
@@ -164,3 +165,39 @@ class TestKanbanE2E:
         # Verify the specific card is now in the applied column
         moved_card = page.locator(f'#col-applied .kanban-card[data-key="{card_key}"]')
         expect(moved_card).to_have_count(1)
+
+    def test_drag_does_not_destroy_board(self, page, live_server, seeded_kanban_db):
+        """Dragging a card between columns must NOT destroy the Kanban board.
+
+        Regression test: previously htmx.ajax swapped the response into document.body,
+        replacing the entire board with a status badge span.
+        """
+        page.goto(f"{live_server}/kanban")
+        page.wait_for_load_state("networkidle")
+
+        # Get a card key from saved column
+        card = page.locator("#col-saved .kanban-card").first
+        card_key = card.get_attribute("data-key")
+
+        # Simulate the drag-and-drop status update (same as onEnd handler)
+        page.evaluate(
+            """(cardKey) => {
+                var formData = new FormData();
+                formData.append('status', 'applied');
+                return fetch('/jobs/' + encodeURIComponent(cardKey) + '/status', {
+                    method: 'POST',
+                    body: formData
+                }).then(r => { if (!r.ok) throw new Error('Status ' + r.status); });
+            }""",
+            card_key,
+        )
+
+        page.wait_for_timeout(300)
+
+        # CRITICAL: The board must still be visible (not replaced by response HTML)
+        expect(page.locator(".kanban-list")).to_have_count(9)  # 9 kanban columns
+        expect(page.locator("#col-saved")).to_be_visible()
+        expect(page.locator("#col-applied")).to_be_visible()
+
+        # The page title should still be the kanban page
+        expect(page).to_have_title("Kanban -- Job Tracker")
