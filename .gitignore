@@ -18,6 +18,7 @@ debug_screenshots/
 
 # Generated job data
 job_pipeline/*.json
+job_pipeline/*.md
 job_pipeline/*.db
 job_pipeline/*.db-shm
 job_pipeline/*.db-wal
