@@ -139,7 +139,7 @@ class Orchestrator:
 
         resume_path = PROJECT_ROOT / self.settings.candidate_resume_path
         if not resume_path.exists():
-            print(f"  WARNING: ATS resume not found at {resume_path}")
+            print(f"  WARNING: Resume file not found at {resume_path}")
 
         print("  Setup complete.")
 

@@ -118,7 +118,7 @@ class CandidateProfile(BaseModel):
     desired_salary_usd: int = 200_000
     start_date: str = ""
     education: str = ""
-    resume_path: str = "resumes/Patryk_Golabek_Resume_ATS.pdf"
+    resume_path: str = "resumes/Patryk_Golabek_Resume.pdf"
 
     target_titles: list[str] = Field(default_factory=list)
     tech_keywords: list[str] = Field(default_factory=list)

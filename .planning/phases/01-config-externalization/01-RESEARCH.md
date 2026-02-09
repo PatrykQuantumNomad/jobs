@@ -171,7 +171,7 @@ class AppSettings(BaseSettings):
     candidate_desired_salary_usd: int = 200_000
     candidate_start_date: str = ""
     candidate_education: str = ""
-    candidate_resume_path: str = "resumes/Patryk_Golabek_Resume_ATS.pdf"
+    candidate_resume_path: str = "resumes/Patryk_Golabek_Resume.pdf"
 
     @classmethod
     def settings_customise_sources(

@@ -394,7 +394,7 @@ class TestConfigDefaults:
         assert settings.dice_password is None
         assert settings.candidate_first_name == ""
         assert settings.candidate_desired_salary_usd == 200_000
-        assert settings.candidate_resume_path == "resumes/Patryk_Golabek_Resume_ATS.pdf"
+        assert settings.candidate_resume_path == "resumes/Patryk_Golabek_Resume.pdf"
 
     def test_partial_section_gets_remaining_defaults(self, config_from_yaml):
         """Partial timing section keeps defaults for unspecified fields."""

@@ -56,7 +56,6 @@
 │   ├── tracker.md                  # Markdown summary table
 │   └── descriptions/               # Full job descriptions as markdown
 ├── resumes/                        # Resume PDFs
-│   ├── Patryk_Golabek_Resume_ATS.pdf
 │   ├── Patryk_Golabek_Resume.pdf
 │   └── tailored/                   # LLM-generated tailored resumes
 ├── orchestrator.py                 # Main pipeline orchestrator (568 lines)

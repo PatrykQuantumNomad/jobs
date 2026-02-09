@@ -270,7 +270,7 @@ class TestCandidateProfile:
         assert p.desired_salary_usd == 200_000
         assert p.target_titles == []
         assert p.tech_keywords == []
-        assert p.resume_path == "resumes/Patryk_Golabek_Resume_ATS.pdf"
+        assert p.resume_path == "resumes/Patryk_Golabek_Resume.pdf"
 
     def test_custom_values(self):
         """Custom values are stored correctly."""

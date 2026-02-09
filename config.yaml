@@ -56,6 +56,10 @@ scoring:
     - "Platform Engineering Lead"
     - "DevOps Lead"
     - "Engineering Manager"
+    - "Software Architect"
+    - "Cloud Architect"
+    - "Technical Lead"
+    - "AI Engineer"
   tech_keywords:
     - kubernetes
     - k8s
@@ -91,6 +95,20 @@ scoring:
     - cloud native
     - microservices
     - platform engineering
+    - nextjs
+    - next.js
+    - react
+    - aws
+    - amazon web services
+    - gcp
+    - google cloud
+    - azure
+    - spring boot
+    - keycloak
+    - supabase
+    - openai
+    - anthropic
+    - rag
   weights:
     title_match: 2.0
     tech_overlap: 2.0

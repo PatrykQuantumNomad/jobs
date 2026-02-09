@@ -68,7 +68,7 @@ project-root/
 │       └── partials/
 │           └── resume_diff.html        # Diff view partial for htmx
 ├── resumes/
-│   ├── Patryk_Golabek_Resume_ATS.pdf   # Original (source of truth)
+│   ├── Patryk_Golabek_Resume.pdf   # Original (source of truth)
 │   └── tailored/
 │       └── Patryk_Golabek_Resume_CompanyName_2026-02-07.pdf
 └── .env                                # ANTHROPIC_API_KEY added here

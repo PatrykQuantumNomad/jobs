@@ -115,7 +115,7 @@ None.
 To use the AI resume features, users need:
 1. `ANTHROPIC_API_KEY` set in `.env` file
 2. WeasyPrint system dependency installed (`brew install weasyprint` or `brew install pango` on macOS)
-3. A base resume PDF at the path configured in `config.yaml` (default: `resumes/Patryk_Golabek_Resume_ATS.pdf`)
+3. A base resume PDF at the path configured in `config.yaml` (default: `resumes/Patryk_Golabek_Resume.pdf`)
 
 Without these, the dashboard still works normally -- AI buttons will return clear error messages.
 

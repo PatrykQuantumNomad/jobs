@@ -29,7 +29,7 @@ from apply_engine.config import ApplyConfig
 from models import CandidateProfile, SearchQuery
 
 # -- Directory constants -----------------------------------------------------
-PROJECT_ROOT = Path(__file__).parent
+PROJECT_ROOT = Path.cwd()
 BROWSER_SESSIONS_DIR = PROJECT_ROOT / "browser_sessions"
 DEBUG_SCREENSHOTS_DIR = PROJECT_ROOT / "debug_screenshots"
 JOB_PIPELINE_DIR = PROJECT_ROOT / "job_pipeline"
@@ -184,7 +184,7 @@ class AppSettings(BaseSettings):
     candidate_desired_salary_usd: int = 200_000
     candidate_start_date: str = ""
     candidate_education: str = ""
-    candidate_resume_path: str = "resumes/Patryk_Golabek_Resume_ATS.pdf"
+    candidate_resume_path: str = "resumes/Patryk_Golabek_Resume.pdf"
 
     # ── Platform names (class-level constant) ──────────────────────────────
     _PLATFORM_NAMES: ClassVar[list[str]] = ["indeed", "dice", "remoteok"]

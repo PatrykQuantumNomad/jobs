@@ -39,7 +39,7 @@ def _parse_score(value: str | None) -> int | None:
 
 BASE_DIR = Path(__file__).parent
 RESUMES_TAILORED_DIR = Path("resumes/tailored")
-DEFAULT_RESUME_PATH = "resumes/Patryk_Golabek_Resume_ATS.pdf"
+DEFAULT_RESUME_PATH = "resumes/Patryk_Golabek_Resume.pdf"
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.filters["parse_json"] = lambda s: (
     json.loads(s) if isinstance(s, str) and s else (s or {})
