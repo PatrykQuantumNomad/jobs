@@ -161,7 +161,10 @@ uv run pytest -m unit
 uv run pytest -m integration
 
 # E2E browser tests (requires Playwright)
-uv run pytest -m e2e -p no:socket -o addopts=
+uv run pytest -m e2e
+
+# E2E with visible browser (for debugging)
+uv run pytest -m e2e --headed
 
 # With coverage report
 uv run pytest --cov --cov-report=term-missing
@@ -170,10 +173,25 @@ uv run pytest --cov --cov-report=term-missing
 uv run pytest tests/test_scorer.py -v
 ```
 
-The test suite has 428 tests across three layers:
-- **Unit** (204): models, scoring, salary normalization, deduplication, anti-fabrication, delta detection
-- **Integration** (213): SQLite CRUD/FTS5, FastAPI endpoints, RemoteOK parsing, platform registry, config loading
-- **E2E** (11): Playwright browser tests for dashboard, filtering, kanban drag-and-drop, CSV/JSON export
+The test suite has 544 tests across three layers:
+
+- **Unit** (293): models, scoring, salary normalization, deduplication, anti-fabrication, delta detection
+- **Integration** (226): SQLite CRUD/FTS5, FastAPI endpoints, RemoteOK parsing, platform registry, config loading
+- **E2E** (12): Playwright browser tests for dashboard, filtering, kanban drag-and-drop, CSV/JSON export
+
+### Network Safety
+
+Tests use [pytest-socket](https://github.com/miketheman/pytest-socket) to block all network access by default. This prevents tests from accidentally hitting real APIs (Indeed, Dice, Anthropic) which would be slow, flaky, and costly.
+
+Three layers of protection:
+
+| Layer | What it blocks | Config |
+| ----- | -------------- | ------ |
+| `pytest-socket` | All TCP/UDP connections at the OS level | `--disable-socket` in `pyproject.toml` addopts |
+| `_block_anthropic` fixture | Anthropic API calls specifically | `tests/conftest.py` (autouse) |
+| `--allow-unix-socket` | Exception: permits Unix domain sockets | Required for SQLite WAL mode |
+
+E2E tests need real network access (browser talks to the live test server), so each e2e test class uses `@pytest.mark.enable_socket` to selectively re-enable sockets for those tests only.
 
 ### Adding a dependency
 
