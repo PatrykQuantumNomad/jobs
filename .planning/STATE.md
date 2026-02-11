@@ -2,19 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-08)
+See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Planning next milestone
+**Current focus:** v1.2 Claude CLI Agent Integration
 
 ## Current Position
 
-Phase: 15 of 15 complete
-Plan: All complete
-Status: v1.0 MVP + v1.1 Test Web App shipped. Ready for next milestone.
-Last activity: 2026-02-08 - Completed quick task 003: Fix kanban drag-and-drop destroying board
-
-Progress: [########################################] 100% (38 total plans -- 24 v1.0 + 14 v1.1 complete)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v1.2
+Last activity: 2026-02-11 — Milestone v1.2 started
 
 ## Performance Metrics
 
@@ -32,7 +30,13 @@ Progress: [########################################] 100% (38 total plans -- 24 
 
 ### Decisions
 
-All decisions logged in PROJECT.md Key Decisions table (16 entries across v1.0 + v1.1).
+All decisions logged in PROJECT.md Key Decisions table (17 entries across v1.0 + v1.1 + v1.2).
+
+- v1.2: Replace Anthropic SDK with Claude CLI subprocess for AI features (runs on subscription, no API key needed)
+- v1.2: CLI wrapper at top-level claude_cli.py (cross-cutting, not resume-specific)
+- v1.2: Sync subprocess.run wrapped in asyncio.to_thread (matches existing pattern)
+- v1.2: AI scores stored as new columns on jobs table (not separate table)
+- v1.2: SSE streaming for resume/cover letter (upgrade from htmx spinner)
 
 ### Pending Todos
 
@@ -52,6 +56,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-08
-Stopped at: Quick task 003 complete -- Kanban drag-and-drop fixed (fetch replaces htmx.ajax).
+Last session: 2026-02-11
+Stopped at: Milestone v1.2 initialization — requirements and roadmap being defined.
 Resume file: N/A
