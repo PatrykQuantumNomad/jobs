@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A self-hosted, single-user job search automation platform with comprehensive test coverage. Clone the repo, drop in your resume and a YAML config file, and the system scrapes job boards (Indeed, Dice, RemoteOK), scores matches against your profile, manages listings through a web dashboard with analytics and kanban views, generates AI-tailored resumes and cover letters, and automates applications with configurable control levels -- from one-click auto-apply to careful manual review. Runs daily via launchd scheduler with real-time SSE progress streaming to the dashboard. Backed by 428 automated tests and CI pipeline.
+A self-hosted, single-user job search automation platform with comprehensive test coverage and AI features powered by Claude CLI. Clone the repo, install Claude CLI, drop in your resume and a YAML config file, and the system scrapes job boards (Indeed, Dice, RemoteOK), scores matches against your profile (rule-based + on-demand AI semantic analysis), manages listings through a web dashboard with analytics and kanban views, generates AI-tailored resumes and cover letters with real-time SSE progress streaming, and automates applications with configurable control levels -- from one-click auto-apply to careful manual review. Runs daily via launchd scheduler. Backed by 581 automated tests and CI pipeline.
 
 ## Core Value
 
@@ -12,17 +12,17 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 
 ### Validated
 
-- ✓ Multi-platform scraping (Indeed, Dice, RemoteOK) -- existing + v1.0
-- ✓ Stealth browser automation with anti-detection (Playwright + playwright-stealth) -- existing
-- ✓ Session persistence per platform (browser_sessions/) -- existing
-- ✓ Human-in-the-loop CAPTCHA/verification handling -- existing
-- ✓ Job scoring engine (1-5 scale against candidate profile) -- existing + v1.0
-- ✓ Cross-platform deduplication by normalized company+title -- existing + v1.0 (fuzzy)
-- ✓ CLI orchestrator with 5-phase pipeline (setup -> login -> search -> score -> apply) -- existing
-- ✓ Web dashboard with SQLite persistence, filtering, status updates -- existing + v1.0
-- ✓ Form filling heuristics for application fields -- existing + v1.0 (ATS iframe)
-- ✓ Configurable search queries and platform selection -- existing + v1.0 (YAML)
-- ✓ Debug screenshot capture on selector failure -- existing
+- ✓ Multi-platform scraping (Indeed, Dice, RemoteOK) -- v1.0
+- ✓ Stealth browser automation with anti-detection (Playwright + playwright-stealth) -- v1.0
+- ✓ Session persistence per platform (browser_sessions/) -- v1.0
+- ✓ Human-in-the-loop CAPTCHA/verification handling -- v1.0
+- ✓ Job scoring engine (1-5 scale against candidate profile) -- v1.0
+- ✓ Cross-platform deduplication by normalized company+title -- v1.0
+- ✓ CLI orchestrator with 5-phase pipeline (setup -> login -> search -> score -> apply) -- v1.0
+- ✓ Web dashboard with SQLite persistence, filtering, status updates -- v1.0
+- ✓ Form filling heuristics for application fields -- v1.0
+- ✓ Configurable search queries and platform selection -- v1.0
+- ✓ Debug screenshot capture on selector failure -- v1.0
 - ✓ CFG-01: Single YAML config for all settings -- v1.0
 - ✓ CFG-02: Scheduled pipeline runs via launchd -- v1.0
 - ✓ CFG-03: Salary normalization to comparable USD annual -- v1.0
@@ -46,35 +46,25 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 - ✓ GitHub Actions CI pipeline with coverage enforcement and linting -- v1.1
 - ✓ Test isolation infrastructure (settings reset, in-memory DB, network/API blocking) -- v1.1
 - ✓ Playwright E2E tests for dashboard, kanban, and export flows -- v1.1
+- ✓ CLI-01: Claude CLI subprocess with structured output -- v1.2
+- ✓ CLI-02: CLI error handling (timeout, exit code, JSON, auth, not installed) -- v1.2
+- ✓ CLI-03: Typed Pydantic models from structured_output with resilient parser -- v1.2
+- ✓ RES-01: Resume tailoring via Claude CLI (not Anthropic SDK) -- v1.2
+- ✓ RES-02: Resume tailoring SSE progress events -- v1.2
+- ✓ RES-03: Anti-fabrication validation on CLI output -- v1.2
+- ✓ RES-04: PDF rendering and version tracking unchanged -- v1.2
+- ✓ COV-01: Cover letter via Claude CLI (not Anthropic SDK) -- v1.2
+- ✓ COV-02: Cover letter SSE progress events -- v1.2
+- ✓ COV-03: Cover letter PDF rendering and version tracking unchanged -- v1.2
+- ✓ SCR-01: On-demand AI rescore from job detail page -- v1.2
+- ✓ SCR-02: AI scoring with full resume + job description context -- v1.2
+- ✓ SCR-03: AI score, reasoning, strengths, gaps stored and displayed -- v1.2
+- ✓ CFG-01: Anthropic SDK removed from runtime dependencies -- v1.2
+- ✓ CFG-02: Documentation updated for Claude CLI prerequisite -- v1.2
 
 ### Active
 
-- [ ] CLI-01: System can invoke Claude CLI as subprocess with structured output
-- [ ] CLI-02: CLI wrapper handles errors (timeout, exit code, JSON, auth, not installed)
-- [ ] CLI-03: CLI wrapper returns typed Pydantic models from structured_output
-- [ ] RES-01: Resume tailoring uses Claude CLI instead of Anthropic SDK
-- [ ] RES-02: Resume tailoring shows SSE progress events
-- [ ] RES-03: Anti-fabrication validation still runs on tailored output
-- [ ] RES-04: PDF rendering and version tracking unchanged
-- [ ] COV-01: Cover letter uses Claude CLI instead of Anthropic SDK
-- [ ] COV-02: Cover letter shows SSE progress events
-- [ ] COV-03: PDF rendering and version tracking unchanged
-- [ ] SCR-01: User can trigger AI rescore from job detail page
-- [ ] SCR-02: AI scoring uses Claude CLI with full resume + job description context
-- [ ] SCR-03: AI score, reasoning, strengths, and gaps stored and displayed
-- [ ] CFG-01: Anthropic SDK no longer required for runtime
-- [ ] CFG-02: Documentation updated for Claude CLI prerequisite
-
-## Current Milestone: v1.2 Claude CLI Agent Integration
-
-**Goal:** Replace all Anthropic API SDK calls with Claude CLI agent subprocesses so AI features run on the user's Anthropic subscription instead of requiring a separate API key with per-token charges.
-
-**Target features:**
-- Replace resume tailoring API calls with Claude CLI subprocess (structured output via --json-schema)
-- Replace cover letter generation API calls with Claude CLI subprocess (same pattern)
-- Add on-demand AI scoring via Claude CLI ("AI Rescore" button in dashboard)
-- Upgrade resume/cover letter UX to SSE progress streaming
-- Remove Anthropic SDK runtime dependency
+(None -- planning next milestone)
 
 ### Out of Scope
 
@@ -95,14 +85,18 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 
 **v1.1 shipped:** 2026-02-08. 7 phases, 14 plans, 45 requirements. 5,639 lines of test code. 428 tests (417 unit/integration + 11 E2E). GitHub Actions CI with 80%+ coverage enforcement. Found and fixed 4 production bugs during test development.
 
-**Tech stack:** Python 3.14, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), pydantic-settings + YAML, Claude CLI (subprocess), WeasyPrint, sse-starlette, Chart.js, SortableJS, pytest + factory-boy + respx + pytest-playwright
+**v1.2 shipped:** 2026-02-11. 4 phases, 7 plans, 15 requirements. Replaced Anthropic SDK with Claude CLI subprocess for all AI features. Added on-demand AI scoring, SSE streaming for resume/cover letter. 18 new tests (563 -> 581). Zero production files import anthropic SDK.
+
+**Tech stack:** Python 3.14, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), pydantic-settings + YAML, Claude CLI (subprocess with structured output), WeasyPrint, sse-starlette, Chart.js, SortableJS, pytest + factory-boy + respx + pytest-playwright
+
+**Codebase:** 18,022 LOC (16,258 Python + 1,764 HTML). 581 automated tests.
 
 **Known technical debt:**
 - CDN-loaded JS libraries (htmx, Chart.js, SortableJS) rather than bundled
 - Lazy imports could be replaced with proper dependency injection
 - ATS form fill covers 5 providers (Greenhouse, Lever, Ashby, BambooHR, Workday) but needs broader coverage
 - 4 analytics routes lack integration tests
-- SSE endpoint testing not implemented (TestClient + EventSourceResponse interaction)
+- SSE endpoint testing relies on background task testing pattern (direct Queue testing), not actual SSE stream parsing
 - scorer.py score_batch_with_breakdown uncovered (8 lines)
 
 ## Constraints
@@ -113,6 +107,7 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 - **Human-in-the-loop**: Application submission always requires human approval (even in "auto" mode, there's an approve step)
 - **Credentials**: Always from .env, never committed. Platform credentials stay separate from user profile config.
 - **Test coverage**: Maintain 80%+ coverage. All new features must include tests.
+- **AI runtime**: Claude CLI must be installed. AI features use subprocess invocation, not SDK API calls.
 
 ## Key Decisions
 
@@ -121,7 +116,7 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 | pydantic-settings with YAML config | Clean, validated, type-safe configuration | ✓ Good |
 | Protocol-based platform architecture | More Pythonic than ABC, easier to test and extend | ✓ Good |
 | Three apply modes (auto/semi/manual) | Different comfort levels for different job types | ✓ Good |
-| Anthropic SDK for AI (not LangChain) | Lightweight, single-prompt use doesn't need framework overhead | ⚠️ Revisit — replacing with Claude CLI in v1.2 |
+| Claude CLI for AI (not Anthropic SDK) | Runs on user's subscription, no per-token API costs, structured output via --json-schema | ✓ Good |
 | asyncio.to_thread for Playwright bridge | Correct pattern for sync-in-async without blocking event loop | ✓ Good |
 | FTS5 content-sync tables | Search without double-storage of job data | ✓ Good |
 | WeasyPrint for PDF rendering | Jinja2 HTML templates, Calibri/Carlito font fallback for ATS | ✓ Good |
@@ -134,8 +129,12 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 | No Playwright mocking for scraper tests | Anti-pattern; extract pure parsing functions instead for testability | ✓ Good |
 | Coverage threshold in pyproject.toml | Single source of truth, not CLI flags that can diverge | ✓ Good |
 | E2E tests CI-optional (continue-on-error) | Playwright browser tests are flaky by nature, shouldn't block PRs | ✓ Good |
-
-| Claude CLI for AI (not Anthropic SDK) | Runs on user's subscription, no per-token API costs, structured output via --json-schema | — Pending |
+| asyncio.create_subprocess_exec for CLI | Enables streaming, cleaner than to_thread(subprocess.run) | ✓ Good |
+| Resilient JSON parser for CLI output | Handles structured_output and result field regression transparently | ✓ Good |
+| AI scores as columns on jobs table | Simpler than separate table, score is 1:1 with job | ✓ Good |
+| Queue + background task for SSE | Established pattern from apply_engine, consistent across all SSE features | ✓ Good |
+| CLIError -> RuntimeError at boundary | Backward compatibility with webapp's generic exception handler | ✓ Good |
+| Single-module ai_scorer.py | Feature is small enough, parallels existing scorer.py | ✓ Good |
 
 ---
-*Last updated: 2026-02-11 after v1.2 milestone started*
+*Last updated: 2026-02-11 after v1.2 milestone*

@@ -1,5 +1,35 @@
 # Milestones: JobFlow
 
+## v1.2 Claude CLI Agent Integration (Shipped: 2026-02-11)
+
+**Delivered:** Replaced all Anthropic SDK API calls with Claude CLI subprocess invocations so AI features run on the user's existing subscription with no per-token costs, plus added SSE streaming for resume/cover letter generation and on-demand AI scoring.
+
+**Phases completed:** 16-19 (7 plans total)
+
+**Key accomplishments:**
+
+- Built claude_cli async subprocess wrapper with 7-class exception hierarchy, resilient JSON parser (structured_output + result field fallback), and cold-start retry
+- Fully removed Anthropic SDK from runtime -- all AI features now use Claude CLI on user's subscription (no per-token API costs)
+- Added on-demand AI scoring with "AI Rescore" button, structured output model (AIScoreResult), and persisted score/reasoning/strengths/gaps display
+- SSE streaming for resume tailoring -- 4-stage real-time progress (extracting, generating, validating, rendering) with double-click protection and session cleanup
+- SSE streaming for cover letter generation -- 3-stage pipeline with emerald-themed UI and collapsible text preview
+- Updated all project documentation to reference Claude CLI instead of Anthropic SDK
+
+**Stats:**
+
+- 28 code files created/modified (+2,486/-362 lines Python + HTML)
+- 18,022 total lines of code (16,258 Python + 1,764 HTML)
+- 4 phases, 7 plans, 13 tasks
+- Tests: 563 -> 581 (18 new integration tests)
+- 15 requirements satisfied (15/15)
+- 1 day (~5 hours execution, 2026-02-11)
+
+**Git range:** `feat(16-01)` -> `docs(phase-19)`
+
+**What's next:** Enhanced AI features (batch rescore, model selection UI, cost tracking), additional job boards, ATS form fill expansion
+
+---
+
 ## v1.1 Test Web App (Shipped: 2026-02-08)
 
 **Delivered:** Comprehensive automated test suite with CI pipeline covering all application layers -- 428 tests (unit, integration, E2E) with 80%+ coverage and GitHub Actions CI.
