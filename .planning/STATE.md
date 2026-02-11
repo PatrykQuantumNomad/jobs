@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 16 of 19 (CLI Wrapper Foundation)
-Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-02-11 -- Roadmap created for v1.2 milestone (4 phases, 8 plans, 15 requirements)
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-02-11 -- Completed 16-01 (claude_cli package)
 
-Progress: [░░░░░░░░░░] 0% (0/8 plans)
+Progress: [█░░░░░░░░░] 12% (1/8 plans)
 
 ## Performance Metrics
 
@@ -28,6 +28,12 @@ Progress: [░░░░░░░░░░] 0% (0/8 plans)
 - Total tests written: 428
 - Timeline: 1 day (2026-02-08)
 
+**Velocity (v1.2):**
+
+| Plan | Duration | Tasks | Files | Tests |
+|------|----------|-------|-------|-------|
+| 16-01 | 8 min | 2 | 9 | 31 |
+
 ## Accumulated Context
 
 ### Decisions
@@ -40,6 +46,8 @@ Recent decisions affecting current work:
 - v1.2: AI scores stored as new columns on jobs table (not separate table)
 - v1.2: SSE streaming for resume/cover letter follows apply_engine pattern (Queue + background task + EventSourceResponse)
 - v1.2: Resilient JSON parser needed for CLI --json-schema regression (handle both structured_output and result fields)
+- 16-01: PEP 695 type parameters required by ruff UP047 on Python 3.14 target
+- 16-01: Separate except clauses needed to avoid ruff auto-fix breaking tuple-style multi-exception catches
 
 ### Pending Todos
 
@@ -60,5 +68,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Roadmap created for v1.2 milestone. Ready to plan Phase 16.
+Stopped at: Completed 16-01-PLAN.md (claude_cli package). Ready for 16-02 (SDK migration).
 Resume file: N/A

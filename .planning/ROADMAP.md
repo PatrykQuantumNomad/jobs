@@ -63,7 +63,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 **Plans**: 2 plans
 
 Plans:
-- [ ] 16-01-PLAN.md -- Build claude_cli/ package (exceptions, parser, client) with comprehensive tests
+- [x] 16-01-PLAN.md -- Build claude_cli/ package (exceptions, parser, client) with comprehensive tests
 - [ ] 16-02-PLAN.md -- Replace SDK in resume_ai, update webapp call sites, remove SDK dependency, update test infrastructure
 
 ### Phase 17: AI Scoring
@@ -135,7 +135,7 @@ Phases execute in numeric order: 16 -> 17 -> 18 -> 19
 | 13. Config Integration Tests | v1.1 | 1/1 | Complete | 2026-02-08 |
 | 14. CI Pipeline | v1.1 | 1/1 | Complete | 2026-02-08 |
 | 15. E2E Tests | v1.1 | 2/2 | Complete | 2026-02-08 |
-| 16. CLI Wrapper Foundation | v1.2 | 0/2 | Planned | - |
+| 16. CLI Wrapper Foundation | v1.2 | 1/2 | In Progress | - |
 | 17. AI Scoring | v1.2 | 0/2 | Not started | - |
 | 18. Resume Tailoring via CLI + SSE | v1.2 | 0/2 | Not started | - |
 | 19. Cover Letter via CLI + SSE & Cleanup | v1.2 | 0/2 | Not started | - |
