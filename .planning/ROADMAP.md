@@ -91,11 +91,10 @@ Plans:
   3. PDF rendering produces the same quality output as before (WeasyPrint, Calibri/Carlito fonts, ATS-friendly format)
   4. Resume version tracking continues to work -- each tailored resume gets a version number and the user can view/download previous versions
   5. If the user navigates away during generation, the background CLI subprocess is cleaned up (no zombie processes or orphaned SSE connections)
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 18-01: Streaming resume tailoring with CLI subprocess
-- [ ] 18-02: SSE endpoints and dashboard integration
+- [ ] 18-01-PLAN.md -- SSE-backed resume tailoring pipeline (background task, SSE endpoints, htmx template, tests)
 
 ### Phase 19: Cover Letter via CLI + SSE & Cleanup
 **Goal**: Cover letter generation runs through Claude CLI with SSE streaming, and all documentation reflects the new CLI prerequisite
@@ -137,5 +136,5 @@ Phases execute in numeric order: 16 -> 17 -> 18 -> 19
 | 15. E2E Tests | v1.1 | 2/2 | Complete | 2026-02-08 |
 | 16. CLI Wrapper Foundation | v1.2 | 2/2 | Complete | 2026-02-11 |
 | 17. AI Scoring | v1.2 | 2/2 | Complete | 2026-02-11 |
-| 18. Resume Tailoring via CLI + SSE | v1.2 | 0/2 | Not started | - |
+| 18. Resume Tailoring via CLI + SSE | v1.2 | 0/1 | Not started | - |
 | 19. Cover Letter via CLI + SSE & Cleanup | v1.2 | 0/2 | Not started | - |
