@@ -244,37 +244,31 @@ async def export_json(
 # Resume AI endpoints (must be registered BEFORE the catch-all /jobs/{path} GET)
 # ---------------------------------------------------------------------------
 
+_resume_sessions: dict[str, asyncio.Queue] = {}
+_resume_tasks: dict[str, asyncio.Task] = {}
 
-@app.post("/jobs/{dedup_key:path}/tailor-resume", response_class=HTMLResponse)
-async def tailor_resume_endpoint(request: Request, dedup_key: str):
-    """Tailor the candidate's resume for a specific job posting via LLM."""
-    job = db.get_job(dedup_key)
-    if not job:
-        return HTMLResponse("<h1>Job not found</h1>", status_code=404)
+
+async def _run_resume_tailor(
+    dedup_key: str, job: dict, resume_path: str, queue: asyncio.Queue
+) -> None:
+    """Background task: run the full resume tailoring pipeline with SSE progress events."""
+    from resume_ai.diff import generate_resume_diff_html, wrap_diff_html
+    from resume_ai.extractor import extract_resume_text
+    from resume_ai.renderer import render_resume_pdf as _render_resume_pdf
+    from resume_ai.tailor import format_resume_as_text, tailor_resume
+    from resume_ai.tracker import save_resume_version as _save_resume_version
+    from resume_ai.validator import validate_no_fabrication
+
+    def _emit(event_type: str, message: str, html: str = "") -> None:
+        queue.put_nowait({"type": event_type, "message": message, "html": html})
 
     try:
-        from resume_ai.diff import generate_resume_diff_html, wrap_diff_html
-        from resume_ai.extractor import extract_resume_text
-        from resume_ai.renderer import render_resume_pdf as _render_resume_pdf
-        from resume_ai.tailor import format_resume_as_text, tailor_resume
-        from resume_ai.tracker import save_resume_version as _save_resume_version
-        from resume_ai.validator import validate_no_fabrication
+        # Stage 1: Extract resume text
+        _emit("progress", "Extracting resume text...")
+        resume_text = await asyncio.to_thread(extract_resume_text, resume_path)
 
-        # Resolve resume path
-        resume_path = DEFAULT_RESUME_PATH
-        try:
-            from config import get_settings
-
-            settings = get_settings()
-            if settings.candidate_resume_path:
-                resume_path = settings.candidate_resume_path
-        except Exception:
-            pass  # Fall back to default
-
-        # Extract original resume text
-        resume_text = extract_resume_text(resume_path)
-
-        # Call LLM (tailor_resume is natively async via claude_cli)
+        # Stage 2: Generate tailored resume via Claude CLI
+        _emit("progress", "Generating tailored resume...")
         tailored = await tailor_resume(
             resume_text=resume_text,
             job_description=job["description"] or "",
@@ -282,24 +276,24 @@ async def tailor_resume_endpoint(request: Request, dedup_key: str):
             company_name=job["company"],
         )
 
-        # Generate tailored text and diff
+        # Stage 3: Validate (anti-fabrication)
+        _emit("progress", "Validating for fabrication...")
         tailored_text = format_resume_as_text(tailored)
-        diff_html = generate_resume_diff_html(resume_text, tailored_text)
-        diff_styled = wrap_diff_html(diff_html)
-
-        # Run post-generation anti-fabrication validation
         validation = validate_no_fabrication(resume_text, tailored_text)
 
-        # Generate PDF
+        # Stage 4: Render PDF
+        _emit("progress", "Rendering PDF...")
         company_slug = job["company"].replace(" ", "_")[:30]
         filename = f"Patryk_Golabek_Resume_{company_slug}_{date.today().isoformat()}.pdf"
         RESUMES_TAILORED_DIR.mkdir(parents=True, exist_ok=True)
         output_path = RESUMES_TAILORED_DIR / filename
 
         contact_info = "pgolabek@gmail.com | 416-708-9839 | Springwater, ON, Canada"
-        _render_resume_pdf(tailored, "Patryk Golabek", contact_info, output_path)
+        await asyncio.to_thread(
+            _render_resume_pdf, tailored, "Patryk Golabek", contact_info, output_path
+        )
 
-        # Track version
+        # Save version and log activity (fast sync, ok inline)
         _save_resume_version(
             job_dedup_key=dedup_key,
             resume_type="resume",
@@ -307,33 +301,119 @@ async def tailor_resume_endpoint(request: Request, dedup_key: str):
             original_resume_path=str(resume_path),
             model_used="claude-sonnet-4-5-20250929",
         )
-
-        # Log activity
         db.log_activity(
             dedup_key, "resume_tailored", detail=f"Generated tailored resume: {filename}"
         )
 
-        return templates.TemplateResponse(
-            request,
-            "partials/resume_diff.html",
-            {
-                "diff_html": diff_styled,
-                "download_url": f"/resumes/tailored/{filename}",
-                "tailoring_notes": tailored.tailoring_notes,
-                "filename": filename,
-                "validation_valid": validation.is_valid,
-                "validation_warnings": validation.warnings,
-            },
+        # Build final result HTML (pre-render the diff partial)
+        diff_html = generate_resume_diff_html(resume_text, tailored_text)
+        diff_styled = wrap_diff_html(diff_html)
+        result_html = templates.get_template("partials/resume_diff.html").render(
+            diff_html=diff_styled,
+            download_url=f"/resumes/tailored/{filename}",
+            tailoring_notes=tailored.tailoring_notes,
+            filename=filename,
+            validation_valid=validation.is_valid,
+            validation_warnings=validation.warnings,
         )
 
+        _emit("done", "Resume tailored successfully", html=result_html)
+
+    except asyncio.CancelledError:
+        _emit("done", "Generation cancelled")
+        raise
     except Exception as exc:
         logger.exception("Resume tailoring failed for %s", dedup_key)
+        _emit("error", f"Resume tailoring failed: {exc}")
+        _emit("done", "")
+
+
+@app.post("/jobs/{dedup_key:path}/tailor-resume", response_class=HTMLResponse)
+async def tailor_resume_endpoint(request: Request, dedup_key: str):
+    """Trigger resume tailoring via SSE -- returns an SSE-connect div immediately."""
+    job = db.get_job(dedup_key)
+    if not job:
+        return HTMLResponse("<h1>Job not found</h1>", status_code=404)
+
+    # Double-click protection
+    if dedup_key in _resume_sessions:
         return HTMLResponse(
-            f'<div class="bg-red-50 border border-red-400 text-red-800 px-4 py-3 rounded">'
-            f'<p class="font-bold">Error</p>'
-            f'<p class="text-sm">{exc}</p>'
-            f"</div>"
+            '<div class="bg-yellow-50 border border-yellow-300 text-yellow-800'
+            ' px-4 py-3 rounded">'
+            '<p class="text-sm font-medium">Resume generation already in progress...</p>'
+            "</div>"
         )
+
+    # Resolve resume path
+    resume_path = DEFAULT_RESUME_PATH
+    try:
+        from config import get_settings
+
+        settings = get_settings()
+        if settings.candidate_resume_path:
+            resume_path = settings.candidate_resume_path
+    except Exception:
+        pass  # Fall back to default
+
+    # Create queue and start background task
+    queue: asyncio.Queue = asyncio.Queue()
+    _resume_sessions[dedup_key] = queue
+    task = asyncio.create_task(_run_resume_tailor(dedup_key, job, resume_path, queue))
+    _resume_tasks[dedup_key] = task
+
+    # Return SSE-connect HTML
+    encoded_key = urllib.parse.quote(dedup_key, safe="")
+    return HTMLResponse(
+        f'<div hx-ext="sse"'
+        f' sse-connect="/jobs/{encoded_key}/tailor-resume/stream"'
+        f' sse-swap="progress"'
+        f' sse-close="done">'
+        f'  <div class="flex items-center gap-2 py-2">'
+        f'    <div class="animate-spin h-4 w-4 border-2 border-indigo-500'
+        f' border-t-transparent rounded-full"></div>'
+        f'    <span class="text-sm text-gray-500">Starting resume tailoring...</span>'
+        f"  </div>"
+        f"</div>"
+    )
+
+
+@app.get("/jobs/{dedup_key:path}/tailor-resume/stream")
+async def resume_tailor_stream(request: Request, dedup_key: str):
+    """SSE endpoint streaming real-time resume tailoring progress."""
+    from sse_starlette import EventSourceResponse
+
+    queue = _resume_sessions.get(dedup_key)
+    if queue is None:
+        return HTMLResponse(
+            "<p class='text-red-600 text-sm'>No active resume session</p>",
+            status_code=404,
+        )
+
+    async def event_generator():
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=15)
+                    event_type = event.get("type", "progress")
+                    html = templates.get_template("partials/resume_tailor_status.html").render(
+                        event=event, dedup_key=dedup_key
+                    )
+                    yield {"event": event_type, "data": html}
+                    if event_type == "done":
+                        break
+                except TimeoutError:
+                    yield {"event": "ping", "data": ""}
+        except asyncio.CancelledError:
+            pass
+        finally:
+            _resume_sessions.pop(dedup_key, None)
+            task = _resume_tasks.pop(dedup_key, None)
+            if task and not task.done():
+                task.cancel()
+
+    return EventSourceResponse(event_generator())
 
 
 @app.post("/jobs/{dedup_key:path}/cover-letter", response_class=HTMLResponse)

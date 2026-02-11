@@ -1,0 +1,28 @@
+{# Resume tailoring SSE status partial -- rendered per event and swapped via sse-swap="progress" #}
+
+{% if event.type == "progress" %}
+<div class="flex items-center gap-2 py-2">
+    <div class="animate-spin h-4 w-4 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+    <span class="text-sm text-gray-700">{{ event.message }}</span>
+</div>
+
+{% elif event.type == "error" %}
+<div class="bg-red-50 border border-red-400 text-red-800 px-4 py-3 rounded">
+    <p class="text-sm font-medium">Error</p>
+    <p class="text-sm">{{ event.message }}</p>
+</div>
+
+{% elif event.type == "done" %}
+{% if event.html %}
+{{ event.html | safe }}
+{% elif event.message %}
+<div class="bg-gray-50 border border-gray-300 text-gray-700 px-4 py-3 rounded">
+    <p class="text-sm">{{ event.message }}</p>
+</div>
+{% endif %}
+
+{% else %}
+<div class="py-2">
+    <span class="text-sm text-gray-500">{{ event.message }}</span>
+</div>
+{% endif %}
