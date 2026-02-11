@@ -2,13 +2,13 @@
 format_cover_letter_as_text.
 
 Tests cover:
-- Successful cover letter generation via mocked Anthropic client
-- AuthenticationError handling
-- No parsed output handling
+- Successful cover letter generation via mocked Claude CLI subprocess
+- CLI error handling (non-zero exit code)
+- CLI not found handling
 - Plain-text formatting with candidate name
 """
 
-from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import pytest
 
@@ -32,50 +32,36 @@ def _make_cover_letter() -> CoverLetter:
 
 @pytest.mark.unit
 class TestGenerateCoverLetter:
-    """Verify generate_cover_letter() API interaction and error handling."""
+    """Verify generate_cover_letter() CLI interaction and error handling."""
 
-    def test_generate_cover_letter_success(self, mock_anthropic):
-        """generate_cover_letter returns CoverLetter when API succeeds."""
+    @pytest.mark.asyncio
+    async def test_generate_cover_letter_success(self, mock_claude_cli):
+        """generate_cover_letter returns CoverLetter when CLI succeeds."""
         expected = _make_cover_letter()
-        mock_response = MagicMock()
-        mock_response.parsed_output = expected
-        mock_anthropic.messages.parse.return_value = mock_response
+        mock_claude_cli.set_response(expected)
 
-        result = generate_cover_letter("resume text", "job desc", "Engineer", "Acme")
+        result = await generate_cover_letter("resume text", "job desc", "Engineer", "Acme")
 
-        assert result is expected
-        mock_anthropic.messages.parse.assert_called_once()
-        call_kwargs = mock_anthropic.messages.parse.call_args.kwargs
-        assert call_kwargs["max_tokens"] == 2048
-        assert call_kwargs["temperature"] == 0.3
-        assert call_kwargs["output_format"] is CoverLetter
+        assert result == expected
+        assert result.greeting == expected.greeting
+        assert result.opening_paragraph == expected.opening_paragraph
 
-    def test_generate_cover_letter_auth_error(self, monkeypatch):
-        """generate_cover_letter raises RuntimeError on AuthenticationError."""
-        import anthropic
+    @pytest.mark.asyncio
+    async def test_generate_cover_letter_cli_error(self, mock_claude_cli):
+        """generate_cover_letter raises RuntimeError when CLI exits with non-zero code."""
+        mock_claude_cli.set_error(returncode=1, stderr_text="Something went wrong")
 
-        monkeypatch.setattr(
-            anthropic,
-            "Anthropic",
-            MagicMock(
-                side_effect=anthropic.AuthenticationError(
-                    message="bad key",
-                    response=MagicMock(status_code=401),
-                    body=None,
-                )
-            ),
-        )
-        with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
-            generate_cover_letter("resume", "desc", "title", "company")
+        with pytest.raises(RuntimeError, match="Cover letter generation failed"):
+            await generate_cover_letter("resume", "desc", "title", "company")
 
-    def test_generate_cover_letter_no_parsed_output(self, mock_anthropic):
-        """generate_cover_letter raises RuntimeError when parsed_output is None."""
-        mock_response = MagicMock()
-        mock_response.parsed_output = None
-        mock_anthropic.messages.parse.return_value = mock_response
-
-        with pytest.raises(RuntimeError, match="no parsed output"):
-            generate_cover_letter("resume", "desc", "title", "company")
+    @pytest.mark.asyncio
+    async def test_generate_cover_letter_cli_not_found(self):
+        """generate_cover_letter raises RuntimeError when claude binary is not on PATH."""
+        with (
+            patch("claude_cli.client.shutil.which", return_value=None),
+            pytest.raises(RuntimeError, match="Cover letter generation failed"),
+        ):
+            await generate_cover_letter("resume", "desc", "title", "company")
 
 
 @pytest.mark.unit

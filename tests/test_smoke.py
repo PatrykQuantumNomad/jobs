@@ -116,22 +116,29 @@ class TestDbWithJobsFixture:
         assert count == 10  # 3 platforms * 3 + 1 high-scoring
 
 
-class TestAnthropicGuard:
-    """Verify Anthropic API calls are blocked."""
+class TestCLIGuard:
+    """Verify Claude CLI subprocess calls are blocked."""
 
-    def test_anthropic_blocked(self):
-        try:
-            import anthropic
+    @pytest.mark.asyncio
+    async def test_cli_blocked(self):
+        import asyncio
 
-            client = anthropic.Anthropic()
-            with pytest.raises(RuntimeError, match="real Anthropic API call"):
-                client.messages.create(
-                    model="claude-3-haiku-20240307",
-                    max_tokens=10,
-                    messages=[{"role": "user", "content": "test"}],
-                )
-        except ImportError:
-            pytest.skip("anthropic not installed")
+        with pytest.raises(RuntimeError, match="real Claude CLI subprocess call"):
+            await asyncio.create_subprocess_exec("claude", "-p", "test")
+
+
+class TestNoAnthropicSDKInProduction:
+    """Verify no production module imports anthropic at module level."""
+
+    def test_no_anthropic_sdk_in_production(self):
+        import importlib
+        import sys
+
+        mods_before = set(sys.modules.keys())
+        importlib.import_module("resume_ai.tailor")
+        importlib.import_module("resume_ai.cover_letter")
+        new_mods = set(sys.modules.keys()) - mods_before
+        assert not any("anthropic" in m for m in new_mods)
 
 
 class TestNetworkBlocked:
@@ -152,6 +159,3 @@ class TestEnvironment:
 
     def test_jobflow_test_db_set(self):
         assert os.environ.get("JOBFLOW_TEST_DB") == "1"
-
-    def test_anthropic_key_is_fake(self):
-        assert os.environ.get("ANTHROPIC_API_KEY") == "test-key-not-real"

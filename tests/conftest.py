@@ -7,9 +7,6 @@ This is because ``webapp/db.py`` runs ``init_db()`` at import time (line 723),
 which creates the database.  Setting ``JOBFLOW_TEST_DB=1`` first forces it to
 use an in-memory SQLite database instead of ``job_pipeline/jobs.db``.
 
-Similarly, ``ANTHROPIC_API_KEY`` must be set before the ``anthropic`` library
-is imported to prevent ``AuthenticationError`` during client instantiation.
-
 The ``# noqa: E402`` comments suppress ruff's "module-level import not at top
 of file" warning, which is expected here.
 """
@@ -19,7 +16,6 @@ import os
 
 # ── Environment setup (BEFORE any project imports) ────────────────────────
 os.environ["JOBFLOW_TEST_DB"] = "1"
-os.environ["ANTHROPIC_API_KEY"] = "test-key-not-real"
 
 import pytest  # noqa: E402
 
@@ -77,32 +73,26 @@ def _fresh_db():
 
 
 # ---------------------------------------------------------------------------
-# Autouse fixture 3: Block real Anthropic API calls
+# Autouse fixture 3: Block real Claude CLI subprocess calls
 # ---------------------------------------------------------------------------
 
 
 @pytest.fixture(autouse=True)
-def _block_anthropic(monkeypatch):
-    """Prevent accidental real Anthropic API calls during tests.
+def _block_cli(monkeypatch):
+    """Prevent accidental real Claude CLI subprocess calls during tests.
 
-    Patches ``Messages.create`` and ``Messages.parse`` to raise
-    ``RuntimeError`` with a descriptive message.  Tests that need to
-    simulate LLM responses should use the ``mock_anthropic`` fixture
-    from ``tests/resume_ai/conftest.py``, which overrides this guard.
+    Patches ``asyncio.create_subprocess_exec`` to raise ``RuntimeError``.
+    Tests that need to simulate CLI responses should use the ``mock_claude_cli``
+    fixture from ``tests/resume_ai/conftest.py`` or ``tests/claude_cli/conftest.py``.
     """
-    try:
-        import anthropic.resources.messages
 
-        def _blocked(*args, **kwargs):
-            raise RuntimeError(
-                "Test attempted real Anthropic API call to api.anthropic.com "
-                "-- use the mock_anthropic fixture instead"
-            )
+    async def _blocked(*args, **kwargs):
+        raise RuntimeError(
+            "Test attempted real Claude CLI subprocess call "
+            "-- use the mock_claude_cli fixture instead"
+        )
 
-        monkeypatch.setattr(anthropic.resources.messages.Messages, "create", _blocked)
-        monkeypatch.setattr(anthropic.resources.messages.Messages, "parse", _blocked)
-    except ImportError:
-        pass  # anthropic not installed -- nothing to block
+    monkeypatch.setattr("asyncio.create_subprocess_exec", _blocked)
 
 
 # ---------------------------------------------------------------------------

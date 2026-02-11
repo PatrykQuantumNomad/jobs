@@ -1,13 +1,13 @@
 """Unit tests for resume_ai/tailor.py -- tailor_resume and format_resume_as_text.
 
 Tests cover:
-- Successful resume tailoring via mocked Anthropic client
-- AuthenticationError and APIError handling
-- No parsed output handling
+- Successful resume tailoring via mocked Claude CLI subprocess
+- CLI error handling (non-zero exit code)
+- CLI not found handling
 - Plain-text formatting with ATS section headers
 """
 
-from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import pytest
 
@@ -39,63 +39,48 @@ def _make_tailored_resume() -> TailoredResume:
 
 @pytest.mark.unit
 class TestTailorResume:
-    """Verify tailor_resume() API interaction and error handling."""
+    """Verify tailor_resume() CLI interaction and error handling."""
 
-    def test_tailor_resume_success(self, mock_anthropic):
-        """tailor_resume returns TailoredResume when API succeeds."""
+    @pytest.mark.asyncio
+    async def test_tailor_resume_success(self, mock_claude_cli):
+        """tailor_resume returns TailoredResume when CLI succeeds."""
         expected = _make_tailored_resume()
-        mock_response = MagicMock()
-        mock_response.parsed_output = expected
-        mock_anthropic.messages.parse.return_value = mock_response
+        mock_claude_cli.set_response(expected)
 
-        result = tailor_resume("resume text", "job desc", "Engineer", "Acme")
+        result = await tailor_resume("resume text", "job desc", "Engineer", "Acme")
 
-        assert result is expected
-        mock_anthropic.messages.parse.assert_called_once()
-        call_kwargs = mock_anthropic.messages.parse.call_args.kwargs
-        assert call_kwargs["max_tokens"] == 4096
-        assert call_kwargs["temperature"] == 0
-        assert call_kwargs["system"] == SYSTEM_PROMPT
-        assert call_kwargs["output_format"] is TailoredResume
+        assert result == expected
+        assert result.professional_summary == expected.professional_summary
+        assert result.tailoring_notes == expected.tailoring_notes
 
-    def test_tailor_resume_auth_error_on_client_init(self, monkeypatch):
-        """tailor_resume raises RuntimeError with ANTHROPIC_API_KEY on AuthenticationError."""
-        import anthropic
+    @pytest.mark.asyncio
+    async def test_tailor_resume_cli_error(self, mock_claude_cli):
+        """tailor_resume raises RuntimeError when CLI exits with non-zero code."""
+        mock_claude_cli.set_error(returncode=1, stderr_text="Something went wrong")
 
-        monkeypatch.setattr(
-            anthropic,
-            "Anthropic",
-            MagicMock(
-                side_effect=anthropic.AuthenticationError(
-                    message="bad key",
-                    response=MagicMock(status_code=401),
-                    body=None,
-                )
-            ),
-        )
-        with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
-            tailor_resume("resume", "desc", "title", "company")
+        with pytest.raises(RuntimeError, match="Resume tailoring failed"):
+            await tailor_resume("resume", "desc", "title", "company")
 
-    def test_tailor_resume_api_error(self, mock_anthropic):
-        """tailor_resume raises RuntimeError on APIError during parse."""
-        import anthropic
+    @pytest.mark.asyncio
+    async def test_tailor_resume_cli_not_found(self):
+        """tailor_resume raises RuntimeError when claude binary is not on PATH."""
+        with (
+            patch("claude_cli.client.shutil.which", return_value=None),
+            pytest.raises(RuntimeError, match="Resume tailoring failed"),
+        ):
+            await tailor_resume("resume", "desc", "title", "company")
 
-        mock_anthropic.messages.parse.side_effect = anthropic.APIError(
-            message="server error",
-            request=MagicMock(),
-            body=None,
-        )
-        with pytest.raises(RuntimeError, match="Anthropic API error"):
-            tailor_resume("resume", "desc", "title", "company")
+    @pytest.mark.asyncio
+    async def test_system_prompt_passed(self, mock_claude_cli):
+        """Verify the anti-fabrication system prompt is used."""
+        expected = _make_tailored_resume()
+        mock_claude_cli.set_response(expected)
 
-    def test_tailor_resume_no_parsed_output(self, mock_anthropic):
-        """tailor_resume raises RuntimeError when parsed_output is None."""
-        mock_response = MagicMock()
-        mock_response.parsed_output = None
-        mock_anthropic.messages.parse.return_value = mock_response
+        await tailor_resume("resume text", "job desc", "Engineer", "Acme")
 
-        with pytest.raises(RuntimeError, match="no parsed output"):
-            tailor_resume("resume", "desc", "title", "company")
+        # System prompt should contain anti-fabrication rules
+        assert "MUST NOT" in SYSTEM_PROMPT
+        assert "fabricate" in SYSTEM_PROMPT.lower()
 
 
 @pytest.mark.unit
