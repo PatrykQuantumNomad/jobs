@@ -274,9 +274,8 @@ async def tailor_resume_endpoint(request: Request, dedup_key: str):
         # Extract original resume text
         resume_text = extract_resume_text(resume_path)
 
-        # Call LLM via thread to avoid blocking the event loop
-        tailored = await asyncio.to_thread(
-            tailor_resume,
+        # Call LLM (tailor_resume is natively async via claude_cli)
+        tailored = await tailor_resume(
             resume_text=resume_text,
             job_description=job["description"] or "",
             job_title=job["title"],
@@ -364,9 +363,8 @@ async def cover_letter_endpoint(request: Request, dedup_key: str):
         # Extract resume text
         resume_text = extract_resume_text(resume_path)
 
-        # Call LLM via thread to avoid blocking
-        letter = await asyncio.to_thread(
-            generate_cover_letter,
+        # Call LLM (generate_cover_letter is natively async via claude_cli)
+        letter = await generate_cover_letter(
             resume_text=resume_text,
             job_description=job["description"] or "",
             job_title=job["title"],

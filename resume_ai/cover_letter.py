@@ -1,11 +1,12 @@
-"""Cover letter generation via Anthropic structured outputs.
+"""Cover letter generation via Claude CLI structured outputs.
 
-Uses the Anthropic ``messages.parse()`` API to produce a :class:`CoverLetter`
-that connects the candidate's real experience to a specific role and company.
+Uses the ``claude_cli.run()`` async subprocess wrapper to produce a
+:class:`CoverLetter` that connects the candidate's real experience to a
+specific role and company.
 """
 
-import anthropic
-
+from claude_cli import run as cli_run
+from claude_cli.exceptions import CLIError
 from resume_ai.models import CoverLetter
 
 # ---------------------------------------------------------------------------
@@ -45,18 +46,18 @@ FORMATTING:
 - Sign off professionally.\
 """
 
-# Default model for cover letter generation
-DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
+# Default model alias for cover letter generation (CLI uses short aliases)
+DEFAULT_MODEL = "sonnet"
 
 
-def generate_cover_letter(
+async def generate_cover_letter(
     resume_text: str,
     job_description: str,
     job_title: str,
     company_name: str,
     model: str = DEFAULT_MODEL,
 ) -> CoverLetter:
-    """Generate a cover letter tailored to a specific job posting.
+    """Generate a cover letter tailored to a specific job posting via Claude CLI.
 
     Parameters
     ----------
@@ -69,7 +70,7 @@ def generate_cover_letter(
     company_name:
         The hiring company name.
     model:
-        Anthropic model ID.  Defaults to Claude Sonnet.
+        Claude CLI model alias.  Defaults to 'sonnet'.
 
     Returns
     -------
@@ -79,15 +80,8 @@ def generate_cover_letter(
     Raises
     ------
     RuntimeError
-        If the API key is missing/invalid or the API call fails.
+        If the Claude CLI is missing, not authenticated, or the call fails.
     """
-    try:
-        client = anthropic.Anthropic()
-    except anthropic.AuthenticationError as exc:
-        raise RuntimeError(
-            "ANTHROPIC_API_KEY not set or invalid. Add it to your .env file."
-        ) from exc
-
     user_message = (
         f"## Candidate Resume\n\n{resume_text}\n\n"
         f"## Job Description\n\n{job_description}\n\n"
@@ -97,28 +91,14 @@ def generate_cover_letter(
     )
 
     try:
-        response = client.messages.parse(
+        return await cli_run(
+            system_prompt=SYSTEM_PROMPT,
+            user_message=user_message,
+            output_model=CoverLetter,
             model=model,
-            max_tokens=2048,
-            temperature=0.3,
-            system=SYSTEM_PROMPT,
-            output_format=CoverLetter,
-            messages=[{"role": "user", "content": user_message}],
         )
-    except anthropic.AuthenticationError as exc:
-        raise RuntimeError(
-            "ANTHROPIC_API_KEY not set or invalid. Add it to your .env file."
-        ) from exc
-    except anthropic.APIError as exc:
-        raise RuntimeError(f"Anthropic API error during cover letter generation: {exc}") from exc
-
-    parsed = response.parsed_output
-    if parsed is None:
-        raise RuntimeError(
-            "Anthropic API returned no parsed output.  "
-            "The model may have refused or produced invalid JSON."
-        )
-    return parsed
+    except CLIError as exc:
+        raise RuntimeError(f"Cover letter generation failed: {exc}") from exc
 
 
 def format_cover_letter_as_text(letter: CoverLetter, candidate_name: str) -> str:
