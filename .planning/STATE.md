@@ -37,6 +37,7 @@ Progress: [██████████] 100% (8/8 plans)
 | 17-01 | 5 min | 2 | 6 | 569 (full suite) |
 | 17-02 | 3 min | 2 | 3 | 569 (full suite) |
 | 18-01 | 5 min | 2 | 4 | 575 (full suite) |
+| 19-01 | 4 min | 2 | 5 | 581 (full suite) |
 | 19-02 | 3 min | 1 | 4 | 575 (full suite) |
 
 ## Accumulated Context
@@ -63,6 +64,8 @@ Recent decisions affecting current work:
 - 17-02: Inline persisted score in job_detail.html (no include partial) to avoid extra request on page load
 - 18-01: Pre-render resume_diff.html in background task and embed in done event HTML
 - 18-01: Patch source modules (resume_ai.*) in tests since _run_resume_tailor uses lazy imports
+- 19-01: 3-stage cover letter pipeline (no validation stage unlike 4-stage resume tailor)
+- 19-01: Emerald-500 spinner and collapsible text preview in done event
 - 19-02: Historical/contextual SDK references in PROJECT.md preserved (requirements/decisions describe transition, not current state)
 - 19-02: config.yaml "anthropic" tech keyword preserved (legitimate technology name for job matching)
 
@@ -85,5 +88,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 19-02-PLAN.md (Documentation Update & SDK Cleanup). Phase 19-01 (SSE Cover Letter Pipeline) still pending.
+Stopped at: Completed 19-01-PLAN.md (SSE Cover Letter Pipeline). Phase 19 complete. v1.2 milestone complete (8/8 plans).
 Resume file: N/A
