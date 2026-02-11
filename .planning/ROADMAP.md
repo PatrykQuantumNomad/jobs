@@ -44,7 +44,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 **Milestone Goal:** Replace all Anthropic SDK API calls with Claude CLI agent subprocesses so AI features run on the user's Anthropic subscription instead of requiring a separate API key with per-token charges. Add SSE streaming for resume/cover letter generation and on-demand AI scoring.
 
 - [x] **Phase 16: CLI Wrapper Foundation** - Rock-solid subprocess abstraction for invoking Claude CLI with structured output (completed 2026-02-11)
-- [ ] **Phase 17: AI Scoring** - On-demand semantic job-fit analysis via CLI, stored alongside rule-based scores
+- [x] **Phase 17: AI Scoring** - On-demand semantic job-fit analysis via CLI, stored alongside rule-based scores (completed 2026-02-11)
 - [ ] **Phase 18: Resume Tailoring via CLI + SSE** - Convert resume generation from SDK to CLI with real-time SSE progress streaming
 - [ ] **Phase 19: Cover Letter via CLI + SSE & Cleanup** - Convert cover letter generation and finalize SDK removal with documentation
 
@@ -78,8 +78,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 17-01-PLAN.md -- AI scorer module (AIScoreResult model + score_job_ai function), database migration v7, unit tests
-- [ ] 17-02-PLAN.md -- Dashboard POST endpoint, htmx partial, job detail page UI with button and persisted score display
+- [x] 17-01-PLAN.md -- AI scorer module (AIScoreResult model + score_job_ai function), database migration v7, unit tests
+- [x] 17-02-PLAN.md -- Dashboard POST endpoint, htmx partial, job detail page UI with button and persisted score display
 
 ### Phase 18: Resume Tailoring via CLI + SSE
 **Goal**: Resume tailoring runs through Claude CLI instead of the Anthropic SDK and shows real-time SSE progress events during generation
@@ -136,6 +136,6 @@ Phases execute in numeric order: 16 -> 17 -> 18 -> 19
 | 14. CI Pipeline | v1.1 | 1/1 | Complete | 2026-02-08 |
 | 15. E2E Tests | v1.1 | 2/2 | Complete | 2026-02-08 |
 | 16. CLI Wrapper Foundation | v1.2 | 2/2 | Complete | 2026-02-11 |
-| 17. AI Scoring | v1.2 | 0/2 | Not started | - |
+| 17. AI Scoring | v1.2 | 2/2 | Complete | 2026-02-11 |
 | 18. Resume Tailoring via CLI + SSE | v1.2 | 0/2 | Not started | - |
 | 19. Cover Letter via CLI + SSE & Cleanup | v1.2 | 0/2 | Not started | - |
