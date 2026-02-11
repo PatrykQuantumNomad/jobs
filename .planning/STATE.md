@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** v1.2 Claude CLI Agent Integration -- Phase 18 (Resume Tailoring via CLI + SSE)
+**Current focus:** v1.2 Claude CLI Agent Integration -- Phase 19 (Cover Letter via CLI + SSE & Cleanup)
 
 ## Current Position
 
-Phase: 18 of 19 (Resume Tailoring via CLI + SSE)
-Plan: 1 of 1 in current phase (COMPLETE)
-Status: Phase 18 Complete
-Last activity: 2026-02-11 -- Completed 18-01 (SSE Resume Tailoring Pipeline)
+Phase: 19 of 19 (Cover Letter via CLI + SSE & Cleanup)
+Plan: 2 of 2 in current phase (COMPLETE)
+Status: Phase 19 Complete -- v1.2 Milestone Complete
+Last activity: 2026-02-11 -- Completed 19-01 (SSE Cover Letter Pipeline)
 
-Progress: [██████░░░░] 63% (5/8 plans)
+Progress: [██████████] 100% (8/8 plans)
 
 ## Performance Metrics
 
@@ -37,6 +37,7 @@ Progress: [██████░░░░] 63% (5/8 plans)
 | 17-01 | 5 min | 2 | 6 | 569 (full suite) |
 | 17-02 | 3 min | 2 | 3 | 569 (full suite) |
 | 18-01 | 5 min | 2 | 4 | 575 (full suite) |
+| 19-02 | 3 min | 1 | 4 | 575 (full suite) |
 
 ## Accumulated Context
 
@@ -62,6 +63,8 @@ Recent decisions affecting current work:
 - 17-02: Inline persisted score in job_detail.html (no include partial) to avoid extra request on page load
 - 18-01: Pre-render resume_diff.html in background task and embed in done event HTML
 - 18-01: Patch source modules (resume_ai.*) in tests since _run_resume_tailor uses lazy imports
+- 19-02: Historical/contextual SDK references in PROJECT.md preserved (requirements/decisions describe transition, not current state)
+- 19-02: config.yaml "anthropic" tech keyword preserved (legitimate technology name for job matching)
 
 ### Pending Todos
 
@@ -82,5 +85,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 18-01-PLAN.md (SSE Resume Tailoring Pipeline). Phase 18 complete. Ready for phase 19 (Cover Letter via CLI + SSE).
+Stopped at: Completed 19-02-PLAN.md (Documentation Update & SDK Cleanup). Phase 19-01 (SSE Cover Letter Pipeline) still pending.
 Resume file: N/A

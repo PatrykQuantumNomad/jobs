@@ -109,7 +109,7 @@ Plans:
 
 Plans:
 - [ ] 19-01-PLAN.md -- SSE cover letter pipeline (background task, SSE endpoints, htmx templates, tests)
-- [ ] 19-02-PLAN.md -- Documentation update (CLAUDE.md, architecture.md, INTEGRATIONS.md, PROJECT.md) and SDK cleanup verification
+- [x] 19-02-PLAN.md -- Documentation update (CLAUDE.md, architecture.md, INTEGRATIONS.md, PROJECT.md) and SDK cleanup verification
 
 ## Progress
 
@@ -137,4 +137,4 @@ Phases execute in numeric order: 16 -> 17 -> 18 -> 19
 | 16. CLI Wrapper Foundation | v1.2 | 2/2 | Complete | 2026-02-11 |
 | 17. AI Scoring | v1.2 | 2/2 | Complete | 2026-02-11 |
 | 18. Resume Tailoring via CLI + SSE | v1.2 | 1/1 | Complete | 2026-02-11 |
-| 19. Cover Letter via CLI + SSE & Cleanup | v1.2 | 0/2 | Not started | - |
+| 19. Cover Letter via CLI + SSE & Cleanup | v1.2 | 1/2 | In progress | - |
