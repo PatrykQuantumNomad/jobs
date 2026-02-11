@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-JobFlow is a Python application that automates the job search lifecycle across three platforms (Indeed, Dice, RemoteOK). The architecture follows a clean pipeline pattern: a **5-phase Orchestrator** coordinates platform-specific scrapers (Playwright for browser automation, httpx for APIs), runs jobs through a weighted scoring engine, persists everything in SQLite, and surfaces results through a FastAPI/htmx dashboard with real-time SSE. AI integration via Anthropic's Claude API handles resume tailoring and cover letter generation with a 3-layer anti-fabrication system. A macOS launchd scheduler enables daily unattended runs. The codebase uses Protocol-based polymorphism with a decorator registry for platforms, making it straightforward to add new job boards.
+JobFlow is a Python application that automates the job search lifecycle across three platforms (Indeed, Dice, RemoteOK). The architecture follows a clean pipeline pattern: a **5-phase Orchestrator** coordinates platform-specific scrapers (Playwright for browser automation, httpx for APIs), runs jobs through a weighted scoring engine, persists everything in SQLite, and surfaces results through a FastAPI/htmx dashboard with real-time SSE. AI integration via Claude CLI subprocess handles resume tailoring and cover letter generation with a 3-layer anti-fabrication system. A macOS launchd scheduler enables daily unattended runs. The codebase uses Protocol-based polymorphism with a decorator registry for platforms, making it straightforward to add new job boards.
 
 ### Bird's Eye View
 
@@ -25,7 +25,7 @@ Source: [02-high-level-architecture.mmd](./diagrams/02-high-level-architecture.m
 - Two operational modes share the same data layer (SQLite) -- pipeline writes, dashboard reads/writes
 - Browser platforms (Indeed, Dice) use persistent contexts with `playwright-stealth` for anti-detection
 - The Apply Engine bridges async FastAPI with synchronous Playwright via `threading.Event` + `asyncio.Queue`
-- AI features (resume/cover letter) are lazy-imported -- the dashboard works without `ANTHROPIC_API_KEY`
+- AI features (resume/cover letter) are lazy-imported -- the dashboard works without Claude CLI installed
 
 ---
 
@@ -55,7 +55,7 @@ Source: [04-component-dependency-graph.mmd](./diagrams/04-component-dependency-g
 - **No circular dependencies** -- the import chain is clean: `models` -> `protocols` -> `registry` -> platforms
 - **Three high fan-in modules** act as foundation: `models.py`, `config.py`, `webapp/db.py`
 - **Three orchestrators** with high fan-out: `orchestrator.py`, `webapp/app.py`, `apply_engine/engine.py`
-- AI modules use **lazy imports** from `app.py` to avoid loading Anthropic SDK at startup
+- AI modules use **lazy imports** from `app.py` to avoid loading AI dependencies at startup
 
 ---
 
@@ -172,7 +172,7 @@ Source: [13-ai-integration-map.mmd](./diagrams/13-ai-integration-map.mmd)
 **Key Insights:**
 
 - 3-layer anti-fabrication: prompt constraints -> Pydantic schema enforcement -> post-generation entity comparison
-- Uses Anthropic's `messages.parse()` for structured output (not JSON mode) -- Pydantic models define the schema
+- Uses Claude CLI subprocess with `--json-schema` for structured output -- Pydantic models define the schema
 - Temperature 0 for resumes (deterministic), 0.3 for cover letters (slight creativity)
 - The validator checks 170+ known tech keywords and uses regex to extract companies, metrics, and percentages
 
@@ -190,7 +190,7 @@ Source: [13-ai-integration-map.mmd](./diagrams/13-ai-integration-map.mmd)
 | **Documentation** | 🟡 | Excellent docstrings on all public APIs. Comprehensive CLAUDE.md. No standalone docs beyond README. |
 | **Security: Credentials** | ✅ | `.env` for secrets, `.gitignore` prevents commits. `validate_platform_credentials()` checks before use. |
 | **Security: Browser Sessions** | 🟡 | Persistent sessions stored in `browser_sessions/` (gitignored). No encryption at rest. Session theft = account access. |
-| **Security: API Keys** | 🟡 | `ANTHROPIC_API_KEY` loaded via env. Lazy-imported -- dashboard works without it. No rate limiting or cost tracking. |
+| **Security: API Keys** | 🟡 | Claude CLI invoked via subprocess. Lazy-imported -- dashboard works without it installed. Runs on user's Anthropic subscription (no separate API key needed). |
 | **Security: Dashboard** | 🔴 | **No authentication** on FastAPI. Localhost-only binding mitigates risk, but no auth if port-forwarded. |
 | **Technical Debt** | ✅ | Only 1 TODO/FIXME across the codebase. No legacy shims. No dead mounts. |
 | **Error Handling** | ✅ | Screenshots on selector failure. Structured error types in ApplyEngine. `_run_errors` tracked and recorded. |
@@ -225,7 +225,7 @@ Source: [13-ai-integration-map.mmd](./diagrams/13-ai-integration-map.mmd)
 
 4. ~~Remove the legacy `Config` class shim~~ -- **DONE.** Removed in technical debt cleanup (2026-02-08). All modules use `get_settings()` directly.
 
-5. **Add AI cost tracking:** The Anthropic API calls in `resume_ai/tailor.py` and `resume_ai/cover_letter.py` have no token counting or cost estimation. Since each tailored resume costs ~$0.01-0.10, adding `response.usage.input_tokens` / `output_tokens` logging to the `resume_versions` table would provide visibility into AI spend per job application.
+5. **Add AI cost tracking:** The Claude CLI subprocess calls in `resume_ai/tailor.py` and `resume_ai/cover_letter.py` run on the user's Anthropic subscription (no per-token API billing). Cost tracking is handled at the subscription level.
 
 ---
 

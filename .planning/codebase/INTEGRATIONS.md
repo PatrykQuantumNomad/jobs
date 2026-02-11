@@ -22,12 +22,12 @@
   - Endpoint: `https://remoteok.com/api`
 
 **AI/ML:**
-- Anthropic Claude - Resume tailoring via structured outputs
-  - SDK/Client: `anthropic>=0.79.0`
-  - Auth: ANTHROPIC_API_KEY (env var)
-  - Model: `claude-sonnet-4-5-20250929` (default)
-  - Usage: `resume_ai/tailor.py`, `resume_ai/cover_letter.py`
-  - API: `client.messages.parse()` for structured output
+- Anthropic Claude - Resume tailoring and cover letter generation via CLI subprocess
+  - Client: `claude_cli/` package (asyncio.create_subprocess_exec)
+  - Auth: Claude CLI authenticated via user's Anthropic subscription (no API key needed)
+  - Model: `sonnet` (CLI alias, resolves to latest Claude Sonnet)
+  - Usage: `resume_ai/tailor.py`, `resume_ai/cover_letter.py`, `ai_scorer.py`
+  - API: `claude_cli.run()` with `--json-schema` for structured output
 
 ## Data Storage
 
@@ -93,7 +93,6 @@
 - `INDEED_EMAIL` - Indeed account email (session-based Google auth)
 - `DICE_EMAIL` - Dice account email
 - `DICE_PASSWORD` - Dice account password
-- `ANTHROPIC_API_KEY` - Claude API key for resume AI features
 - Candidate profile fields: `CANDIDATE_FIRST_NAME`, `CANDIDATE_LAST_NAME`, `CANDIDATE_EMAIL`, etc. (20+ fields in `config.py`)
 
 **Secrets location:**

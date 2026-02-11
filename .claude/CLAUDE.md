@@ -2,7 +2,7 @@
 
 Self-hosted pipeline that scrapes job boards (Indeed, Dice, RemoteOK), scores matches against a candidate profile, manages listings through a web dashboard, generates AI-tailored resumes, and automates applications with configurable control levels. Single-user, local-only.
 
-**Stack:** Python 3.14, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), Pydantic v2 + pydantic-settings (YAML), Anthropic SDK, WeasyPrint, SSE via sse-starlette.
+**Stack:** Python 3.14, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), Pydantic v2 + pydantic-settings (YAML), Claude CLI (subprocess), WeasyPrint, SSE via sse-starlette.
 
 ## Commands
 
@@ -33,7 +33,7 @@ Five-phase pipeline (setup → login → search → score → apply) with plugga
 - `scorer.py` — Job scoring (1–5) with explainable breakdowns against candidate profile
 - `webapp/` — FastAPI dashboard with SQLite, htmx partials, SSE streaming for apply progress
 - `apply_engine/` — Background thread apply orchestration with SSE events and confirmation gates
-- `resume_ai/` — Anthropic structured outputs for resume tailoring, anti-fabrication validation
+- `resume_ai/` — Claude CLI structured outputs for resume tailoring, anti-fabrication validation
 - `config.py` — Pydantic settings loading from `config.yaml` (operational) + `.env` (secrets)
 - `models.py` — Pydantic v2 domain models (Job, SearchQuery, CandidateProfile)
 

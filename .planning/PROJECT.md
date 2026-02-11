@@ -95,7 +95,7 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 
 **v1.1 shipped:** 2026-02-08. 7 phases, 14 plans, 45 requirements. 5,639 lines of test code. 428 tests (417 unit/integration + 11 E2E). GitHub Actions CI with 80%+ coverage enforcement. Found and fixed 4 production bugs during test development.
 
-**Tech stack:** Python 3.14, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), pydantic-settings + YAML, Anthropic SDK (Claude), WeasyPrint, sse-starlette, Chart.js, SortableJS, pytest + factory-boy + respx + pytest-playwright
+**Tech stack:** Python 3.14, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), pydantic-settings + YAML, Claude CLI (subprocess), WeasyPrint, sse-starlette, Chart.js, SortableJS, pytest + factory-boy + respx + pytest-playwright
 
 **Known technical debt:**
 - CDN-loaded JS libraries (htmx, Chart.js, SortableJS) rather than bundled
