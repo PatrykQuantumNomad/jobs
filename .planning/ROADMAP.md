@@ -60,11 +60,11 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   3. The wrapper handles the --json-schema CLI regression (structured_output vs result field) transparently -- caller never sees raw JSON parsing issues
   4. The anthropic SDK package is no longer imported at runtime by any production code path
   5. Tests exist for all error paths (timeout, bad JSON, auth failure, CLI missing) using subprocess mocks
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 16-01: Core CLI subprocess wrapper with stream and run modes
-- [ ] 16-02: Error handling, typed exceptions, and SDK removal
+- [ ] 16-01-PLAN.md -- Build claude_cli/ package (exceptions, parser, client) with comprehensive tests
+- [ ] 16-02-PLAN.md -- Replace SDK in resume_ai, update webapp call sites, remove SDK dependency, update test infrastructure
 
 ### Phase 17: AI Scoring
 **Goal**: User can trigger a deep AI-powered job-fit analysis from the dashboard and see semantic score, reasoning, strengths, and gaps alongside the existing rule-based score
@@ -135,7 +135,7 @@ Phases execute in numeric order: 16 -> 17 -> 18 -> 19
 | 13. Config Integration Tests | v1.1 | 1/1 | Complete | 2026-02-08 |
 | 14. CI Pipeline | v1.1 | 1/1 | Complete | 2026-02-08 |
 | 15. E2E Tests | v1.1 | 2/2 | Complete | 2026-02-08 |
-| 16. CLI Wrapper Foundation | v1.2 | 0/2 | Not started | - |
+| 16. CLI Wrapper Foundation | v1.2 | 0/2 | Planned | - |
 | 17. AI Scoring | v1.2 | 0/2 | Not started | - |
 | 18. Resume Tailoring via CLI + SSE | v1.2 | 0/2 | Not started | - |
 | 19. Cover Letter via CLI + SSE & Cleanup | v1.2 | 0/2 | Not started | - |
