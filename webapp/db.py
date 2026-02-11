@@ -18,7 +18,7 @@ else:
 # Schema
 # ---------------------------------------------------------------------------
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS jobs (
@@ -141,6 +141,11 @@ MIGRATIONS: dict[int, list[str]] = {
             FOREIGN KEY (job_dedup_key) REFERENCES jobs(dedup_key)
         )""",
         "CREATE INDEX IF NOT EXISTS idx_resume_versions_job ON resume_versions(job_dedup_key)",
+    ],
+    7: [
+        "ALTER TABLE jobs ADD COLUMN ai_score INTEGER",
+        "ALTER TABLE jobs ADD COLUMN ai_score_breakdown TEXT",
+        "ALTER TABLE jobs ADD COLUMN ai_scored_at TEXT",
     ],
 }
 
@@ -487,6 +492,19 @@ def update_job_notes(dedup_key: str, notes: str) -> None:
             (notes, now, dedup_key),
         )
     log_activity(dedup_key, "note_added", detail=notes)
+
+
+def update_ai_score(dedup_key: str, score: int, breakdown: dict) -> None:
+    """Store AI score results for a job."""
+    now = datetime.now().isoformat()
+    with get_conn() as conn:
+        conn.execute(
+            """UPDATE jobs
+               SET ai_score = ?, ai_score_breakdown = ?, ai_scored_at = ?, updated_at = ?
+               WHERE dedup_key = ?""",
+            (score, json.dumps(breakdown), now, now, dedup_key),
+        )
+    log_activity(dedup_key, "ai_scored", new_value=str(score))
 
 
 # ---------------------------------------------------------------------------

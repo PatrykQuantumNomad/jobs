@@ -625,10 +625,10 @@ class TestSchemaInitialization:
         assert expected <= trigger_names
 
     def test_schema_version(self):
-        """PRAGMA user_version equals 6 after full migration."""
+        """PRAGMA user_version equals SCHEMA_VERSION after full migration."""
         conn = db_module.get_conn()
         version = conn.execute("PRAGMA user_version").fetchone()[0]
-        assert version == 6
+        assert version == db_module.SCHEMA_VERSION
 
     def test_init_db_idempotent(self):
         """Calling init_db() a second time raises no errors."""
@@ -648,7 +648,7 @@ class TestSchemaInitialization:
         db_module.migrate_db(conn)
 
         version = conn.execute("PRAGMA user_version").fetchone()[0]
-        assert version == 6
+        assert version == db_module.SCHEMA_VERSION
 
     def test_jobs_table_columns(self):
         """jobs table has all 28+ expected columns."""
