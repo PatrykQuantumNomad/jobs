@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 17 of 19 (AI Scoring)
-Plan: 1 of 2 in current phase
-Status: In Progress
-Last activity: 2026-02-11 -- Completed 17-01 (AI Scoring Backend)
+Plan: 2 of 2 in current phase (COMPLETE)
+Status: Phase 17 Complete
+Last activity: 2026-02-11 -- Completed 17-02 (Dashboard Endpoint)
 
-Progress: [███░░░░░░░] 37% (3/8 plans)
+Progress: [████░░░░░░] 50% (4/8 plans)
 
 ## Performance Metrics
 
@@ -35,6 +35,7 @@ Progress: [███░░░░░░░] 37% (3/8 plans)
 | 16-01 | 8 min | 2 | 9 | 31 |
 | 16-02 | 5 min | 2 | 9 | 563 (full suite) |
 | 17-01 | 5 min | 2 | 6 | 569 (full suite) |
+| 17-02 | 3 min | 2 | 3 | 569 (full suite) |
 
 ## Accumulated Context
 
@@ -56,6 +57,8 @@ Recent decisions affecting current work:
 - 17-01: Single-module ai_scorer.py at project root (not a package) -- feature is small enough
 - 17-01: mock_claude_cli fixture moved to root conftest for cross-module test availability
 - 17-01: Schema version test assertions use SCHEMA_VERSION constant instead of hardcoded integers
+- 17-02: Amber-600 button color for AI Analysis to differentiate from other sidebar buttons
+- 17-02: Inline persisted score in job_detail.html (no include partial) to avoid extra request on page load
 
 ### Pending Todos
 
@@ -76,5 +79,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 17-01-PLAN.md (AI Scoring Backend). Ready for 17-02 (Dashboard Endpoint).
+Stopped at: Completed 17-02-PLAN.md (Dashboard Endpoint). Phase 17 complete. Ready for phase 18 (AI Scoring Tests).
 Resume file: N/A
