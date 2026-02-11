@@ -75,11 +75,11 @@ Plans:
   2. After AI scoring completes, the job detail page displays AI score (1-5), reasoning text, matched strengths, and skill gaps -- separate from the rule-based score
   3. AI score results persist in the database and survive page reloads (ai_score, ai_score_breakdown, ai_scored_at columns)
   4. If the CLI call fails (timeout, auth, unavailable), the user sees a clear error message and the existing rule-based score remains unaffected
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 17-01: Database migration and AI scorer module
-- [ ] 17-02: Dashboard endpoint and UI for AI rescore
+- [ ] 17-01-PLAN.md -- AI scorer module (AIScoreResult model + score_job_ai function), database migration v7, unit tests
+- [ ] 17-02-PLAN.md -- Dashboard POST endpoint, htmx partial, job detail page UI with button and persisted score display
 
 ### Phase 18: Resume Tailoring via CLI + SSE
 **Goal**: Resume tailoring runs through Claude CLI instead of the Anthropic SDK and shows real-time SSE progress events during generation
