@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** v1.2 Claude CLI Agent Integration -- Phase 16 (CLI Wrapper Foundation)
+**Current focus:** v1.2 Claude CLI Agent Integration -- Phase 17 (Resume CLI Migration)
 
 ## Current Position
 
-Phase: 16 of 19 (CLI Wrapper Foundation)
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-02-11 -- Completed 16-01 (claude_cli package)
+Phase: 17 of 19 (Resume CLI Migration)
+Plan: 0 of 2 in current phase
+Status: Ready
+Last activity: 2026-02-11 -- Completed Phase 16 (CLI Wrapper Foundation)
 
-Progress: [█░░░░░░░░░] 12% (1/8 plans)
+Progress: [██░░░░░░░░] 25% (2/8 plans)
 
 ## Performance Metrics
 
@@ -33,6 +33,7 @@ Progress: [█░░░░░░░░░] 12% (1/8 plans)
 | Plan | Duration | Tasks | Files | Tests |
 |------|----------|-------|-------|-------|
 | 16-01 | 8 min | 2 | 9 | 31 |
+| 16-02 | 5 min | 2 | 9 | 563 (full suite) |
 
 ## Accumulated Context
 
@@ -48,6 +49,9 @@ Recent decisions affecting current work:
 - v1.2: Resilient JSON parser needed for CLI --json-schema regression (handle both structured_output and result fields)
 - 16-01: PEP 695 type parameters required by ruff UP047 on Python 3.14 target
 - 16-01: Separate except clauses needed to avoid ruff auto-fix breaking tuple-style multi-exception catches
+- 16-02: Wrap CLIError in RuntimeError at resume_ai boundary for webapp backward compatibility
+- 16-02: Use CLI model alias "sonnet" instead of full model ID (CLI resolves aliases)
+- 16-02: Controller pattern for mock_claude_cli fixture (set_response/set_error methods)
 
 ### Pending Todos
 
@@ -68,5 +72,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 16-01-PLAN.md (claude_cli package). Ready for 16-02 (SDK migration).
+Stopped at: Completed Phase 16 (16-02-PLAN.md SDK migration). Ready for Phase 17.
 Resume file: N/A

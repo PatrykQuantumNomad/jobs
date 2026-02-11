@@ -43,7 +43,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
 **Milestone Goal:** Replace all Anthropic SDK API calls with Claude CLI agent subprocesses so AI features run on the user's Anthropic subscription instead of requiring a separate API key with per-token charges. Add SSE streaming for resume/cover letter generation and on-demand AI scoring.
 
-- [ ] **Phase 16: CLI Wrapper Foundation** - Rock-solid subprocess abstraction for invoking Claude CLI with structured output
+- [x] **Phase 16: CLI Wrapper Foundation** - Rock-solid subprocess abstraction for invoking Claude CLI with structured output (completed 2026-02-11)
 - [ ] **Phase 17: AI Scoring** - On-demand semantic job-fit analysis via CLI, stored alongside rule-based scores
 - [ ] **Phase 18: Resume Tailoring via CLI + SSE** - Convert resume generation from SDK to CLI with real-time SSE progress streaming
 - [ ] **Phase 19: Cover Letter via CLI + SSE & Cleanup** - Convert cover letter generation and finalize SDK removal with documentation
@@ -64,7 +64,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
 Plans:
 - [x] 16-01-PLAN.md -- Build claude_cli/ package (exceptions, parser, client) with comprehensive tests
-- [ ] 16-02-PLAN.md -- Replace SDK in resume_ai, update webapp call sites, remove SDK dependency, update test infrastructure
+- [x] 16-02-PLAN.md -- Replace SDK in resume_ai, update webapp call sites, remove SDK dependency, update test infrastructure
 
 ### Phase 17: AI Scoring
 **Goal**: User can trigger a deep AI-powered job-fit analysis from the dashboard and see semantic score, reasoning, strengths, and gaps alongside the existing rule-based score
@@ -135,7 +135,7 @@ Phases execute in numeric order: 16 -> 17 -> 18 -> 19
 | 13. Config Integration Tests | v1.1 | 1/1 | Complete | 2026-02-08 |
 | 14. CI Pipeline | v1.1 | 1/1 | Complete | 2026-02-08 |
 | 15. E2E Tests | v1.1 | 2/2 | Complete | 2026-02-08 |
-| 16. CLI Wrapper Foundation | v1.2 | 1/2 | In Progress | - |
+| 16. CLI Wrapper Foundation | v1.2 | 2/2 | Complete | 2026-02-11 |
 | 17. AI Scoring | v1.2 | 0/2 | Not started | - |
 | 18. Resume Tailoring via CLI + SSE | v1.2 | 0/2 | Not started | - |
 | 19. Cover Letter via CLI + SSE & Cleanup | v1.2 | 0/2 | Not started | - |
