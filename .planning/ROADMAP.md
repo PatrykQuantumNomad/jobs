@@ -45,7 +45,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
 - [x] **Phase 16: CLI Wrapper Foundation** - Rock-solid subprocess abstraction for invoking Claude CLI with structured output (completed 2026-02-11)
 - [x] **Phase 17: AI Scoring** - On-demand semantic job-fit analysis via CLI, stored alongside rule-based scores (completed 2026-02-11)
-- [ ] **Phase 18: Resume Tailoring via CLI + SSE** - Convert resume generation from SDK to CLI with real-time SSE progress streaming
+- [x] **Phase 18: Resume Tailoring via CLI + SSE** - Convert resume generation from SDK to CLI with real-time SSE progress streaming (completed 2026-02-11)
 - [ ] **Phase 19: Cover Letter via CLI + SSE & Cleanup** - Convert cover letter generation and finalize SDK removal with documentation
 
 ## Phase Details
@@ -94,7 +94,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 18-01-PLAN.md -- SSE-backed resume tailoring pipeline (background task, SSE endpoints, htmx template, tests)
+- [x] 18-01-PLAN.md -- SSE-backed resume tailoring pipeline (background task, SSE endpoints, htmx template, tests)
 
 ### Phase 19: Cover Letter via CLI + SSE & Cleanup
 **Goal**: Cover letter generation runs through Claude CLI with SSE streaming, and all documentation reflects the new CLI prerequisite
@@ -136,5 +136,5 @@ Phases execute in numeric order: 16 -> 17 -> 18 -> 19
 | 15. E2E Tests | v1.1 | 2/2 | Complete | 2026-02-08 |
 | 16. CLI Wrapper Foundation | v1.2 | 2/2 | Complete | 2026-02-11 |
 | 17. AI Scoring | v1.2 | 2/2 | Complete | 2026-02-11 |
-| 18. Resume Tailoring via CLI + SSE | v1.2 | 0/1 | Not started | - |
+| 18. Resume Tailoring via CLI + SSE | v1.2 | 1/1 | Complete | 2026-02-11 |
 | 19. Cover Letter via CLI + SSE & Cleanup | v1.2 | 0/2 | Not started | - |

@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** v1.2 Claude CLI Agent Integration -- Phase 17 (AI Scoring)
+**Current focus:** v1.2 Claude CLI Agent Integration -- Phase 18 (Resume Tailoring via CLI + SSE)
 
 ## Current Position
 
-Phase: 17 of 19 (AI Scoring)
-Plan: 2 of 2 in current phase (COMPLETE)
-Status: Phase 17 Complete
-Last activity: 2026-02-11 -- Completed 17-02 (Dashboard Endpoint)
+Phase: 18 of 19 (Resume Tailoring via CLI + SSE)
+Plan: 1 of 1 in current phase (COMPLETE)
+Status: Phase 18 Complete
+Last activity: 2026-02-11 -- Completed 18-01 (SSE Resume Tailoring Pipeline)
 
-Progress: [████░░░░░░] 50% (4/8 plans)
+Progress: [██████░░░░] 63% (5/8 plans)
 
 ## Performance Metrics
 
@@ -36,6 +36,7 @@ Progress: [████░░░░░░] 50% (4/8 plans)
 | 16-02 | 5 min | 2 | 9 | 563 (full suite) |
 | 17-01 | 5 min | 2 | 6 | 569 (full suite) |
 | 17-02 | 3 min | 2 | 3 | 569 (full suite) |
+| 18-01 | 5 min | 2 | 4 | 575 (full suite) |
 
 ## Accumulated Context
 
@@ -59,6 +60,8 @@ Recent decisions affecting current work:
 - 17-01: Schema version test assertions use SCHEMA_VERSION constant instead of hardcoded integers
 - 17-02: Amber-600 button color for AI Analysis to differentiate from other sidebar buttons
 - 17-02: Inline persisted score in job_detail.html (no include partial) to avoid extra request on page load
+- 18-01: Pre-render resume_diff.html in background task and embed in done event HTML
+- 18-01: Patch source modules (resume_ai.*) in tests since _run_resume_tailor uses lazy imports
 
 ### Pending Todos
 
@@ -79,5 +82,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 17-02-PLAN.md (Dashboard Endpoint). Phase 17 complete. Ready for phase 18 (AI Scoring Tests).
+Stopped at: Completed 18-01-PLAN.md (SSE Resume Tailoring Pipeline). Phase 18 complete. Ready for phase 19 (Cover Letter via CLI + SSE).
 Resume file: N/A
