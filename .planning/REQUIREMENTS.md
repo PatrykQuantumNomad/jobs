@@ -68,27 +68,27 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLI-01 | — | Pending |
-| CLI-02 | — | Pending |
-| CLI-03 | — | Pending |
-| RES-01 | — | Pending |
-| RES-02 | — | Pending |
-| RES-03 | — | Pending |
-| RES-04 | — | Pending |
-| COV-01 | — | Pending |
-| COV-02 | — | Pending |
-| COV-03 | — | Pending |
-| SCR-01 | — | Pending |
-| SCR-02 | — | Pending |
-| SCR-03 | — | Pending |
-| CFG-01 | — | Pending |
-| CFG-02 | — | Pending |
+| CLI-01 | Phase 16 | Pending |
+| CLI-02 | Phase 16 | Pending |
+| CLI-03 | Phase 16 | Pending |
+| RES-01 | Phase 18 | Pending |
+| RES-02 | Phase 18 | Pending |
+| RES-03 | Phase 18 | Pending |
+| RES-04 | Phase 18 | Pending |
+| COV-01 | Phase 19 | Pending |
+| COV-02 | Phase 19 | Pending |
+| COV-03 | Phase 19 | Pending |
+| SCR-01 | Phase 17 | Pending |
+| SCR-02 | Phase 17 | Pending |
+| SCR-03 | Phase 17 | Pending |
+| CFG-01 | Phase 16 | Pending |
+| CFG-02 | Phase 19 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 16 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 16
+- v1.2 requirements: 15 total
+- Mapped to phases: 15/15
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-11*
-*Last updated: 2026-02-11 after initial definition*
+*Last updated: 2026-02-11 after roadmap creation*

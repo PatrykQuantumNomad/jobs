@@ -5,14 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** v1.2 Claude CLI Agent Integration
+**Current focus:** v1.2 Claude CLI Agent Integration -- Phase 16 (CLI Wrapper Foundation)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements for v1.2
-Last activity: 2026-02-11 — Milestone v1.2 started
+Phase: 16 of 19 (CLI Wrapper Foundation)
+Plan: 0 of 2 in current phase
+Status: Ready to plan
+Last activity: 2026-02-11 -- Roadmap created for v1.2 milestone (4 phases, 8 plans, 15 requirements)
+
+Progress: [░░░░░░░░░░] 0% (0/8 plans)
 
 ## Performance Metrics
 
@@ -32,11 +34,12 @@ Last activity: 2026-02-11 — Milestone v1.2 started
 
 All decisions logged in PROJECT.md Key Decisions table (17 entries across v1.0 + v1.1 + v1.2).
 
+Recent decisions affecting current work:
 - v1.2: Replace Anthropic SDK with Claude CLI subprocess for AI features (runs on subscription, no API key needed)
-- v1.2: CLI wrapper at top-level claude_cli.py (cross-cutting, not resume-specific)
-- v1.2: Sync subprocess.run wrapped in asyncio.to_thread (matches existing pattern)
+- v1.2: Use asyncio.create_subprocess_exec for CLI calls (not subprocess.run in to_thread) -- enables streaming
 - v1.2: AI scores stored as new columns on jobs table (not separate table)
-- v1.2: SSE streaming for resume/cover letter (upgrade from htmx spinner)
+- v1.2: SSE streaming for resume/cover letter follows apply_engine pattern (Queue + background task + EventSourceResponse)
+- v1.2: Resilient JSON parser needed for CLI --json-schema regression (handle both structured_output and result fields)
 
 ### Pending Todos
 
@@ -57,5 +60,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Milestone v1.2 initialization — requirements and roadmap being defined.
+Stopped at: Roadmap created for v1.2 milestone. Ready to plan Phase 16.
 Resume file: N/A
