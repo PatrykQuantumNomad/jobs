@@ -422,6 +422,80 @@ async def cover_letter_endpoint(request: Request, dedup_key: str):
         )
 
 
+@app.post("/jobs/{dedup_key:path}/ai-rescore", response_class=HTMLResponse)
+async def ai_rescore_endpoint(request: Request, dedup_key: str):
+    """Score a job using AI semantic analysis via Claude CLI."""
+    job = db.get_job(dedup_key)
+    if not job:
+        return HTMLResponse("<h1>Job not found</h1>", status_code=404)
+
+    # Guard: description must be substantial enough for analysis
+    description = job.get("description") or ""
+    if len(description.strip()) < 50:
+        return HTMLResponse(
+            '<div class="bg-yellow-50 border border-yellow-400 text-yellow-800 px-4 py-3 rounded">'
+            '<p class="font-bold">Cannot analyze</p>'
+            '<p class="text-sm">Job description is too short for AI analysis. '
+            "Try refreshing the job listing first.</p>"
+            "</div>"
+        )
+
+    try:
+        from ai_scorer import score_job_ai
+        from resume_ai.extractor import extract_resume_text
+
+        # Resolve resume path (same pattern as tailor_resume_endpoint)
+        resume_path = DEFAULT_RESUME_PATH
+        try:
+            from config import get_settings
+
+            settings = get_settings()
+            if settings.candidate_resume_path:
+                resume_path = settings.candidate_resume_path
+        except Exception:
+            pass
+
+        resume_text = extract_resume_text(resume_path)
+
+        # Call AI scorer (natively async via claude_cli)
+        result = await score_job_ai(
+            resume_text=resume_text,
+            job_description=description,
+            job_title=job["title"],
+            company_name=job["company"],
+        )
+
+        # Persist to database
+        breakdown = {
+            "reasoning": result.reasoning,
+            "strengths": result.strengths,
+            "gaps": result.gaps,
+        }
+        db.update_ai_score(dedup_key, result.score, breakdown)
+
+        # Return htmx partial
+        return templates.TemplateResponse(
+            request,
+            "partials/ai_score_result.html",
+            {
+                "score": result.score,
+                "reasoning": result.reasoning,
+                "strengths": result.strengths,
+                "gaps": result.gaps,
+                "scored_at": "just now",
+            },
+        )
+
+    except Exception as exc:
+        logger.exception("AI scoring failed for %s", dedup_key)
+        return HTMLResponse(
+            f'<div class="bg-red-50 border border-red-400 text-red-800 px-4 py-3 rounded">'
+            f'<p class="font-bold">AI Scoring Error</p>'
+            f'<p class="text-sm">{exc}</p>'
+            f"</div>"
+        )
+
+
 @app.get("/resumes/tailored/{filename:path}")
 async def serve_tailored_resume(filename: str):
     """Serve a generated resume or cover letter PDF for download."""
