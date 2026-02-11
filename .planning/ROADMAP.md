@@ -105,11 +105,11 @@ Plans:
   2. Cover letter PDF rendering and version tracking work unchanged
   3. CLAUDE.md, setup docs, and any README instructions reference Claude CLI as a prerequisite instead of Anthropic API key
   4. No production code imports or references the anthropic SDK (fully removed from runtime dependencies)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 19-01: Streaming cover letter generation with CLI subprocess
-- [ ] 19-02: Documentation update and SDK cleanup verification
+- [ ] 19-01-PLAN.md -- SSE cover letter pipeline (background task, SSE endpoints, htmx templates, tests)
+- [ ] 19-02-PLAN.md -- Documentation update (CLAUDE.md, architecture.md, INTEGRATIONS.md, PROJECT.md) and SDK cleanup verification
 
 ## Progress
 
