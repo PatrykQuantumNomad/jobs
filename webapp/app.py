@@ -416,34 +416,29 @@ async def resume_tailor_stream(request: Request, dedup_key: str):
     return EventSourceResponse(event_generator())
 
 
-@app.post("/jobs/{dedup_key:path}/cover-letter", response_class=HTMLResponse)
-async def cover_letter_endpoint(request: Request, dedup_key: str):
-    """Generate a cover letter for a specific job posting via LLM."""
-    job = db.get_job(dedup_key)
-    if not job:
-        return HTMLResponse("<h1>Job not found</h1>", status_code=404)
+_cover_sessions: dict[str, asyncio.Queue] = {}
+_cover_tasks: dict[str, asyncio.Task] = {}
+
+
+async def _run_cover_letter(
+    dedup_key: str, job: dict, resume_path: str, queue: asyncio.Queue
+) -> None:
+    """Background task: run the full cover letter pipeline with SSE progress events."""
+    from resume_ai.cover_letter import format_cover_letter_as_text, generate_cover_letter
+    from resume_ai.extractor import extract_resume_text
+    from resume_ai.renderer import render_cover_letter_pdf as _render_cover_letter_pdf
+    from resume_ai.tracker import save_resume_version as _save_cover_version
+
+    def _emit(event_type: str, message: str, html: str = "") -> None:
+        queue.put_nowait({"type": event_type, "message": message, "html": html})
 
     try:
-        from resume_ai.cover_letter import generate_cover_letter
-        from resume_ai.extractor import extract_resume_text
-        from resume_ai.renderer import render_cover_letter_pdf as _render_cover_letter_pdf
-        from resume_ai.tracker import save_resume_version as _save_cover_version
+        # Stage 1: Extract resume text
+        _emit("progress", "Extracting resume text...")
+        resume_text = await asyncio.to_thread(extract_resume_text, resume_path)
 
-        # Resolve resume path
-        resume_path = DEFAULT_RESUME_PATH
-        try:
-            from config import get_settings
-
-            settings = get_settings()
-            if settings.candidate_resume_path:
-                resume_path = settings.candidate_resume_path
-        except Exception:
-            pass
-
-        # Extract resume text
-        resume_text = extract_resume_text(resume_path)
-
-        # Call LLM (generate_cover_letter is natively async via claude_cli)
+        # Stage 2: Generate cover letter via Claude CLI
+        _emit("progress", "Generating cover letter...")
         letter = await generate_cover_letter(
             resume_text=resume_text,
             job_description=job["description"] or "",
@@ -451,21 +446,23 @@ async def cover_letter_endpoint(request: Request, dedup_key: str):
             company_name=job["company"],
         )
 
-        # Generate PDF
+        # Stage 3: Render PDF
+        _emit("progress", "Rendering PDF...")
         company_slug = job["company"].replace(" ", "_")[:30]
         filename = f"Patryk_Golabek_CoverLetter_{company_slug}_{date.today().isoformat()}.pdf"
         RESUMES_TAILORED_DIR.mkdir(parents=True, exist_ok=True)
         output_path = RESUMES_TAILORED_DIR / filename
 
-        _render_cover_letter_pdf(
+        await asyncio.to_thread(
+            _render_cover_letter_pdf,
             letter,
-            candidate_name="Patryk Golabek",
-            candidate_email="pgolabek@gmail.com",
-            candidate_phone="416-708-9839",
-            output_path=output_path,
+            "Patryk Golabek",
+            "pgolabek@gmail.com",
+            "416-708-9839",
+            output_path,
         )
 
-        # Track version
+        # Save version and log activity (fast sync, ok inline)
         _save_cover_version(
             job_dedup_key=dedup_key,
             resume_type="cover_letter",
@@ -473,33 +470,115 @@ async def cover_letter_endpoint(request: Request, dedup_key: str):
             original_resume_path=str(resume_path),
             model_used="claude-sonnet-4-5-20250929",
         )
-
-        # Log activity
         db.log_activity(
             dedup_key, "cover_letter_generated", detail=f"Generated cover letter: {filename}"
         )
 
-        return HTMLResponse(
-            '<div class="bg-green-50 border border-green-400'
-            ' text-green-800 px-4 py-3 rounded mb-4">'
-            '<p class="text-sm font-medium">'
-            "Cover letter generated successfully</p>"
-            "</div>"
-            f'<a href="/resumes/tailored/{filename}" '
-            'class="inline-block bg-emerald-600 text-white'
-            " px-4 py-2 rounded text-sm"
-            ' hover:bg-emerald-700" '
-            f"download>Download Cover Letter ({filename})</a>"
+        # Build final result HTML
+        letter_preview = format_cover_letter_as_text(letter, "Patryk Golabek")
+        result_html = templates.get_template("partials/cover_letter_result.html").render(
+            download_url=f"/resumes/tailored/{filename}",
+            filename=filename,
+            letter_preview=letter_preview,
         )
 
+        _emit("done", "Cover letter generated successfully", html=result_html)
+
+    except asyncio.CancelledError:
+        _emit("done", "Generation cancelled")
+        raise
     except Exception as exc:
         logger.exception("Cover letter generation failed for %s", dedup_key)
+        _emit("error", f"Cover letter generation failed: {exc}")
+        _emit("done", "")
+
+
+@app.post("/jobs/{dedup_key:path}/cover-letter", response_class=HTMLResponse)
+async def cover_letter_endpoint(request: Request, dedup_key: str):
+    """Trigger cover letter generation via SSE -- returns an SSE-connect div immediately."""
+    job = db.get_job(dedup_key)
+    if not job:
+        return HTMLResponse("<h1>Job not found</h1>", status_code=404)
+
+    # Double-click protection
+    if dedup_key in _cover_sessions:
         return HTMLResponse(
-            f'<div class="bg-red-50 border border-red-400 text-red-800 px-4 py-3 rounded">'
-            f'<p class="font-bold">Error</p>'
-            f'<p class="text-sm">{exc}</p>'
-            f"</div>"
+            '<div class="text-sm text-amber-700 bg-amber-50 border border-amber-300'
+            ' px-4 py-3 rounded">'
+            "Cover letter generation already in progress..."
+            "</div>"
         )
+
+    # Resolve resume path
+    resume_path = DEFAULT_RESUME_PATH
+    try:
+        from config import get_settings
+
+        settings = get_settings()
+        if settings.candidate_resume_path:
+            resume_path = settings.candidate_resume_path
+    except Exception:
+        pass  # Fall back to default
+
+    # Create queue and start background task
+    queue: asyncio.Queue = asyncio.Queue()
+    _cover_sessions[dedup_key] = queue
+    task = asyncio.create_task(_run_cover_letter(dedup_key, job, resume_path, queue))
+    _cover_tasks[dedup_key] = task
+
+    # Return SSE-connect HTML
+    encoded_key = urllib.parse.quote(dedup_key, safe="")
+    return HTMLResponse(
+        f'<div hx-ext="sse"'
+        f' sse-connect="/jobs/{encoded_key}/cover-letter/stream"'
+        f' sse-swap="progress"'
+        f' sse-close="done">'
+        f'  <div class="flex items-center gap-2 py-2">'
+        f'    <div class="animate-spin h-4 w-4 border-2 border-emerald-500'
+        f' border-t-transparent rounded-full"></div>'
+        f'    <span class="text-sm text-gray-500">Starting cover letter generation...</span>'
+        f"  </div>"
+        f"</div>"
+    )
+
+
+@app.get("/jobs/{dedup_key:path}/cover-letter/stream")
+async def cover_letter_stream(request: Request, dedup_key: str):
+    """SSE endpoint streaming real-time cover letter generation progress."""
+    from sse_starlette import EventSourceResponse
+
+    queue = _cover_sessions.get(dedup_key)
+    if queue is None:
+        return HTMLResponse(
+            "<p class='text-red-600 text-sm'>No active cover letter session</p>",
+            status_code=404,
+        )
+
+    async def event_generator():
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=15)
+                    event_type = event.get("type", "progress")
+                    html = templates.get_template("partials/cover_letter_status.html").render(
+                        event=event, dedup_key=dedup_key
+                    )
+                    yield {"event": event_type, "data": html}
+                    if event_type == "done":
+                        break
+                except TimeoutError:
+                    yield {"event": "ping", "data": ""}
+        except asyncio.CancelledError:
+            pass
+        finally:
+            _cover_sessions.pop(dedup_key, None)
+            task = _cover_tasks.pop(dedup_key, None)
+            if task and not task.done():
+                task.cancel()
+
+    return EventSourceResponse(event_generator())
 
 
 @app.post("/jobs/{dedup_key:path}/ai-rescore", response_class=HTMLResponse)
