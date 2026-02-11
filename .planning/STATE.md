@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** v1.2 Claude CLI Agent Integration -- Phase 17 (Resume CLI Migration)
+**Current focus:** v1.2 Claude CLI Agent Integration -- Phase 17 (AI Scoring)
 
 ## Current Position
 
-Phase: 17 of 19 (Resume CLI Migration)
-Plan: 0 of 2 in current phase
-Status: Ready
-Last activity: 2026-02-11 -- Completed Phase 16 (CLI Wrapper Foundation)
+Phase: 17 of 19 (AI Scoring)
+Plan: 1 of 2 in current phase
+Status: In Progress
+Last activity: 2026-02-11 -- Completed 17-01 (AI Scoring Backend)
 
-Progress: [██░░░░░░░░] 25% (2/8 plans)
+Progress: [███░░░░░░░] 37% (3/8 plans)
 
 ## Performance Metrics
 
@@ -34,6 +34,7 @@ Progress: [██░░░░░░░░] 25% (2/8 plans)
 |------|----------|-------|-------|-------|
 | 16-01 | 8 min | 2 | 9 | 31 |
 | 16-02 | 5 min | 2 | 9 | 563 (full suite) |
+| 17-01 | 5 min | 2 | 6 | 569 (full suite) |
 
 ## Accumulated Context
 
@@ -52,6 +53,9 @@ Recent decisions affecting current work:
 - 16-02: Wrap CLIError in RuntimeError at resume_ai boundary for webapp backward compatibility
 - 16-02: Use CLI model alias "sonnet" instead of full model ID (CLI resolves aliases)
 - 16-02: Controller pattern for mock_claude_cli fixture (set_response/set_error methods)
+- 17-01: Single-module ai_scorer.py at project root (not a package) -- feature is small enough
+- 17-01: mock_claude_cli fixture moved to root conftest for cross-module test availability
+- 17-01: Schema version test assertions use SCHEMA_VERSION constant instead of hardcoded integers
 
 ### Pending Todos
 
@@ -72,5 +76,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed Phase 16 (16-02-PLAN.md SDK migration). Ready for Phase 17.
+Stopped at: Completed 17-01-PLAN.md (AI Scoring Backend). Ready for 17-02 (Dashboard Endpoint).
 Resume file: N/A
