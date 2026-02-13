@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-11)
+See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** Planning next milestone
+**Current focus:** v1.3 Project Showcase Site
 
 ## Current Position
 
-Phase: 19 of 19 (all milestones complete)
-Plan: N/A
-Status: Ready for next milestone
-Last activity: 2026-02-11 -- v1.2 milestone complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-13 — Milestone v1.3 started
 
-Progress: [██████████] 100% (all 3 milestones shipped)
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -64,6 +64,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-11
-Stopped at: v1.2 milestone archived. All 3 milestones shipped (v1.0, v1.1, v1.2). Ready for next milestone.
+Last session: 2026-02-13
+Stopped at: Milestone v1.3 started. Defining requirements for GitHub Pages project showcase site.
 Resume file: N/A

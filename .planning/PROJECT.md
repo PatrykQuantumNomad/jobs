@@ -64,7 +64,18 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 
 ### Active
 
-(None -- planning next milestone)
+## Current Milestone: v1.3 Project Showcase Site
+
+**Goal:** A professional, marketing-forward GitHub Pages site that showcases JobFlow as a portfolio centerpiece — feature highlights, screenshots, tech stack, architecture, and quick start guide.
+
+**Target features:**
+- Marketing landing page with hero, stats, and CTAs
+- Feature showcase sections with dashboard/kanban/AI screenshots
+- Demo/video walkthrough section
+- Tech stack and architecture deep-dive
+- Quick start setup guide
+- GitHub Actions deployment to GitHub Pages
+- Unique professional identity (blues/grays, clean, enterprise-feeling)
 
 ### Out of Scope
 
@@ -86,6 +97,8 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 **v1.1 shipped:** 2026-02-08. 7 phases, 14 plans, 45 requirements. 5,639 lines of test code. 428 tests (417 unit/integration + 11 E2E). GitHub Actions CI with 80%+ coverage enforcement. Found and fixed 4 production bugs during test development.
 
 **v1.2 shipped:** 2026-02-11. 4 phases, 7 plans, 15 requirements. Replaced Anthropic SDK with Claude CLI subprocess for all AI features. Added on-demand AI scoring, SSE streaming for resume/cover letter. 18 new tests (563 -> 581). Zero production files import anthropic SDK.
+
+**v1.3 started:** 2026-02-13. GitHub Pages project showcase site. Astro-based, marketing-forward with docs support. Same repo under `/site`.
 
 **Tech stack:** Python 3.14, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), pydantic-settings + YAML, Claude CLI (subprocess with structured output), WeasyPrint, sse-starlette, Chart.js, SortableJS, pytest + factory-boy + respx + pytest-playwright
 
@@ -136,5 +149,9 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 | CLIError -> RuntimeError at boundary | Backward compatibility with webapp's generic exception handler | ✓ Good |
 | Single-module ai_scorer.py | Feature is small enough, parallels existing scorer.py | ✓ Good |
 
+| Astro for site (not Starlight) | Marketing-forward, not docs-heavy; custom components over framework constraints | — Pending |
+| Same-repo /site folder | One repo, GitHub Pages from subfolder, simpler maintenance | — Pending |
+| Blues/grays professional palette | Unique identity distinct from personal site (orange) and networking-tools (dark orange) | — Pending |
+
 ---
-*Last updated: 2026-02-11 after v1.2 milestone*
+*Last updated: 2026-02-13 after v1.3 milestone start*
