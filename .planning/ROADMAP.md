@@ -156,7 +156,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 24-01-PLAN.md — NavBar with smooth scroll anchor links + TerminalDemo with typing animation
+- [x] 24-01-PLAN.md — NavBar with smooth scroll anchor links + TerminalDemo with typing animation
 - [ ] 24-02-PLAN.md — Scroll-triggered fade-in animations via IntersectionObserver + CSS transitions
 
 **Success Criteria:**
@@ -193,4 +193,4 @@ Plans:
 | 21. Core Sections and Responsive Design | v1.3 | 2/2 | Complete | 2026-02-13 |
 | 22. Engineering Depth Sections | v1.3 | 2/2 | Complete | 2026-02-13 |
 | 23. CI/CD, Deployment, and Dark Mode | v1.3 | 3/3 | Complete | 2026-02-13 |
-| 24. Polish and Animations | v1.3 | 0/2 | Pending | -- |
+| 24. Polish and Animations | v1.3 | 1/2 | In Progress | 2026-02-13 |

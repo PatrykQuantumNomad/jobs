@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 ## Current Position
 
-Phase: 23 -- CI/CD, Deployment, and Dark Mode COMPLETE
-Plan: 23-03 COMPLETE (3/3 plans)
-Status: Phase 23 complete. GitHub Pages deployed, dark mode verified, workflow isolation working. Ready for Phase 24.
-Last activity: 2026-02-13 -- Completed 23-03 (Deployment verification)
+Phase: 24 -- Polish and Animations IN PROGRESS
+Plan: 24-01 COMPLETE (1/2 plans)
+Status: Plan 01 complete (NavBar + TerminalDemo). Plan 02 remaining.
+Last activity: 2026-02-13 -- Completed 24-01 (NavBar and Terminal Animation)
 
-Progress: [████████░░] 80% (4/5 phases)
+Progress: [█████████░] 90% (4.5/5 phases)
 
 ### v1.3 Phase Overview
 
@@ -23,8 +23,8 @@ Progress: [████████░░] 80% (4/5 phases)
 | 20 | Foundation and Configuration | 8 | Complete |
 | 21 | Core Sections and Responsive Design | 7 | Complete |
 | 22 | Engineering Depth Sections | 4 | Complete |
-| 23 | CI/CD, Deployment, and Dark Mode | 7 | In Progress (2/3) |
-| 24 | Polish and Animations | 3 | Pending |
+| 23 | CI/CD, Deployment, and Dark Mode | 7 | Complete |
+| 24 | Polish and Animations | 3 | In Progress (1/2) |
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ Progress: [████████░░] 80% (4/5 phases)
 | 23-01 | 3 min | 2 | 6 |
 | 23-02 | 5 min | 2 | 12 |
 | 23-03 | 5 min | 3 | 0 |
+| 24-01 | 3 min | 2 | 5 |
 
 ## Accumulated Context
 
@@ -95,6 +96,10 @@ v1.3 decisions:
 - Two theme scripts: is:inline for FOUC prevention, non-inline for astro:after-swap
 - ThemeToggle fixed top-right z-50 for always-visible theme switching
 - Deployment verification as separate checkpoint plan (not part of implementation plan)
+- ThemeToggle moved into NavBar (not floating separately)
+- No mobile hamburger menu -- single-page site, mobile users scroll naturally
+- Terminal always dark-themed regardless of page theme
+- Custom IntersectionObserver typing animation (not typed.js) for terminal demo
 
 ### Pending Todos
 
@@ -104,7 +109,7 @@ None.
 
 - Screenshot capture workflow not specified (need running app for dashboard/kanban/analytics screenshots)
 - OG image creation tool not decided (Figma, Canva, or screenshot + crop)
-- Terminal animation implementation approach TBD (typed.js vs custom -- Phase 24)
+- Terminal animation: resolved -- custom IntersectionObserver + per-character typing (no typed.js dependency)
 
 ### Quick Tasks Completed
 
@@ -117,5 +122,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed Phase 23 (CI/CD, Deployment, and Dark Mode). Ready for Phase 24.
-Resume file: .planning/phases/
+Stopped at: Completed 24-01 (NavBar and Terminal Animation). Plan 24-02 remaining.
+Resume file: .planning/phases/24-polish-and-animations/
