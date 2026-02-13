@@ -1,0 +1,87 @@
+---
+const milestones = [
+  {
+    version: "v1.0",
+    title: "MVP",
+    date: "Feb 8, 2026",
+    stats: "6,705 LOC | 8 phases | 24 plans",
+    description:
+      "Full pipeline: scrape, score, dashboard, AI resume, apply.",
+    features: [
+      "Multi-platform scraping",
+      "Scoring engine",
+      "Web dashboard",
+      "AI resume tailoring",
+      "One-click apply",
+    ],
+  },
+  {
+    version: "v1.1",
+    title: "Test Suite",
+    date: "Feb 8, 2026",
+    stats: "5,639 test LOC | 428 tests | 80%+ coverage",
+    description:
+      "Comprehensive test infrastructure with CI pipeline.",
+    features: [
+      "Unit tests",
+      "Integration tests",
+      "E2E browser tests",
+      "GitHub Actions CI",
+    ],
+  },
+  {
+    version: "v1.2",
+    title: "Claude CLI",
+    date: "Feb 11, 2026",
+    stats: "581 tests | 15 requirements | 7 plans",
+    description:
+      "Replaced SDK with Claude CLI subprocess for all AI features.",
+    features: [
+      "Claude CLI wrapper",
+      "AI scoring",
+      "SSE streaming",
+      "Anti-fabrication validation",
+    ],
+  },
+];
+---
+
+<section id="timeline" class="py-20 bg-surface-50">
+  <div class="max-w-3xl mx-auto px-4">
+    <h2 class="font-display text-3xl font-bold text-surface-900 text-center">
+      Built in Public
+    </h2>
+    <p class="mt-3 text-surface-600 text-center max-w-2xl mx-auto">
+      From MVP to production in one week
+    </p>
+
+    <div class="mt-12 border-l-2 border-primary-200 ml-4 space-y-12">
+      {milestones.map((milestone) => (
+        <div class="relative pl-8">
+          <span class="absolute -left-4 top-0 bg-primary-600 text-white rounded-full px-3 py-1 text-sm font-display font-bold">
+            {milestone.version}
+          </span>
+          <div class="pt-1">
+            <h3 class="font-display text-xl font-semibold text-surface-900">
+              {milestone.title}
+            </h3>
+            <p class="mt-1 text-sm text-surface-500">{milestone.date}</p>
+            <p class="mt-1 text-sm text-surface-500 font-mono">
+              {milestone.stats}
+            </p>
+            <p class="mt-3 text-surface-600 leading-relaxed">
+              {milestone.description}
+            </p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              {milestone.features.map((feature) => (
+                <span class="bg-primary-50 text-primary-700 rounded-full px-2 py-0.5 text-xs">
+                  {feature}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
