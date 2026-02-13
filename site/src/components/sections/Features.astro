@@ -68,7 +68,7 @@ const features = [
 ];
 ---
 
-<section id="features" class="py-20 bg-white dark:bg-surface-950">
+<section id="features" data-animate class="py-20 bg-white dark:bg-surface-950">
   <div class="max-w-6xl mx-auto px-4">
     <h2 class="font-display text-3xl font-bold text-surface-900 dark:text-surface-50 text-center">
       What It Does
@@ -96,3 +96,31 @@ const features = [
     </div>
   </div>
 </section>
+
+<script>
+function initScrollAnimations() {
+  const prefersReducedMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)'
+  ).matches;
+  if (prefersReducedMotion) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-in');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+  );
+
+  document.querySelectorAll('[data-animate]').forEach((el) => {
+    observer.observe(el);
+  });
+}
+
+initScrollAnimations();
+document.addEventListener('astro:page-load', initScrollAnimations);
+</script>
