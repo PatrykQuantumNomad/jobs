@@ -110,8 +110,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 22-01-PLAN.md — Architecture pipeline diagram and Code Snippets with Shiki syntax highlighting
-- [ ] 22-02-PLAN.md — Timeline, QuickStart, and full page composition with all 9 sections
+- [x] 22-01-PLAN.md — Architecture pipeline diagram and Code Snippets with Shiki syntax highlighting
+- [x] 22-02-PLAN.md — Timeline, QuickStart, and full page composition with all 9 sections
 
 **Success Criteria:**
 1. An architecture/pipeline section visually communicates the 5-phase flow (setup, login, search, score, apply) as a diagram or visual sequence
@@ -178,6 +178,6 @@ Plans:
 | 19. Cover Letter via CLI + SSE & Cleanup | v1.2 | 2/2 | Complete | 2026-02-11 |
 | 20. Foundation and Configuration | v1.3 | 1/1 | Complete | 2026-02-13 |
 | 21. Core Sections and Responsive Design | v1.3 | 2/2 | Complete | 2026-02-13 |
-| 22. Engineering Depth Sections | v1.3 | 0/? | Pending | — |
+| 22. Engineering Depth Sections | v1.3 | 2/2 | Complete | 2026-02-13 |
 | 23. CI/CD, Deployment, and Dark Mode | v1.3 | 0/? | Pending | — |
 | 24. Polish and Animations | v1.3 | 0/? | Pending | — |
