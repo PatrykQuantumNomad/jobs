@@ -46,6 +46,33 @@ const absoluteImageURL = new URL(image, Astro.site);
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={absoluteImageURL} />
 
+    <!-- Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "JobFlow",
+      "description": "Self-hosted pipeline that scrapes job boards, scores matches against your profile, and automates applications with human-in-the-loop safety.",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Linux, macOS, Windows",
+      "url": "https://patrykgolabek.github.io/jobs/",
+      "author": {
+        "@type": "Person",
+        "name": "Patryk Golabek",
+        "url": "https://patrykgolabek.dev"
+      },
+      "softwareVersion": "1.2",
+      "license": "https://opensource.org/licenses/MIT",
+      "featureList": [
+        "Multi-platform job scraping (Indeed, Dice, RemoteOK)",
+        "AI-powered job scoring with Claude CLI",
+        "Resume tailoring with anti-fabrication validation",
+        "Web dashboard with real-time SSE updates",
+        "Human-in-the-loop application automation"
+      ],
+      "runtimePlatform": "Python 3.14",
+      "downloadUrl": "https://github.com/patrykgolabek/jobs"
+    })} />
+
     <ClientRouter />
   </head>
   <body class="bg-surface-50 text-surface-900 font-sans antialiased">
