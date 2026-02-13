@@ -90,25 +90,25 @@ Requirements for the GitHub Pages project showcase site. Each maps to roadmap ph
 | SETUP-03 | Phase 20 | Pending |
 | SETUP-04 | Phase 20 | Pending |
 | SETUP-05 | Phase 20 | Pending |
+| DSGN-01 | Phase 20 | Pending |
+| SEO-01 | Phase 20 | Pending |
+| SEO-02 | Phase 20 | Pending |
 | CONT-01 | Phase 21 | Pending |
 | CONT-02 | Phase 21 | Pending |
 | CONT-03 | Phase 21 | Pending |
 | CONT-04 | Phase 21 | Pending |
+| CONT-09 | Phase 21 | Pending |
+| DSGN-02 | Phase 21 | Pending |
+| DSGN-04 | Phase 21 | Pending |
 | CONT-05 | Phase 22 | Pending |
 | CONT-06 | Phase 22 | Pending |
 | CONT-07 | Phase 22 | Pending |
 | CONT-08 | Phase 22 | Pending |
-| CONT-09 | Phase 21 | Pending |
-| DSGN-01 | Phase 20 | Pending |
-| DSGN-02 | Phase 21 | Pending |
-| DSGN-03 | Phase 23 | Pending |
-| DSGN-04 | Phase 21 | Pending |
 | DPLY-01 | Phase 23 | Pending |
 | DPLY-02 | Phase 23 | Pending |
 | DPLY-03 | Phase 23 | Pending |
 | DPLY-04 | Phase 23 | Pending |
-| SEO-01 | Phase 20 | Pending |
-| SEO-02 | Phase 20 | Pending |
+| DSGN-03 | Phase 23 | Pending |
 | SEO-03 | Phase 23 | Pending |
 | SEO-04 | Phase 23 | Pending |
 | PLSH-01 | Phase 24 | Pending |
@@ -118,8 +118,8 @@ Requirements for the GitHub Pages project showcase site. Each maps to roadmap ph
 **Coverage:**
 - v1.3 requirements: 29 total
 - Mapped to phases: 29
-- Unmapped: 0 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-13*
-*Last updated: 2026-02-13 after initial definition*
+*Last updated: 2026-02-13 after roadmap creation*

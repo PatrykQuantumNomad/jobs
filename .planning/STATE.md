@@ -5,16 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** v1.3 Project Showcase Site
+**Current focus:** v1.3 Project Showcase Site -- GitHub Pages marketing landing page showcasing JobFlow as a portfolio centerpiece.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-13 — Milestone v1.3 started
+Phase: 20 -- Foundation and Configuration
+Plan: Not yet planned
+Status: Roadmap created, awaiting phase planning
+Last activity: 2026-02-13 -- Roadmap created for v1.3 (5 phases, 29 requirements)
 
 Progress: [░░░░░░░░░░] 0%
+
+### v1.3 Phase Overview
+
+| Phase | Name | Requirements | Status |
+|-------|------|-------------|--------|
+| 20 | Foundation and Configuration | 8 | Pending |
+| 21 | Core Sections and Responsive Design | 7 | Pending |
+| 22 | Engineering Depth Sections | 4 | Pending |
+| 23 | CI/CD, Deployment, and Dark Mode | 7 | Pending |
+| 24 | Polish and Animations | 3 | Pending |
 
 ## Performance Metrics
 
@@ -44,7 +54,12 @@ Progress: [░░░░░░░░░░] 0%
 
 ### Decisions
 
-All decisions logged in PROJECT.md Key Decisions table (23 entries across v1.0 + v1.1 + v1.2).
+All decisions logged in PROJECT.md Key Decisions table (23 entries across v1.0 + v1.1 + v1.2, plus 3 pending for v1.3).
+
+v1.3 pending decisions:
+- Astro for site (not Starlight) -- marketing-forward, not docs-heavy
+- Same-repo /site folder -- one repo, GitHub Pages from subfolder
+- Blues/grays professional palette -- distinct from personal site (orange) and networking-tools (dark orange)
 
 ### Pending Todos
 
@@ -52,7 +67,9 @@ None.
 
 ### Blockers/Concerns
 
-None.
+- Screenshot capture workflow not specified (need running app for dashboard/kanban/analytics screenshots)
+- OG image creation tool not decided (Figma, Canva, or screenshot + crop)
+- Terminal animation implementation approach TBD (typed.js vs custom -- Phase 24)
 
 ### Quick Tasks Completed
 
@@ -65,5 +82,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Milestone v1.3 started. Defining requirements for GitHub Pages project showcase site.
-Resume file: N/A
+Stopped at: Roadmap created for v1.3 milestone. 5 phases (20-24), 29 requirements mapped. Ready for phase 20 planning.
+Resume file: .planning/ROADMAP.md -- Phase 20: Foundation and Configuration
