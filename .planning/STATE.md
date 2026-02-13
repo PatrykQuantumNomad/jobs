@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** v1.3 Project Showcase Site -- GitHub Pages marketing landing page showcasing JobFlow as a portfolio centerpiece.
+**Current focus:** v1.3 Project Showcase Site -- SHIPPED 2026-02-13. GitHub Pages marketing landing page showcasing JobFlow as a portfolio centerpiece.
 
 ## Current Position
 
-Phase: 24 -- Polish and Animations IN PROGRESS
-Plan: 24-01 COMPLETE (1/2 plans)
-Status: Plan 01 complete (NavBar + TerminalDemo). Plan 02 remaining.
-Last activity: 2026-02-13 -- Completed 24-01 (NavBar and Terminal Animation)
+Phase: 24 -- Polish and Animations COMPLETE
+Plan: 24-02 COMPLETE (2/2 plans)
+Status: v1.3 Project Showcase Site milestone COMPLETE. All 5 phases shipped.
+Last activity: 2026-02-13 -- Completed 24-02 (Scroll Animations)
 
-Progress: [█████████░] 90% (4.5/5 phases)
+Progress: [██████████] 100% (5/5 phases)
 
 ### v1.3 Phase Overview
 
@@ -24,7 +24,7 @@ Progress: [█████████░] 90% (4.5/5 phases)
 | 21 | Core Sections and Responsive Design | 7 | Complete |
 | 22 | Engineering Depth Sections | 4 | Complete |
 | 23 | CI/CD, Deployment, and Dark Mode | 7 | Complete |
-| 24 | Polish and Animations | 3 | In Progress (1/2) |
+| 24 | Polish and Animations | 3 | Complete |
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [█████████░] 90% (4.5/5 phases)
 | 23-02 | 5 min | 2 | 12 |
 | 23-03 | 5 min | 3 | 0 |
 | 24-01 | 3 min | 2 | 5 |
+| 24-02 | 2 min | 2 | 8 |
 
 ## Accumulated Context
 
@@ -100,6 +101,8 @@ v1.3 decisions:
 - No mobile hamburger menu -- single-page site, mobile users scroll naturally
 - Terminal always dark-themed regardless of page theme
 - Custom IntersectionObserver typing animation (not typed.js) for terminal demo
+- .js-enabled CSS gate for progressive enhancement (content visible without JS)
+- data-animate + IntersectionObserver pattern for scroll-triggered fade-in animations
 
 ### Pending Todos
 
@@ -122,5 +125,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 24-01 (NavBar and Terminal Animation). Plan 24-02 remaining.
+Stopped at: Completed 24-02 (Scroll Animations). v1.3 milestone COMPLETE.
 Resume file: .planning/phases/24-polish-and-animations/

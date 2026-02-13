@@ -5,7 +5,7 @@
 - SHIPPED **v1.0 MVP** -- Phases 1-8 (shipped 2026-02-08)
 - SHIPPED **v1.1 Test Web App** -- Phases 9-15 (shipped 2026-02-08)
 - SHIPPED **v1.2 Claude CLI Agent Integration** -- Phases 16-19 (shipped 2026-02-11)
-- ACTIVE **v1.3 Project Showcase Site** -- Phases 20-24
+- SHIPPED **v1.3 Project Showcase Site** -- Phases 20-24 (shipped 2026-02-13)
 
 ## Phases
 
@@ -157,7 +157,7 @@ Plans:
 
 Plans:
 - [x] 24-01-PLAN.md — NavBar with smooth scroll anchor links + TerminalDemo with typing animation
-- [ ] 24-02-PLAN.md — Scroll-triggered fade-in animations via IntersectionObserver + CSS transitions
+- [x] 24-02-PLAN.md — Scroll-triggered fade-in animations via IntersectionObserver + CSS transitions
 
 **Success Criteria:**
 1. An animated terminal section simulates `python orchestrator.py` output with a typing effect, showing pipeline phases executing with realistic timing
@@ -193,4 +193,4 @@ Plans:
 | 21. Core Sections and Responsive Design | v1.3 | 2/2 | Complete | 2026-02-13 |
 | 22. Engineering Depth Sections | v1.3 | 2/2 | Complete | 2026-02-13 |
 | 23. CI/CD, Deployment, and Dark Mode | v1.3 | 3/3 | Complete | 2026-02-13 |
-| 24. Polish and Animations | v1.3 | 1/2 | In Progress | 2026-02-13 |
+| 24. Polish and Animations | v1.3 | 2/2 | Complete | 2026-02-13 |
