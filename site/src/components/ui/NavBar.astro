@@ -1,0 +1,19 @@
+---
+import ThemeToggle from "./ThemeToggle.astro";
+---
+
+<nav class="fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-surface-950/80 backdrop-blur-sm border-b border-surface-200 dark:border-surface-800">
+  <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
+    <a href="#hero" class="font-display font-bold text-lg text-surface-900 dark:text-surface-50 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+      JobFlow
+    </a>
+    <div class="hidden md:flex items-center gap-6">
+      <a href="#features" class="text-sm text-surface-600 dark:text-surface-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Features</a>
+      <a href="#architecture" class="text-sm text-surface-600 dark:text-surface-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">How It Works</a>
+      <a href="#code" class="text-sm text-surface-600 dark:text-surface-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Code</a>
+      <a href="#timeline" class="text-sm text-surface-600 dark:text-surface-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Timeline</a>
+      <a href="#quickstart" class="text-sm text-surface-600 dark:text-surface-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Quick Start</a>
+      <ThemeToggle />
+    </div>
+  </div>
+</nav>
