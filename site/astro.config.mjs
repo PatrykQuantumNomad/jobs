@@ -5,7 +5,7 @@ import sitemap from "@astrojs/sitemap";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://patrykgolabek.github.io",
+  site: "https://patrykquantumnomad.github.io",
   base: "/jobs",
   trailingSlash: "always",
   integrations: [sitemap()],
