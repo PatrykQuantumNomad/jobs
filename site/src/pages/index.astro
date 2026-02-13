@@ -2,12 +2,20 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Hero from "../components/sections/Hero.astro";
 import Stats from "../components/sections/Stats.astro";
+import Features from "../components/sections/Features.astro";
+import TechStack from "../components/sections/TechStack.astro";
+import Footer from "../components/sections/Footer.astro";
 ---
 
 <BaseLayout
   title="JobFlow — Job Search Automation"
   description="Self-hosted pipeline that scrapes job boards, scores matches against your profile, and automates applications. 18K LOC, 581 tests, 3 platforms."
 >
-  <Hero />
-  <Stats />
+  <main>
+    <Hero />
+    <Stats />
+    <Features />
+    <TechStack />
+  </main>
+  <Footer />
 </BaseLayout>

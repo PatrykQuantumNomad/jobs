@@ -1,0 +1,42 @@
+---
+import GithubIcon from "../../icons/github.svg";
+
+const github = "https://github.com/patrykgolabek/jobs";
+const personalSite = "https://patrykgolabek.dev";
+const currentYear = new Date().getFullYear();
+---
+
+<footer id="footer" class="py-12 bg-surface-900 text-surface-300">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div>
+        <span class="font-display text-lg font-semibold text-white">JobFlow</span>
+        <p class="mt-1 text-sm text-surface-400">
+          From discovery to application in one tool.
+        </p>
+      </div>
+      <div class="flex items-center gap-6">
+        <a
+          href={github}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-surface-400 hover:text-white transition-colors"
+        >
+          <GithubIcon width="20" height="20" fill="currentColor" />
+          <span class="sr-only">GitHub</span>
+        </a>
+        <a
+          href={personalSite}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-sm text-surface-400 hover:text-white transition-colors"
+        >
+          patrykgolabek.dev
+        </a>
+      </div>
+    </div>
+    <div class="mt-8 pt-8 border-t border-surface-700 text-center text-sm text-surface-500">
+      &copy; {currentYear} Patryk Golabek. All rights reserved.
+    </div>
+  </div>
+</footer>
