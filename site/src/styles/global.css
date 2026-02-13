@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 @theme {
   /* Primary palette (blues) */
   --color-primary-50: oklch(0.97 0.014 254.604);
