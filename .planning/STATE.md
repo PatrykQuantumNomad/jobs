@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 ## Current Position
 
-Phase: 21 -- Core Sections and Responsive Design COMPLETE
-Plan: 21-02 COMPLETE (2/2 plans)
-Status: Phase 21 complete. Ready for Phase 22 (Engineering Depth Sections).
-Last activity: 2026-02-13 -- Completed 21-02 (Features, TechStack, Footer, page composition)
+Phase: 22 -- Engineering Depth Sections IN PROGRESS
+Plan: 22-01 COMPLETE (1/2 plans)
+Status: Plan 22-01 complete. Ready for plan 22-02 (page composition).
+Last activity: 2026-02-13 -- Completed 22-01 (Architecture pipeline + CodeSnippets sections)
 
-Progress: [████░░░░░░] 40% (2/5 phases)
+Progress: [█████░░░░░] 50% (2.5/5 phases)
 
 ### v1.3 Phase Overview
 
@@ -22,7 +22,7 @@ Progress: [████░░░░░░] 40% (2/5 phases)
 |-------|------|-------------|--------|
 | 20 | Foundation and Configuration | 8 | Complete |
 | 21 | Core Sections and Responsive Design | 7 | Complete |
-| 22 | Engineering Depth Sections | 4 | Pending |
+| 22 | Engineering Depth Sections | 4 | In Progress (1/2) |
 | 23 | CI/CD, Deployment, and Dark Mode | 7 | Pending |
 | 24 | Polish and Animations | 3 | Pending |
 
@@ -57,6 +57,7 @@ Progress: [████░░░░░░] 40% (2/5 phases)
 | 20-01 | 4 min | 2 | 8 |
 | 21-01 | 4 min | 2 | 16 |
 | 21-02 | 3 min | 2 | 4 |
+| 22-01 | 2 min | 2 | 3 |
 
 ## Accumulated Context
 
@@ -78,6 +79,9 @@ v1.3 decisions:
 - Icon components stored in data arrays for clean map-based rendering
 - Footer uses <footer> element (not <section>) for semantic HTML landmarks
 - Features grid uses CSS Grid for equal-height rows (not Flexbox)
+- Horizontal scroll (overflow-x-auto) over wrapping for code blocks
+- github-dark-default Shiki theme on bg-surface-900 for code section visual break
+- Curated real source code excerpts for code snippet showcase (not fabricated)
 
 ### Pending Todos
 
@@ -100,5 +104,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed Phase 21 (21-02-PLAN.md -- Features, TechStack, Footer, page composition). Ready for Phase 22.
+Stopped at: Completed 22-01-PLAN.md (Architecture pipeline + CodeSnippets sections). Ready for 22-02.
 Resume file: .planning/phases/22-engineering-depth-sections/
