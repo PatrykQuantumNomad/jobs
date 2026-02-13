@@ -107,6 +107,12 @@ Plans:
 
 **Requirements:** CONT-05, CONT-06, CONT-07, CONT-08
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 22-01-PLAN.md — Architecture pipeline diagram and Code Snippets with Shiki syntax highlighting
+- [ ] 22-02-PLAN.md — Timeline, QuickStart, and full page composition with all 9 sections
+
 **Success Criteria:**
 1. An architecture/pipeline section visually communicates the 5-phase flow (setup, login, search, score, apply) as a diagram or visual sequence
 2. A code snippets section shows 2-3 syntax-highlighted examples (platform Protocol, scoring engine, decorator registry) that are readable and correctly formatted
