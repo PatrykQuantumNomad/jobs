@@ -1,17 +1,22 @@
 ---
-
+import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout
+  title="JobFlow — Job Search Automation"
+  description="Self-hosted pipeline that scrapes job boards, scores matches against your profile, and automates applications. 18K LOC, 581 tests, 3 platforms."
+>
+  <main class="max-w-4xl mx-auto px-4 py-16">
+    <h1 class="font-display text-4xl font-bold text-primary-900">
+      JobFlow
+    </h1>
+    <p class="mt-4 text-lg text-surface-600">
+      From discovery to application in one tool.
+    </p>
+    <p class="mt-2 text-surface-500">
+      Self-hosted job search automation pipeline. Scrapes Indeed, Dice, and RemoteOK,
+      scores matches against your candidate profile, manages listings through a web
+      dashboard, generates AI-tailored resumes, and automates applications.
+    </p>
+  </main>
+</BaseLayout>
