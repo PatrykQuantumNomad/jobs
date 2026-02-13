@@ -1,248 +1,274 @@
 # Project Research Summary
 
-**Project:** JobFlow v2 — Claude CLI Subprocess Integration, SSE Streaming for AI Features, On-Demand AI Scoring
-**Domain:** CLI subprocess AI integration, SSE-streamed document generation, on-demand AI scoring
-**Researched:** 2026-02-11
+**Project:** JobFlow — GitHub Pages Showcase Site
+**Domain:** Marketing-forward static site for technical portfolio project
+**Researched:** 2026-02-13
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This milestone replaces direct Anthropic SDK calls with Claude CLI subprocess invocations and adds SSE streaming for real-time progress feedback during resume tailoring, cover letter generation, and AI scoring operations. The research confirms this is a zero-new-dependency change: Python 3.14's native asyncio subprocess support handles CLI invocations, the existing sse-starlette infrastructure adapts directly from the apply engine, and Pydantic v2's `model_json_schema()` generates the exact JSON Schema format the CLI requires. The anthropic SDK can be removed from production dependencies entirely.
+This is a marketing landing page for an 18K LOC Python job automation platform, deployed as a static site to GitHub Pages from the existing repository. The recommended approach is a self-contained Astro 5 project in `/site` with Tailwind v4, self-hosted fonts (Inter + DM Sans), and near-zero JavaScript. The entire page is a single-scroll marketing surface showcasing the product through screenshots, metrics (581 tests, 80%+ coverage), and a visual pipeline walkthrough. The site lives alongside the Python app without any runtime integration — it describes the product but doesn't call it.
 
-The recommended approach uses `asyncio.create_subprocess_exec()` for streaming CLI calls (not `asyncio.to_thread(subprocess.run)`) to enable line-by-line NDJSON parsing for SSE progress events. AI scoring is a separate on-demand feature that complements (not replaces) the existing rule-based scorer: heuristic scoring remains instant and free for pipeline bulk processing, while AI scoring provides deep semantic analysis for individual jobs the user is evaluating. The architecture follows the proven apply engine pattern: POST endpoint creates an asyncio.Queue and starts a background task, returns HTML with SSE connection markup, GET endpoint streams from the queue via EventSourceResponse.
+The critical architectural decision is treating `/site` as a completely independent subfolder with its own package.json, CI workflow, and deployment pipeline. This prevents toolchain contamination between Python (uv, ruff, pytest) and Node.js (npm, astro, tailwind). The biggest risk is base path misconfiguration — GitHub Pages project sites serve from `username.github.io/jobs/`, not root, so every asset, link, and meta tag must account for the `/jobs/` prefix or the deployed site will be a blank page. This only breaks in production (works perfectly in dev), making it an insidious first-time mistake.
 
-Key risks center on subprocess lifecycle management (zombie processes, timeout handling, stderr capture) and the CLI's `--json-schema` regression in v2.1.x where structured output is sometimes embedded in markdown instead of the `structured_output` field. Mitigation includes resilient parsing that handles both formats, timeout/cancellation discipline with proper process cleanup, and SSE disconnection detection to kill orphaned CLI processes when users navigate away. The test mock strategy must migrate from SDK patching to subprocess mocking, requiring an audit of 428+ existing tests.
+The MVP is a three-tier build: (1) credible project page with hero, stats, features, tech stack; (2) engineering depth with architecture diagram, code snippets, milestone timeline; (3) polish with animated terminal demo and scroll effects. Defer any live demo (requires credentials), blog section (maintenance burden), or JavaScript framework (overkill for static content). The showcase itself is a code sample — sloppy CSS or slow load times undermine the credibility of the Python project.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The stack changes are minimal—no new dependencies required. Python 3.14's `asyncio.create_subprocess_exec()` handles Claude CLI subprocesses with native streaming via `readline()`. The existing sse-starlette (already at 2.0.0, upgradable to 3.2.0) provides SSE streaming using the exact pattern from the apply engine. Pydantic v2's `model_json_schema()` generates JSON Schemas compatible with the CLI's `--json-schema` flag without transformation. The Claude CLI (verified at v2.1.39) is already installed on the target machine.
+Deliberately minimal stack optimized for fast load times and zero runtime JavaScript. Astro 5.17.2 (latest stable) with Tailwind CSS v4 (CSS-first configuration via `@theme` directive, no config file). Image optimization via built-in `astro:assets` with Sharp backend (generates AVIF + WebP + responsive srcset at build time). Fonts self-hosted via Fontsource (Inter for body, DM Sans for headings) to eliminate Google Fonts latency. Animations achieved with CSS `@keyframes` + a ~20-line `IntersectionObserver` script — NO GSAP (the portfolio site uses GSAP for complex particle canvas, but a showcase site with simple fade-in-on-scroll effects doesn't justify 40KB of animation library).
 
 **Core technologies:**
-- **Claude CLI (`claude -p`)**: LLM inference via subprocess (already installed, v2.1.39) — uses user's Claude subscription, no API key management, provides structured output via `--json-schema` identical to SDK's `messages.parse()`
-- **asyncio.create_subprocess_exec**: stdlib async subprocess manager — streams stdout line-by-line for SSE forwarding without blocking the event loop
-- **sse-starlette**: already a dependency (v2.0.0+) — EventSourceResponse pattern proven in apply engine, directly reusable
-- **Pydantic v2 model_json_schema()**: already a dependency — generates JSON Schema for `--json-schema` flag with zero transformation
+- **Astro 5.17.2**: Static site generator — Astro 6 is in beta, not production-ready. User already runs Astro on two sites (portfolio + networking tools), so DX is familiar.
+- **Tailwind CSS v4 + @tailwindcss/vite**: Utility CSS via new Vite plugin — the old `@astrojs/tailwind` integration is deprecated for v4.
+- **Self-hosted fonts (Fontsource)**: Inter (body) + DM Sans (headings) — self-hosting is faster and privacy-preserving vs. Google Fonts CDN.
+- **withastro/action@v5**: Official GitHub Action for build + deploy — supports `path: ./site` parameter for subfolder builds (critical for monorepo).
+- **CSS animations + IntersectionObserver**: Zero-dependency scroll animations — proportional to the task, unlike GSAP which is overkill here.
 
 **What NOT to add:**
-- anthropic SDK can be removed from production (move to dev-only for test mocks during migration)
-- No aiofiles, anyio, claude-agent-sdk-python, websockets, celery, or other background task frameworks needed
+- ~~GSAP~~ — Adds 40KB JS for effects achievable with 20 lines of vanilla JS
+- ~~@astrojs/tailwind~~ — Deprecated for v4, use `@tailwindcss/vite` instead
+- ~~React/Vue/Svelte integrations~~ — No interactive components needed, Astro components handle everything
+- ~~Astro 6 beta~~ — Currently at beta.11, stable release weeks away
 
 ### Expected Features
 
-The research divides features into three categories based on user expectations for AI-powered document generation and scoring in job search tools.
+The showcase site is not the product — it's a marketing surface presenting the product to recruiters, hiring managers, and fellow engineers. The audience needs to understand in 30 seconds: "This person built something serious." The feature set is divided into table stakes (expected on any polished project page), differentiators (what makes it stand out), and anti-features (explicit don'ts).
 
 **Must have (table stakes):**
-- Claude CLI subprocess wrapper with timeout, error handling, and CLI availability detection
-- Pydantic-to-JSON-Schema bridge for existing TailoredResume/CoverLetter models
-- System prompt passthrough via `--system-prompt` flag
-- SSE streaming for resume tailoring with real-time progress events
-- SSE streaming for cover letter generation with progress visibility
-- AI Rescore button on job detail page triggering semantic job-fit analysis
-- AI score result display (1-5 scale, reasoning, matched/missing skills)
-- AI score persistence to SQLite in separate columns from rule-based score
+- **Hero section with value proposition** — What JobFlow does + why it matters in under 8 seconds. Headline + subheadline + "View on GitHub" CTA.
+- **Screenshots/visual proof** — 87% of hiring managers consider portfolios more valuable when they can SEE the work. Dashboard, kanban board, SSE streaming, analytics.
+- **Stats/metrics bar** — Concrete numbers create instant credibility: "18K LOC, 581 tests, 80%+ coverage, 3 platforms, Built in 3 days."
+- **Tech stack section** — Logo + name + one-word role (e.g., "FastAPI — API & Dashboard").
+- **Architecture diagram** — Clean system diagram showing pipeline flow (scrape → score → dashboard → apply).
+- **Responsive design + dark mode** — Recruiters view on mobile, developers expect dark mode by default.
 
-**Should have (competitive differentiators):**
-- Side-by-side score comparison (rule-based vs AI with visual diff)
-- Streaming token output during generation (token-by-token text into UI)
-- AI score explanation with highlighted job description sections
-- Generation cost tracking from CLI JSON response usage metadata
-- CLI availability health check in dashboard status indicator
+**Should have (differentiators):**
+- **Animated terminal demo** — Simulated `python orchestrator.py` output showing phases executing with typing effect. Most impactful differentiator — shows "this actually works" without requiring installation.
+- **Milestone timeline** — "v1.0: MVP in 1 day. v1.1: 428 tests. v1.2: Claude CLI." Shows velocity and iteration discipline. The "built in 1 day" fact is extraordinary and should be highlighted.
+- **Code snippets with syntax highlighting** — Show the `@register_platform` decorator pattern, Pydantic model, scoring engine. Demonstrates code quality directly.
+- **"How it works" walkthrough** — 4-5 step visual: Configure → Discover → Score → Review → Apply. Tells a story vs. feature grid.
+- **Scroll-triggered animations** — Subtle fade/slide-in (200-300ms, not aggressive) signals polish. IntersectionObserver + CSS classes, no library.
 
-**Defer (v2+):**
-- Batch AI rescore ("Score All" with queue and progress)
-- Model selection UI (dropdown for sonnet/opus/haiku)
-- Real-time token rendering for structured output (partial JSON not renderable)
-- Agentic multi-turn CLI calls (single-turn is sufficient for this use case)
-- Auto-rescore on import (too expensive, rule-based handles bulk)
+**Defer (anti-features — explicitly avoid):**
+- ~~Live demo / hosted instance~~ — Requires credentials, either fake (undermines trust) or insecure.
+- ~~Blog / content section~~ — A blog with 1-2 posts looks abandoned. Maintenance burden.
+- ~~Pricing / signup / waitlist~~ — JobFlow is a personal tool, not a product. Commercial framing is misleading.
+- ~~Complex JavaScript framework~~ — React/Vue for a single static page is poor judgment about tool selection.
+- ~~Testimonials~~ — Fake testimonials are obviously fake. Use verifiable quality signals instead (test count, coverage).
+
+**Content dependencies (blocking):**
+Screenshots (dashboard, kanban, analytics, SSE streaming), architecture diagram, terminal output script, feature copywriting (headline, subheadline, 8 feature descriptions). Total prep: ~4 hours before writing any HTML.
 
 ### Architecture Approach
 
-The architecture mirrors the existing apply engine SSE pattern: a POST endpoint triggers the operation and returns HTML with `sse-connect` markup, a GET endpoint streams events via EventSourceResponse consuming an asyncio.Queue, and a background task runs the Claude CLI subprocess and pushes progress events to the queue. The CLI wrapper has two modes: streaming (for resume/cover letter with progress) and non-streaming (for AI scoring with structured JSON output).
+Self-contained Astro project in `/site` subfolder with zero runtime integration with the Python app. The site describes the product but doesn't call it — the only connection is screenshots manually captured from the running dashboard and committed to `site/src/assets/screenshots/`. Two completely independent systems with separate CI workflows: Python CI (pytest + ruff) skips on site-only changes via `paths-ignore: ['site/**']`, and Astro deploy triggers only on `paths: ['site/**']` changes.
 
 **Major components:**
-1. **resume_ai/claude_cli.py** (NEW) — Core subprocess abstraction with `stream_prompt()` async iterator for SSE and `run_prompt()` for structured output via `--json-schema`
-2. **resume_ai/ai_scorer.py** (NEW) — AI job scoring logic using CLI with structured JSON Schema for multi-dimensional fit analysis (title relevance, tech overlap, experience level, culture fit)
-3. **resume_ai/tailor.py + cover_letter.py** (MODIFIED) — Add `*_streaming()` async functions alongside existing sync functions (backward compatible for tests)
-4. **webapp/app.py** (MODIFIED) — 4 new SSE endpoints (tailor start/stream, cover letter start/stream) + 1 AI rescore endpoint following apply engine pattern
-5. **webapp/db.py** (MODIFIED) — Migration v7 adds `ai_score`, `ai_score_breakdown`, `ai_scored_at` columns (AI score separate from rule-based `score`)
+1. **BaseLayout.astro** — HTML shell, meta tags (OG/Twitter), fonts, global CSS, dark mode, canonical URLs using `Astro.site` + `Astro.url.pathname`.
+2. **Section components** — Hero, Features, Pipeline, Screenshots, TechStack, CTA, Footer. Each self-contained, composed in `pages/index.astro`. No React/Vue — pure Astro components compile to zero JavaScript.
+3. **UI primitives** — Button, Badge, Card, ScreenshotFrame (browser chrome mockup). Small, no dependencies on each other.
+4. **Image optimization pipeline** — PNGs in `src/assets/screenshots/` → Sharp generates AVIF + WebP + responsive `srcset` at build time → served with explicit width/height to prevent CLS.
+5. **GitHub Actions deploy workflow** — `withastro/action@v5` with `path: ./site` builds from subfolder, `actions/deploy-pages@v4` deploys artifact. Separate concurrency group (`pages`) from CI (`${{ github.workflow }}-${{ github.ref }}`).
 
-**Data flow:** User clicks button → POST creates asyncio.Queue + starts background task → returns HTML with sse-connect → background task spawns `claude -p --output-format stream-json` → reads stdout NDJSON lines → parses `text_delta` events → pushes to queue → GET endpoint yields from queue → htmx swaps progressive HTML updates → final "done" event renders complete result.
-
-**Build order:** (1) claude_cli.py foundation, (2) db.py migration v7, (3) ai_scorer.py, (4) tailor/cover_letter streaming functions, (5) templates/partials, (6) app.py endpoints, (7) job_detail.html SSE wiring, (8) integration testing.
+**Critical patterns:**
+- **Base path awareness**: Every link/asset must account for `/jobs/` prefix via `import.meta.env.BASE_URL` or Astro's asset imports.
+- **Commit lockfile, gitignore node_modules**: `site/package-lock.json` committed (withastro/action needs it), `node_modules/` recursively ignored.
+- **Trailing slash always**: GitHub Pages redirects URLs without trailing slashes (301, 15-80ms penalty) — set `trailingSlash: 'always'` in config.
+- **Props down, no state**: Section components receive data via props or define inline. No stores, no fetch calls. All content known at build time.
 
 ### Critical Pitfalls
 
-The research identified 14 pitfalls across three severity levels. The top five critical issues that require upfront mitigation:
+1. **Base path misconfiguration breaks every asset/link/image** — Without `base: '/jobs'` in `astro.config.mjs`, the deployed site is a blank page (CSS/JS/images all 404). This only breaks in production (works perfectly in dev). Prevention: Set `base` from first commit, use `import.meta.env.BASE_URL` for assets, test with `astro preview` before deploying.
 
-1. **subprocess.run() hangs with CLI** — Using synchronous subprocess.run or wrapping it in asyncio.to_thread blocks the event loop for 5-60+ seconds per call. Zombie processes accumulate if timeouts kill the parent but not Node.js child workers. Prevention: always use `asyncio.create_subprocess_exec()` with PIPE for stdout/stderr, wrap in `asyncio.wait_for(timeout=120)`, kill the process explicitly on timeout/cancellation.
+2. **Custom domain later makes base path a liability** — Project site needs `base: '/jobs'`, custom domain needs no base. Switching requires changing config AND verifying no template has hardcoded `/jobs/`. Prevention: Decide now (likely project path for MVP), NEVER hardcode base paths, always use `BASE_URL`.
 
-2. **CLI `--json-schema` regression in v2.1.x** — The CLI sometimes returns structured output embedded in markdown within the `result` field instead of the `structured_output` field (known bug #18536). Prevention: build resilient parser handling both formats, pin CLI version in docs, validate against Pydantic models regardless of extraction method.
+3. **GitHub Actions workflow conflicts** — Two workflows (CI + deploy) both trigger on push to main. Missing `path: ./site` in `withastro/action` tries to build from repo root (finds `pyproject.toml`, not `package.json`) and fails. Prevention: Deploy workflow has `paths: ['site/**']` filter, CI has `paths-ignore: ['site/**']`, deploy uses `path: ./site` parameter.
 
-3. **SSE connection leak on navigation** — When users navigate away during AI scoring, htmx closes the EventSource but the backend continues running the CLI subprocess and accumulating queue events. Prevention: reduce queue polling timeout to 1-2s, check `request.is_disconnected()` frequently, store subprocess handle alongside queue for cancellation, use `sse-close="done"` attribute.
+4. **Missing or incorrect OG meta tags** — Social shares show no preview without absolute `og:image` URL and matching `og:url`. Relative paths ignored by crawlers. Prevention: Use `new URL('/jobs/og-image.png', Astro.site).href` for all OG URLs, create 1200x630px image in `public/`, validate with Twitter/LinkedIn debug tools.
 
-4. **SQLite ALTER TABLE breaks FTS5** — Adding `ai_score` columns with `DEFAULT (datetime('now'))` fails (SQLite doesn't allow expression defaults in ALTER). Adding columns without updating FTS5 triggers leaves the index out of sync. Prevention: use `DEFAULT NULL` for timestamps (populate in code), keep AI score columns OUT of FTS5 initially (add in separate migration v8 if needed with full rebuild).
+5. **Developer tool showcase reads like documentation** — Wall of text explaining architecture instead of hero + screenshot above fold. 87% of hiring managers value portfolios when they can SEE the work. Prevention: One-sentence headline, dashboard screenshot in first viewport (no scrolling), show don't tell, limit text per section.
 
-5. **Error semantics lost crossing process boundary** — The SDK's typed exceptions (AuthenticationError, RateLimitError) collapse into generic subprocess.CalledProcessError. Prevention: build typed error classes (CLITimeoutError, CLIAuthError, CLIRateLimitError) parsed from stderr patterns, create AIProvider abstraction so tests mock at protocol level not implementation level.
+6. **Large unoptimized images destroy page load** — Full-resolution Retina screenshots (2560x1600, 1-4MB each) → total page weight 10-25MB → 15-30s load on mobile. Prevention: Use Astro `<Image>` component (generates WebP/AVIF + responsive srcset), pre-optimize to max 1600px wide, target <200KB per image, lazy-load below-fold.
+
+7. **Node.js tooling pollution in Python repo** — Missing `node_modules/` in `.gitignore` → someone commits 200MB deps. Root-level `npm install` creates `package-lock.json` at wrong level. Prevention: Update `.gitignore` before `npm install`, keep ALL Node files inside `/site`, commit `site/package-lock.json` but NEVER root-level.
+
+8. **Trailing slash behavior on GitHub Pages** — URLs without trailing slashes redirect (301, 15-80ms penalty). Astro default `trailingSlash: 'ignore'` doesn't prevent this. Prevention: Set `trailingSlash: 'always'` from start, test with `astro preview`.
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure follows the dependency graph and risk mitigation priorities:
+Based on research, suggested phase structure follows a bottom-up build order: foundation (config + project scaffold) → primitives (layout + UI components) → content (sections + assets) → infrastructure (CI/CD + deployment).
 
-### Phase 1: CLI Wrapper Foundation
-**Rationale:** The CLI subprocess wrapper is the foundation for all three features (streaming resume/cover letter, AI scoring). It has the highest risk (subprocess lifecycle management) and must be rock-solid before anything builds on it. Building it first allows unit testing in isolation with known-good inputs before integrating with SSE or existing features.
+### Phase 1: Foundation & Configuration
+**Rationale:** Base path misconfiguration is the #1 critical pitfall and only manifests in production. Setting `base: '/jobs'`, `trailingSlash: 'always'`, and `site` correctly from the start prevents rework on every template.
 
-**Delivers:**
-- `resume_ai/claude_cli.py` with `stream_prompt()` and `run_prompt()` functions
-- Timeout handling, stderr capture, typed error classes
-- CLI availability check with clear error messaging
-- Resilient parser for `--json-schema` regression (handles both response formats)
+**Delivers:** Scaffolded Astro project in `/site` with correct `astro.config.mjs` (base path, site URL, Tailwind integration), committed lockfile, updated `.gitignore` (node_modules, site/dist).
 
 **Addresses:**
-- Table stakes: CLI subprocess wrapper, error handling, fallback on CLI unavailability (FEATURES.md)
-- Foundation for all SSE streaming and AI scoring features
+- Pitfall 1 (base path misconfiguration)
+- Pitfall 2 (custom domain decision — document now)
+- Pitfall 7 (Node.js tooling pollution)
+- Pitfall 8 (trailing slash redirects)
+- Pitfall 10 (lockfile not committed)
 
-**Avoids:**
-- Pitfall 1 (subprocess hangs) via asyncio.create_subprocess_exec + timeout
-- Pitfall 2 (json-schema regression) via dual-format parser
-- Pitfall 5 (error semantics) via typed error class reconstruction
-- Pitfall 11 (CLI not in PATH) via shutil.which() check
+**Stack elements:** Astro 5.17.2, Tailwind v4 via @tailwindcss/vite, Fontsource fonts
 
-### Phase 2: Database Schema & Test Infrastructure
-**Rationale:** The DB migration and test mock updates must happen before implementing features. The schema defines AI score storage (separate from rule-based score), and the test infrastructure prevents accidental real CLI calls. These are orthogonal changes that can be done in parallel after the CLI wrapper exists.
+**Validation:** `npm run dev` serves at `localhost:4321/jobs/` (note base path), `npm run build && npm run preview` shows correct paths.
 
-**Delivers:**
-- Migration v7: `ai_score`, `ai_score_breakdown`, `ai_scored_at` columns
-- `_block_claude_cli` autouse fixture mirroring existing `_block_anthropic`
-- `mock_claude_cli` fixture for test control
-- Updated `get_jobs()` to support ai_score sorting
+### Phase 2: Layout & UI Primitives
+**Rationale:** BaseLayout establishes OG meta tags (pitfall 4) and responsive design foundation (pitfall 12). UI primitives (Button, Badge, Card, ScreenshotFrame) have no dependencies on each other so can be built quickly before sections.
 
-**Uses:**
-- SQLite ALTER TABLE with DEFAULT NULL (not expression defaults)
-- subprocess.run patching in pytest fixtures
+**Delivers:** BaseLayout.astro with OG/Twitter meta (absolute URLs via `Astro.site`), font loading, global CSS with Tailwind `@theme` config (blue/gray palette, Inter/DM Sans), dark mode support. UI components: Button, Badge, Card, Section wrapper, ScreenshotFrame (browser chrome mockup).
 
-**Avoids:**
-- Pitfall 4 (ALTER TABLE breaks FTS5) by keeping AI columns out of FTS initially
-- Pitfall 7 (score conflict) by storing AI score separately from rule-based score
-- Pitfall 8 (test mock strategy) by building CLI-specific fixtures before converting code
-- Pitfall 14 (unstructured JSON) by defining clear schema for ai_score_breakdown
+**Addresses:**
+- Pitfall 4 (OG meta tags)
+- Pitfall 12 (responsive design)
+- Feature: Dark mode (table stakes)
+- Feature: Clean typography (table stakes)
 
-### Phase 3: AI Scoring (Non-Streaming)
-**Rationale:** AI scoring is the simplest integration—no SSE streaming, no existing code changes. It uses `run_prompt()` with `--json-schema` for structured output, validates the concept end-to-end, and provides immediate user value (see AI score on any job with one click). Success here proves the CLI wrapper works before tackling more complex SSE conversions.
+**Architecture component:** BaseLayout, UI primitives layer
+
+**Validation:** OG tags validate on Twitter/LinkedIn debug tools, responsive at 375px/768px/1440px.
+
+### Phase 3: Content Assets & Section Components
+**Rationale:** Screenshots are the highest-impact content dependency (pitfall 5, feature research). Section components depend on UI primitives from Phase 2. Can parallelize screenshot capture and section component structure.
 
 **Delivers:**
-- `resume_ai/ai_scorer.py` with multi-dimensional scoring prompt
-- POST `/jobs/{key}/ai-rescore` endpoint (no SSE, just spinner)
-- `templates/partials/ai_score_result.html` for score display
-- Side-by-side score display in job_detail.html
+- Screenshots captured: dashboard (light/dark), kanban board, analytics, SSE streaming
+- Images optimized (<200KB each) and placed in `src/assets/screenshots/`
+- Section components: Hero (with screenshot above fold), Features (grid with icons), Pipeline (system diagram), Screenshots (gallery with ScreenshotFrame), TechStack (logos), CTA (GitHub link), Footer
+- Composed in `pages/index.astro`
 
-**Implements:**
-- AIScoreResult Pydantic model with dimensions: title_relevance, tech_overlap, experience_level, culture_fit, reasoning, matched_skills, missing_skills
-- Non-streaming CLI call pattern (10-15s latency, spinner acceptable)
+**Addresses:**
+- Pitfall 5 (showcase reads like docs — hero + screenshot above fold)
+- Pitfall 6 (unoptimized images — use Astro Image component, pre-optimize)
+- Features: Hero, screenshots, stats bar, tech stack, architecture diagram (all table stakes)
 
-**Avoids:**
-- Pitfall 9 (AI scoring too slow) by caching results in DB, only allowing on-demand triggering
-- Pitfall 10 (SSE reconnection) not applicable (no SSE in this phase)
+**Architecture component:** Section components layer, image optimization pipeline
 
-### Phase 4: SSE Streaming for Resume Tailoring
-**Rationale:** With the CLI wrapper proven and AI scoring working, convert the existing tailor_resume endpoint to SSE streaming. This is the highest-value UX improvement (replaces 10-15s spinner with real-time progress). Uses the apply engine SSE pattern exactly—low risk since the pattern is proven.
+**Dependencies:** Running Python app locally for screenshot capture, architecture diagram creation (Excalidraw/Mermaid)
 
-**Delivers:**
-- `tailor_resume_streaming()` async function in tailor.py (keeps existing sync version)
-- POST `/jobs/{key}/tailor-resume/start` + GET `/jobs/{key}/tailor-resume/stream`
-- `templates/partials/ai_stream_status.html` for progress rendering
-- SSE wiring in job_detail.html AI tools section
+**Validation:** `astro build` succeeds, preview shows all images load, page weight <2MB total, Lighthouse performance >70.
 
-**Implements:**
-- Queue-based SSE bridging from ARCHITECTURE.md
-- Background task with subprocess lifecycle management
-- Progress events: "Extracting resume text", "Sending to Claude", "Generating...", "Validating output", "Done"
-
-**Avoids:**
-- Pitfall 3 (SSE connection leak) via sse-close, is_disconnected checks, subprocess cleanup in finally block
-- Pitfall 6 (POST to SSE conversion) by following apply engine two-step pattern (POST returns sse-connect HTML, GET streams)
-
-### Phase 5: SSE Streaming for Cover Letter Generation
-**Rationale:** Near-identical to resume tailoring SSE—same pattern, same template reuse, minimal incremental effort once phase 4 works. Completes the SSE conversion for all AI document generation features.
+### Phase 4: CI/CD & Deployment
+**Rationale:** Workflow conflicts (pitfall 3) are critical but independent of site content. Deploy workflow must be correct before first push or the site won't deploy.
 
 **Delivers:**
-- `generate_cover_letter_streaming()` in cover_letter.py
-- POST `/jobs/{key}/cover-letter/start` + GET `/jobs/{key}/cover-letter/stream`
-- Reuse `ai_stream_status.html` template from phase 4
+- `.github/workflows/deploy-site.yml` with `withastro/action@v5` (path: ./site), `actions/deploy-pages@v4`, concurrency group `pages`, paths filter `['site/**']`
+- Modified `.github/workflows/ci.yml` with `paths-ignore: ['site/**']`
+- GitHub Pages enabled (Settings > Pages > Source: GitHub Actions)
+- Deployed site accessible at `patrykattc.github.io/jobs/`
 
-**Implements:**
-- Same SSE pattern as resume tailoring
-- Same progress event structure
+**Addresses:**
+- Pitfall 3 (workflow conflicts)
+- Stack element: withastro/action@v5 deployment
 
-**Avoids:**
-- Same pitfalls as Phase 4 (already solved)
+**Architecture component:** GitHub Actions deploy workflow
+
+**Validation:** Deploy succeeds, site loads with no 404s on assets, Python CI skips on site-only changes, deploy triggers on site changes.
+
+### Phase 5: Polish & Differentiators (Optional)
+**Rationale:** Site is shippable after Phase 4 (credible project page). Phase 5 adds differentiators that make it memorable but aren't required for launch.
+
+**Delivers:**
+- Animated terminal demo (typed.js or custom script simulating pipeline output)
+- Milestone timeline section (v1.0 → v1.1 → v1.2 with stats)
+- Code snippets section (platform protocol, decorator registry, scoring engine) with Prism.js
+- Scroll-triggered fade-in animations (IntersectionObserver + CSS)
+- Before/after comparison table
+- Performance optimization (target Lighthouse 100/100/100/100)
+
+**Addresses:**
+- Features: Animated terminal demo, milestone timeline, code snippets, scroll animations (all differentiators)
+- Feature: Performance metrics (differentiator)
+
+**Defer if time-constrained:** This phase is incremental polish, not core functionality.
 
 ### Phase Ordering Rationale
 
-- **Foundation first:** CLI wrapper (phase 1) has no dependencies and blocks all other work. Getting subprocess handling right is critical and benefits from isolated development/testing.
-- **Infrastructure before features:** DB schema and test mocks (phase 2) enable confident feature implementation without risking data corruption or test pollution.
-- **Simple before complex:** AI scoring (phase 3) proves the CLI wrapper end-to-end with the simplest integration surface before tackling SSE streaming complexity.
-- **Pattern reuse:** Resume SSE (phase 4) establishes the streaming pattern; cover letter SSE (phase 5) is a trivial clone with different prompts.
-- **Avoid rework:** Building in dependency order prevents having to refactor phase N when phase N-1 uncovers architectural issues.
+- **Phase 1 before everything**: Base path config mistakes require reworking every template. Must be correct from first commit.
+- **Phase 2 before Phase 3**: Section components depend on BaseLayout (for layout wrapper) and UI primitives (Button, Card, ScreenshotFrame). Bottom-up dependency order.
+- **Phase 3 before Phase 4**: No point deploying an empty site. Content must exist before CI/CD setup.
+- **Phase 4 is independent**: Could be set up earlier (no code dependency) but makes more sense after content exists for validation.
+- **Phase 5 is purely incremental**: Site is shippable without it. Build if time permits.
+
+**Grouping rationale:**
+- Foundation (Phase 1) addresses config pitfalls that affect all downstream work
+- Build (Phases 2-3) follows Astro component architecture (layout → primitives → sections → pages)
+- Deploy (Phase 4) is infrastructure, not code
+- Polish (Phase 5) adds nice-to-haves after MVP is complete
+
+**Avoids pitfalls:**
+- Phases 1-3 systematically address all 8 critical/moderate pitfalls before deploy
+- Phase 4 validates the deployment before adding polish
+- Phase 5 ensures MVP isn't delayed by nice-to-haves
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 1 (CLI wrapper):** May need additional research into Claude CLI error output formats if typed error reconstruction proves fragile—currently based on stderr pattern matching which is heuristic.
-- **Phase 4/5 (SSE streaming):** If token-by-token streaming is requested (currently deferred), needs research into partial text rendering strategies since JSON Schema output arrives complete, not incrementally parseable.
+**Phases with standard patterns (skip research-phase):**
+- **Phase 1**: Astro project scaffold is well-documented, user has done this twice before (portfolio + networking-tools).
+- **Phase 2**: BaseLayout and UI components follow standard Astro patterns, Tailwind v4 documented in official guides.
+- **Phase 4**: GitHub Actions deploy via withastro/action is the official path, extensively documented.
 
-Phases with standard patterns (skip research-phase):
-- **Phase 2 (DB schema):** SQLite ALTER TABLE and pytest fixture patterns are well-documented and proven in codebase.
-- **Phase 3 (AI scoring):** Standard FastAPI POST endpoint + Pydantic validation, no novel integration.
+**Phases likely needing deeper research:**
+- **Phase 3 (if screenshot workflow is complex)**: If product has many surfaces to capture or screenshot standardization is unclear, may need research on visual asset creation workflow.
+- **Phase 5 (terminal animation)**: Animated terminal demo pattern is unique — might need brief research on typed.js vs custom implementation if pursued.
+
+**Overall:** Most phases follow well-documented Astro patterns. Research completed here should be sufficient for planning and execution without additional research phases.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Claude CLI verified locally (v2.1.39), asyncio.subprocess is stdlib, sse-starlette already in use. Zero speculation—all tools exist and work. |
-| Features | HIGH | Feature breakdown grounded in existing resume_ai/ code and apply engine SSE patterns. Table stakes vs differentiators based on UX expectations from current codebase usage. |
-| Architecture | HIGH | Direct codebase analysis of 8 files (app.py, db.py, scorer.py, tailor.py, cover_letter.py, engine.py, conftest.py, job_detail.html). SSE pattern already proven in apply engine. Build order follows dependency graph. |
-| Pitfalls | HIGH | All critical pitfalls (1-5) verified against official Python/SQLite/htmx docs AND codebase behavior. Moderate/minor pitfalls (6-14) cross-referenced with GitHub issues and community sources. |
+| Stack | HIGH | Astro 5.17.2 latest stable verified via npm, Tailwind v4 official docs, user has two existing Astro sites, all versions verified. |
+| Features | HIGH | Patterns derived from analysis of Tailwind/Astro/Supabase/shadcn homepages plus Evil Martians 100-devtool study (official research). Table stakes vs differentiators grounded in recruiter preference data. |
+| Architecture | HIGH | Based on Astro official deploy docs, withastro/action v5 source, GitHub Actions docs, existing repo structure analysis. Self-contained subfolder is standard monorepo pattern. |
+| Pitfalls | HIGH | All critical pitfalls verified against Astro official docs, GitHub Pages docs, or GitHub issues with reproduction cases. Base path issue is #1 reported problem for Astro on GitHub Pages. |
 
 **Overall confidence:** HIGH
 
+All research grounded in official documentation (Astro, GitHub Pages, Tailwind) or authoritative sources (Evil Martians study, Open Graph spec). Version numbers verified via npm on 2026-02-13. User has existing Astro expertise (two production sites). Stack is deliberately minimal (5 core dependencies) and well-understood.
+
 ### Gaps to Address
 
-While confidence is high overall, three areas need attention during implementation:
+- **Custom domain decision**: Research assumes project path (`/jobs/`) but doesn't know if user plans custom domain within 6 months. Need to confirm during planning (affects base path config).
 
-- **CLI version pinning:** Research confirmed v2.1.39 works but documented the `--json-schema` regression in v2.1.x. During phase 1, verify which CLI version(s) the resilient parser needs to support and document known-good versions in setup docs.
+- **Screenshot capture workflow**: Research identifies screenshots as critical content dependency (~4 hours prep) but doesn't specify tooling. Need to confirm during Phase 3 planning: browser DevTools capture, screenshot tools (CleanShot X, etc.), retina vs standard resolution, light/dark mode variants.
 
-- **Test mock coverage audit:** The existing test suite has 428+ tests with carefully designed SDK mocks. Phase 2 requires auditing which tests are affected by the CLI migration. Build a script to identify tests that import anthropic or patch Messages to prioritize conversion efforts.
+- **CI Sharp build failures**: Research documents Sharp build failure pattern (withastro/astro#9345, #14531) but doesn't know if it will manifest in this repo's CI. Mitigation planned (explicit Sharp install OR passthrough image service fallback) but won't know which is needed until Phase 4.
 
-- **FTS5 for AI explanations:** Phase 2 deliberately keeps `ai_score_breakdown` out of FTS5 to avoid complexity. If users want to search AI explanations ("show me jobs where AI said Kubernetes is a gap"), validate whether full-text search on JSON is needed or if the plain text reasoning field is sufficient before designing migration v8.
+- **OG image creation**: Research specifies 1200x630px OG image in `public/og-image.png` but doesn't specify creation tool or design. Need to address during content prep: design tool (Figma, Canva, screenshot + crop), branding elements to include.
 
-- **Token-by-token streaming value:** Deferred as an anti-feature because structured output (JSON Schema) arrives complete, not token-by-token. If stakeholders request real-time token streaming anyway, research phase-level progress indicators vs synthetic streaming (emit the JSON fields as they conceptually "complete" even though the model produces them all at once).
+- **Terminal animation implementation**: Research identifies animated terminal demo as highest-impact differentiator but doesn't commit to typed.js vs custom implementation. Need to evaluate during Phase 5 planning: bundle size, animation control, maintenance complexity.
+
+All gaps are execution details, not architectural uncertainties. Core approach (self-contained Astro site in `/site` with GitHub Pages deploy) is HIGH confidence.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Direct codebase analysis: `webapp/app.py`, `webapp/db.py`, `scorer.py`, `resume_ai/tailor.py`, `resume_ai/cover_letter.py`, `apply_engine/engine.py`, `tests/conftest.py`, `tests/resume_ai/conftest.py`, `webapp/templates/job_detail.html`
-- [Claude Code CLI Reference](https://code.claude.com/docs/en/cli-reference) — all CLI flags, output formats, json-schema
-- [Claude Code Headless Mode](https://code.claude.com/docs/en/headless) — programmatic usage, structured output
-- [Python asyncio subprocess docs](https://docs.python.org/3/library/asyncio-subprocess.html) — create_subprocess_exec, cancellation
-- [Python subprocess docs](https://docs.python.org/3/library/subprocess.html) — timeout, pipe handling
-- [SQLite ALTER TABLE](https://www.sqlite.org/lang_altertable.html) — DEFAULT constraints
-- [SQLite FTS5](https://sqlite.org/fts5.html) — content-sync triggers
-- [htmx SSE extension](https://htmx.org/extensions/sse/) — sse-connect, sse-swap, sse-close
-- [FastAPI async/concurrency](https://fastapi.tiangolo.com/async/) — to_thread, event loop blocking
-- [sse-starlette](https://github.com/sysid/sse-starlette) — EventSourceResponse, disconnect handling
-- [Pydantic v2 JSON Schema](https://docs.pydantic.dev/latest/concepts/json_schema/) — model_json_schema(), $refs
+- [Astro GitHub Pages Deployment Guide](https://docs.astro.build/en/guides/deploy/github/) — base path, site config, custom domain, lockfile requirement
+- [Astro Configuration Reference](https://docs.astro.build/en/reference/configuration-reference/) — trailingSlash, base, site, image options
+- [Astro Images Guide](https://docs.astro.build/en/guides/images/) — Image/Picture components, Sharp, src/ vs public/, responsive images
+- [Tailwind CSS v4 Installation for Astro](https://tailwindcss.com/docs/installation/framework-guides/astro) — @tailwindcss/vite approach, @astrojs/tailwind deprecation
+- [withastro/action GitHub Repo](https://github.com/withastro/action) — v5 inputs: path, node-version, package-manager
+- [GitHub Pages Limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits) — 100GB bandwidth, 1GB repo, 10 builds/hour
+- [GitHub Actions Workflow Syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions) — paths, paths-ignore filters
+- [Open Graph Protocol Specification](https://ogp.me/) — required properties, URL requirements
+- [Evil Martians: 100 Devtool Landing Pages Study](https://evilmartians.com/chronicles/we-studied-100-devtool-landing-pages-here-is-what-actually-works-in-2025) — hero patterns, visual content, messaging
+- npm registry version checks (2026-02-13) — all versions verified
 
 ### Secondary (MEDIUM confidence)
-- [Claude CLI --json-schema bug #18536](https://github.com/anthropics/claude-code/issues/18536) — structured_output regression in v2.1.x (may be fixed in future releases)
-- [htmx SSE close discussion #2393](https://github.com/bigskysoftware/htmx/issues/2393) — sse-close behavior clarification
-- [htmx SSE DOM removal #2510](https://github.com/bigskysoftware/htmx/issues/2510) — cleanup patterns
-- Local verification: Claude CLI 2.1.39 tested with `--output-format json` and `--json-schema` on 2026-02-11
+- [Trailing Slash Tax on GitHub Pages](https://justoffbyone.com/posts/trailing-slash-tax/) — 15-80ms redirect penalty measurements
+- [Astro base path issue #4229](https://github.com/withastro/astro/issues/4229) — asset paths not respecting base
+- [Astro CSS url() base path issue #14585](https://github.com/withastro/astro/issues/14585) — dev/build inconsistency
+- [Astro Sharp build issue #9345](https://github.com/withastro/astro/issues/9345) — Sharp 0.33.0 build failures
+- [GitHub Pages + Cloudflare OG issue](https://community.cloudflare.com/t/github-pages-with-cloudflare-results-in-no-open-graph-data/519891) — OG tags stripped by proxy
+- [Codecademy portfolio guide](https://www.codecademy.com/resources/blog/software-developer-portfolio-tips) — 87% hiring managers value portfolios stat
 
-### Tertiary (LOW confidence)
-- [AI Hiring with LLMs: Multi-Agent Framework](https://arxiv.org/html/2504.02870v1) — context-aware resume scoring patterns (research paper, not production-tested)
+### Aggregated from Research Files
+All sources documented in STACK.md (49 lines), FEATURES.md (13 lines), ARCHITECTURE.md (8 lines), and PITFALLS.md (24 lines) are incorporated by reference.
 
 ---
-*Research completed: 2026-02-11*
+*Research completed: 2026-02-13*
 *Ready for roadmap: yes*

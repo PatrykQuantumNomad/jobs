@@ -1,620 +1,560 @@
 # Architecture Patterns
 
-**Domain:** Claude CLI subprocess integration, SSE streaming for AI document generation, on-demand AI scoring
-**Researched:** 2026-02-11
-**Confidence:** HIGH (based on codebase analysis, Claude Code CLI docs, existing SSE patterns in apply_engine)
+**Domain:** Astro static site integration within an existing Python repo for GitHub Pages deployment
+**Researched:** 2026-02-13
+**Confidence:** HIGH (based on Astro official docs, withastro/action v5.2.0 source, GitHub Actions docs, existing repo analysis)
 
 ## Recommended Architecture
 
-### System Overview: Before and After
+### System Overview: Existing Repo + New Site
 
-**Current flow (resume tailoring):**
+**Current repo structure (Python app at root):**
 ```
-User clicks "Tailor Resume"
-  -> htmx POST /jobs/{key}/tailor-resume
-  -> asyncio.to_thread(tailor_resume)    # blocks for 10-15s
-  -> anthropic.Anthropic().messages.parse()
-  -> returns complete HTML partial (resume_diff.html)
-  -> htmx swaps into #resume-ai-result
+jobs/
+  orchestrator.py
+  config.py, models.py, scorer.py, ...
+  platforms/
+  webapp/
+  resume_ai/
+  tests/
+  pyproject.toml, uv.lock
+  .github/workflows/ci.yml          <-- existing CI (pytest + ruff)
+  .planning/
+  .gitignore
 ```
-Problem: No progress feedback. User sees a spinner for 10-15 seconds with no indication of what is happening. The Anthropic SDK call is blocking and all-or-nothing.
 
-**New flow (with Claude CLI + SSE):**
+**Target structure (add /site subfolder):**
 ```
-User clicks "Tailor Resume"
-  -> htmx POST /jobs/{key}/tailor-resume
-  -> creates asyncio.Queue, starts background task
-  -> returns SSE connection HTML (like apply engine pattern)
-  -> htmx sse-connect to /jobs/{key}/tailor-resume/stream
-
-Background task:
-  -> asyncio.create_subprocess_exec("claude", "-p", ..., "--output-format", "stream-json")
-  -> reads stdout line by line (NDJSON)
-  -> parses stream events, extracts text deltas
-  -> pushes rendered HTML fragments to asyncio.Queue
-
-SSE endpoint:
-  -> reads from Queue
-  -> yields events to EventSourceResponse
-  -> htmx swaps progressive updates into DOM
-  -> on "done" event: renders final diff + download link
+jobs/
+  orchestrator.py                    # Python app (unchanged)
+  config.py, models.py, ...         # Python app (unchanged)
+  platforms/, webapp/, resume_ai/   # Python app (unchanged)
+  tests/                            # Python tests (unchanged)
+  pyproject.toml, uv.lock           # Python tooling (unchanged)
+  .github/workflows/
+    ci.yml                          # Python CI (unchanged, add path filter)
+    deploy-site.yml                 # NEW: Astro build + GitHub Pages deploy
+  site/                             # NEW: Astro project (self-contained)
+    astro.config.mjs
+    package.json
+    package-lock.json               # MUST commit (withastro/action detects it)
+    tsconfig.json
+    src/
+      assets/                       # Optimized images (screenshots, logos)
+        screenshots/
+      components/                   # Reusable Astro components
+        sections/                   # Page sections (Hero, Features, etc.)
+        ui/                         # Small UI primitives (Button, Badge, etc.)
+      layouts/
+        BaseLayout.astro            # HTML shell, meta, fonts, global styles
+      pages/
+        index.astro                 # Single-page marketing site
+      styles/
+        global.css                  # Tailwind + custom properties
+    public/
+      favicon.svg
+      CNAME                         # If using custom domain
+  .gitignore                        # Updated: add node_modules/ and site/dist/
 ```
+
+### Key Architectural Decision: Self-Contained Subfolder
+
+The `/site` directory is a **complete, independent Astro project**. It has its own `package.json`, its own `node_modules/`, its own build output. The Python app and the Astro site share nothing at build time. This is the correct approach because:
+
+1. **No toolchain contamination** -- Python tooling (uv, ruff, pytest) never touches `/site`. Node tooling (npm, astro) never touches the repo root.
+2. **Independent CI** -- The Python CI workflow and the Pages deploy workflow trigger on different path globs and run completely independently.
+3. **No package.json at root** -- Avoids confusing Python developers with JS tooling at the root level. No risk of `node_modules/` polluting the repo root.
+4. **withastro/action supports this natively** -- The `path` parameter was designed for exactly this use case.
 
 ### Component Map
 
 ```
-                       EXISTING                           NEW
-                    +-------------------+
-                    |   job_detail.html  |  (MODIFIED: SSE wiring for resume/cover letter)
-                    +--------+----------+
-                             |
-                    htmx POST + SSE
-                             |
-                    +--------v----------+
-                    |   webapp/app.py   |  (MODIFIED: 3 new SSE endpoints, 1 AI score endpoint)
-                    +--------+----------+
-                             |
-         +-------------------+-------------------+
-         |                   |                   |
-+--------v------+   +--------v------+   +--------v------+
-| resume_ai/    |   | resume_ai/    |   | resume_ai/    |
-| tailor.py     |   | cover_letter  |   | ai_scorer.py  |  <-- NEW FILE
-| (MODIFIED)    |   | .py (MODIFIED)|   |               |
-+--------+------+   +--------+------+   +--------+------+
-         |                   |                   |
-         +-------------------+-------------------+
-                             |
-                    +--------v----------+
-                    | resume_ai/        |
-                    | claude_cli.py     |  <-- NEW FILE (core abstraction)
-                    +--------+----------+
-                             |
-              asyncio.create_subprocess_exec
-                             |
-                    +--------v----------+
-                    | claude -p         |
-                    | --output-format   |
-                    | stream-json       |
-                    +-------------------+
+                    EXISTING (unchanged)              NEW
+               +------------------------+
+               |  .github/workflows/    |
+               |    ci.yml (MODIFIED:   |
+               |    add paths filter)   |
+               +------------------------+
+               |    deploy-site.yml     |  <-- NEW workflow
+               +----------+------------+
+                          |
+             withastro/action@v5
+             path: ./site
+                          |
+               +----------v------------+
+               |   site/               |  <-- NEW directory (entire Astro project)
+               |   astro.config.mjs    |
+               |   package.json        |
+               |   src/                |
+               |     pages/index.astro |
+               |     layouts/          |
+               |     components/       |
+               |     assets/           |
+               |     styles/           |
+               +----------+------------+
+                          |
+                   astro build
+                          |
+               +----------v------------+
+               |   site/dist/          |  <-- Build output (gitignored)
+               +----------+------------+
+                          |
+             actions/deploy-pages@v4
+                          |
+               +----------v------------+
+               | username.github.io/   |
+               | jobs/                 |  <-- Live site
+               +-----------------------+
 ```
 
 ### Component Boundaries
 
 | Component | Responsibility | Status | Communicates With |
 |-----------|---------------|--------|-------------------|
-| `resume_ai/claude_cli.py` | Subprocess lifecycle, NDJSON parsing, streaming text extraction | **NEW** | `tailor.py`, `cover_letter.py`, `ai_scorer.py` |
-| `resume_ai/ai_scorer.py` | AI-powered job scoring via Claude CLI with structured JSON output | **NEW** | `claude_cli.py`, `webapp/app.py`, `webapp/db.py` |
-| `resume_ai/tailor.py` | Resume tailoring prompt construction, result parsing | **MODIFIED** | `claude_cli.py` (replaces `anthropic` SDK) |
-| `resume_ai/cover_letter.py` | Cover letter prompt construction, result parsing | **MODIFIED** | `claude_cli.py` (replaces `anthropic` SDK) |
-| `webapp/app.py` | SSE endpoints for resume/cover letter streaming, AI rescore endpoint | **MODIFIED** | `tailor.py`, `cover_letter.py`, `ai_scorer.py`, `db.py` |
-| `webapp/db.py` | Schema migration v7 (ai_score columns) | **MODIFIED** | `ai_scorer.py` reads/writes via existing functions |
-| `webapp/templates/job_detail.html` | SSE wiring for AI tools section | **MODIFIED** | `app.py` SSE endpoints |
-| `webapp/templates/partials/ai_stream_status.html` | Progressive SSE event rendering | **NEW** | `app.py` SSE endpoints |
-| `webapp/templates/partials/ai_score_result.html` | AI score display partial | **NEW** | `app.py` AI rescore endpoint |
-
-### Data Flow: Claude CLI Streaming
-
-```
-claude_cli.py                    webapp/app.py                    Browser
-============                    =============                    =======
-
-create_subprocess_exec()
-  |
-  | stdout (NDJSON lines)
-  |
-  v
-parse each line as JSON -------> push to asyncio.Queue ---------> SSE EventSourceResponse
-  |                                                                  |
-  | filter for:                                                      | htmx sse-swap
-  |   stream_event +                                                 |
-  |   content_block_delta +                                          v
-  |   text_delta                                              Progressive HTML updates:
-  |                                                           "Analyzing job description..."
-  | accumulate full text                                      "Reordering skills..."
-  |                                                           "Generating summary..."
-  v                                                                  |
-process.wait()                                                       |
-  |                                                                  |
-  v                                                                  v
-return complete text -----> parse structured output ---------> Final result partial:
-                            (JSON from --json-schema          diff view + download link
-                             or text post-processing)         OR score display
-```
+| `site/` | Self-contained Astro project, all frontend code | **NEW** | None (fully independent) |
+| `site/astro.config.mjs` | Site URL, base path, image optimization config | **NEW** | Astro build process |
+| `site/src/pages/index.astro` | Single marketing page, imports section components | **NEW** | Layouts, section components |
+| `site/src/layouts/BaseLayout.astro` | HTML shell, meta tags, OG tags, fonts, global CSS | **NEW** | Pages |
+| `site/src/components/sections/` | Hero, Features, Pipeline, Screenshots, CTA sections | **NEW** | BaseLayout via slot |
+| `site/src/components/ui/` | Button, Badge, Card, ScreenshotFrame primitives | **NEW** | Section components |
+| `site/src/assets/screenshots/` | Dashboard screenshots (optimized at build via Sharp) | **NEW** | Section components via import |
+| `.github/workflows/deploy-site.yml` | Astro build + GitHub Pages deployment | **NEW** | withastro/action, deploy-pages |
+| `.github/workflows/ci.yml` | Python CI (add path filter to skip on site-only changes) | **MODIFIED** | No new dependencies |
+| `.gitignore` | Add `node_modules/` and `site/dist/` | **MODIFIED** | N/A |
 
 ## New Components: Detailed Design
 
-### 1. `resume_ai/claude_cli.py` -- Core Abstraction
+### 1. `site/astro.config.mjs` -- Configuration
 
-This is the central new component. It wraps the Claude CLI subprocess and provides two modes of operation.
+```javascript
+// site/astro.config.mjs
+import { defineConfig } from 'astro/config';
 
-**Mode A: Streaming text (for resume/cover letter with progress)**
-```python
-# resume_ai/claude_cli.py
-import asyncio
-import json
-import logging
-from collections.abc import AsyncIterator
-from dataclasses import dataclass
+export default defineConfig({
+  // For project pages: username.github.io/jobs/
+  site: 'https://username.github.io',
+  base: '/jobs',
 
-logger = logging.getLogger(__name__)
+  // If using custom domain instead:
+  // site: 'https://jobflow.dev',
+  // base: '/',
 
-# Default model for CLI calls
-DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
+  image: {
+    // Sharp is the default service -- no config needed
+    // Enable responsive image styles globally
+    responsiveStyles: true,
+  },
 
+  build: {
+    // Default 'dist' is fine -- withastro/action knows where to find it
+    // assets: '_astro'  (default, fine)
+  },
 
-@dataclass
-class StreamChunk:
-    """A chunk of text from the Claude CLI stream."""
-    text: str
-    is_final: bool = False
+  // No integrations needed for a pure static marketing site
+  // Tailwind via @astrojs/tailwind only if using Tailwind (recommended)
+});
+```
 
+**Critical: base path configuration.**
 
-@dataclass
-class CliResult:
-    """Complete result from a Claude CLI call."""
-    text: str
-    session_id: str | None = None
-    usage: dict | None = None
+For a repo named `jobs` deployed to `username.github.io/jobs/`, set `base: '/jobs'`. This prefixes all internal links and asset paths. Every `<a href>` and `<img src>` in the built site will be relative to `/jobs/`.
 
+If using a custom domain (e.g., `jobflow.dev`), drop the `base` or set it to `'/'`. Add a `public/CNAME` file with the domain.
 
-async def stream_prompt(
-    prompt: str,
-    *,
-    system_prompt: str = "",
-    model: str = DEFAULT_MODEL,
-    max_tokens: int = 4096,
-) -> AsyncIterator[StreamChunk]:
-    """Stream Claude CLI output as text chunks.
+**The withastro/action handles this automatically** if you use the `actions/configure-pages` step upstream. The GitHub starter workflow passes `--site` and `--base` as CLI args to the build command. However, the simpler approach (hardcode in config) is better because it also works in local dev (`npm run dev` serves at `localhost:4321/jobs/`).
 
-    Uses --output-format stream-json with --verbose and
-    --include-partial-messages to get token-by-token NDJSON.
-    Yields StreamChunk objects with extracted text deltas.
-    """
-    cmd = [
-        "claude", "-p",
-        "--output-format", "stream-json",
-        "--verbose",
-        "--include-partial-messages",
-        "--model", model,
-        "--max-turns", "1",
-    ]
-    if system_prompt:
-        cmd.extend(["--system-prompt", system_prompt])
+### 2. `.github/workflows/deploy-site.yml` -- Pages Deployment
 
-    process = await asyncio.create_subprocess_exec(
-        *cmd,
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
+```yaml
+name: Deploy Site
 
-    # Send prompt via stdin
-    assert process.stdin is not None
-    process.stdin.write(prompt.encode("utf-8"))
-    await process.stdin.drain()
-    process.stdin.close()
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+  workflow_dispatch:        # Manual trigger for first deploy or debugging
 
-    # Read NDJSON lines from stdout
-    assert process.stdout is not None
-    accumulated_text = ""
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
-    while True:
-        line = await process.stdout.readline()
-        if not line:
-            break
+concurrency:
+  group: pages              # Different from CI's group (${{ github.workflow }}-...)
+  cancel-in-progress: false # Let deployments finish (don't cancel mid-deploy)
 
-        try:
-            event = json.loads(line.decode("utf-8").strip())
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            continue
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
-        # Extract text deltas from stream events
-        if (
-            event.get("type") == "stream_event"
-            and event.get("event", {}).get("delta", {}).get("type") == "text_delta"
-        ):
-            text = event["event"]["delta"]["text"]
-            accumulated_text += text
-            yield StreamChunk(text=text)
+      - name: Install, build, and upload site
+        uses: withastro/action@v5
+        with:
+          path: ./site      # Astro project is in /site subfolder
 
-    # Wait for process to complete
-    await process.wait()
-
-    if process.returncode != 0:
-        stderr = await process.stderr.read() if process.stderr else b""
-        logger.error("Claude CLI exited with code %d: %s", process.returncode, stderr.decode())
-
-    # Yield final chunk with accumulated text
-    yield StreamChunk(text=accumulated_text, is_final=True)
-
-
-async def run_prompt(
-    prompt: str,
-    *,
-    system_prompt: str = "",
-    model: str = DEFAULT_MODEL,
-    json_schema: str | None = None,
-) -> CliResult:
-    """Run Claude CLI and return complete result (non-streaming).
-
-    Used for structured output (AI scoring) where streaming is not needed.
-    Uses --output-format json for structured response.
-    """
-    cmd = [
-        "claude", "-p",
-        "--output-format", "json",
-        "--model", model,
-        "--max-turns", "1",
-    ]
-    if system_prompt:
-        cmd.extend(["--system-prompt", system_prompt])
-    if json_schema:
-        cmd.extend(["--json-schema", json_schema])
-
-    process = await asyncio.create_subprocess_exec(
-        *cmd,
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-
-    stdout, stderr = await process.communicate(input=prompt.encode("utf-8"))
-
-    if process.returncode != 0:
-        raise RuntimeError(
-            f"Claude CLI exited with code {process.returncode}: {stderr.decode()}"
-        )
-
-    result = json.loads(stdout.decode("utf-8"))
-    return CliResult(
-        text=result.get("result", ""),
-        session_id=result.get("session_id"),
-        usage=result.get("usage"),
-    )
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 ```
 
 **Key design decisions:**
-- Uses `asyncio.create_subprocess_exec` (not `subprocess.Popen`) because the caller is the async FastAPI event loop
-- Sends prompt via stdin (not CLI arg) to handle long prompts safely -- CLI args have OS-level length limits
-- Parses NDJSON line-by-line for streaming, filters for `text_delta` events specifically
-- `stream_prompt()` is an async iterator -- natural fit for asyncio.Queue bridging
-- `run_prompt()` is a simple async function for non-streaming structured output (AI scoring)
-- No `asyncio.to_thread` needed because `create_subprocess_exec` is already non-blocking
 
-### 2. `resume_ai/ai_scorer.py` -- AI-Powered Scoring
+- **`paths: ['site/**']`** -- Only triggers when files in `/site` change. Python code changes do not trigger a deploy. This is the native GitHub Actions path filter (not `dorny/paths-filter`), which is sufficient here because we want workflow-level filtering, not job-level.
+- **`workflow_dispatch`** -- Allows manual triggering for the initial setup or when debugging. Important for the first deploy before any `site/` commits exist.
+- **`concurrency: group: pages`** -- Uses a DIFFERENT group name than the CI workflow. The CI uses `${{ github.workflow }}-${{ github.ref }}` which resolves to `CI-refs/heads/main`. The deploy uses `pages`. They never conflict.
+- **`cancel-in-progress: false`** -- For Pages deploys, let the current deployment finish. Unlike CI where you want to cancel stale runs, a half-deployed site is worse than waiting.
+- **`path: ./site`** -- The withastro/action detects the `package-lock.json` inside `./site`, installs dependencies there, runs `astro build` there, and uploads `./site/dist/` as the Pages artifact.
+- **No `actions/configure-pages` step needed** -- The withastro/action handles Pages artifact upload internally. The starter workflow uses configure-pages only when building manually (not using withastro/action).
 
-```python
-# resume_ai/ai_scorer.py
-import json
+### 3. `.github/workflows/ci.yml` -- Modified (Add Path Filter)
 
-from resume_ai.claude_cli import run_prompt
+```yaml
+# EXISTING ci.yml -- add paths-ignore to skip on site-only changes
+name: CI
 
-AI_SCORER_SYSTEM_PROMPT = """\
-You are a job match scoring assistant. Given a candidate resume and a job \
-description, score the match on a scale of 1-5 with a detailed breakdown.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'site/**'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'site/**'
 
-Score criteria:
-- 5: Exceptional match -- candidate exceeds requirements
-- 4: Strong match -- candidate meets most requirements
-- 3: Moderate match -- candidate meets some requirements
-- 2: Weak match -- minimal overlap
-- 1: Poor match -- misaligned
-
-Provide scores for each dimension: title_relevance, tech_overlap, \
-experience_level, culture_fit, and overall."""
-
-AI_SCORE_SCHEMA = json.dumps({
-    "type": "object",
-    "properties": {
-        "overall_score": {"type": "integer", "minimum": 1, "maximum": 5},
-        "title_relevance": {"type": "integer", "minimum": 1, "maximum": 5},
-        "tech_overlap": {"type": "integer", "minimum": 1, "maximum": 5},
-        "experience_level": {"type": "integer", "minimum": 1, "maximum": 5},
-        "culture_fit": {"type": "integer", "minimum": 1, "maximum": 5},
-        "reasoning": {"type": "string"},
-        "matched_skills": {"type": "array", "items": {"type": "string"}},
-        "missing_skills": {"type": "array", "items": {"type": "string"}},
-    },
-    "required": [
-        "overall_score", "title_relevance", "tech_overlap",
-        "experience_level", "culture_fit", "reasoning",
-    ],
-})
-
-
-async def ai_score_job(
-    resume_text: str,
-    job_title: str,
-    job_description: str,
-    company_name: str,
-) -> dict:
-    """Score a job match using Claude AI.
-
-    Returns a dict with overall_score (1-5), dimension scores,
-    reasoning, matched_skills, and missing_skills.
-    """
-    prompt = (
-        f"## Candidate Resume\n\n{resume_text}\n\n"
-        f"## Job: {job_title} at {company_name}\n\n{job_description}"
-    )
-
-    result = await run_prompt(
-        prompt,
-        system_prompt=AI_SCORER_SYSTEM_PROMPT,
-        json_schema=AI_SCORE_SCHEMA,
-    )
-
-    # Parse structured output from CLI JSON response
-    return json.loads(result.text) if result.text.startswith("{") else {"overall_score": 0}
+# ... rest unchanged
 ```
 
-**Key design decisions:**
-- Uses `--json-schema` flag for structured output -- the CLI enforces the schema
-- Does NOT need streaming because scoring is a fast single-turn call
-- Returns a dict matching the schema, ready for SQLite JSON storage
-- Async by nature (no `to_thread` wrapper needed)
+**Why `paths-ignore` instead of `paths`:** The CI workflow should run on ALL changes EXCEPT site-only changes. Using `paths` would require listing every Python directory, which is fragile. `paths-ignore: ['site/**']` is the inverse -- "run unless ONLY site files changed." If a commit touches both `site/` and `scorer.py`, CI still runs.
 
-### 3. Modifications to `resume_ai/tailor.py`
+### 4. `.gitignore` Updates
 
-The tailor module gets a new async streaming function alongside the existing sync function (keep backward compatibility for tests/CLI usage).
-
-```python
-# Added to resume_ai/tailor.py
-
-async def tailor_resume_streaming(
-    resume_text: str,
-    job_description: str,
-    job_title: str,
-    company_name: str,
-    model: str = DEFAULT_MODEL,
-) -> AsyncIterator[StreamChunk]:
-    """Stream resume tailoring via Claude CLI.
-
-    Yields text chunks as they arrive. The final chunk (is_final=True)
-    contains the complete accumulated text for post-processing.
-    """
-    from resume_ai.claude_cli import stream_prompt
-
-    user_message = (
-        f"## Original Resume\n\n{resume_text}\n\n"
-        f"## Target Job Description\n\n{job_description}\n\n"
-        f"## Target Role\n\n"
-        f"- **Job Title:** {job_title}\n"
-        f"- **Company:** {company_name}\n"
-    )
-
-    async for chunk in stream_prompt(
-        user_message,
-        system_prompt=SYSTEM_PROMPT,
-        model=model,
-    ):
-        yield chunk
+```gitignore
+# Node (site subfolder)
+node_modules/
+site/dist/
+site/.astro/
 ```
 
-**The existing `tailor_resume()` sync function is preserved** for backward compatibility and testing. The new streaming variant is used exclusively by the SSE endpoints.
+Adding `node_modules/` at the root level of `.gitignore` recursively ignores all `node_modules/` directories anywhere in the repo tree, including `site/node_modules/`. No need for a separate `.gitignore` inside `site/`.
 
-Same pattern applies to `resume_ai/cover_letter.py`.
+### 5. Astro Component Architecture (Marketing Site)
 
-### 4. SSE Endpoints in `webapp/app.py`
+#### Layout Layer
 
-Follow the exact pattern from the apply engine. Three new endpoints per AI tool: trigger (POST), stream (GET SSE), and the existing sync endpoint is kept as fallback.
-
-```python
-# New pattern in webapp/app.py (sketch -- not complete implementation)
-
-# ---- Resume tailoring with SSE ----
-
-_ai_sessions: dict[str, asyncio.Queue] = {}
-
-@app.post("/jobs/{dedup_key:path}/tailor-resume/start", response_class=HTMLResponse)
-async def tailor_resume_start(request: Request, dedup_key: str):
-    """Start streaming resume tailoring, return SSE connection HTML."""
-    job = db.get_job(dedup_key)
-    if not job:
-        return HTMLResponse("<h1>Job not found</h1>", status_code=404)
-
-    queue = asyncio.Queue()
-    _ai_sessions[f"tailor:{dedup_key}"] = queue
-
-    # Start background task
-    asyncio.create_task(_run_tailor_stream(job, dedup_key, queue))
-
-    encoded_key = urllib.parse.quote(dedup_key, safe="")
-    return HTMLResponse(
-        f'<div hx-ext="sse"'
-        f' sse-connect="/jobs/{encoded_key}/tailor-resume/stream"'
-        f' sse-swap="progress"'
-        f' sse-close="done">'
-        f'  <div id="ai-stream-status">'
-        f'    <p class="text-sm text-gray-500">Starting resume tailoring...</p>'
-        f'  </div>'
-        f'</div>'
-    )
-
-@app.get("/jobs/{dedup_key:path}/tailor-resume/stream")
-async def tailor_resume_stream(request: Request, dedup_key: str):
-    """SSE endpoint streaming resume tailoring progress."""
-    from sse_starlette import EventSourceResponse
-
-    queue = _ai_sessions.get(f"tailor:{dedup_key}")
-    if queue is None:
-        return HTMLResponse("No active session", status_code=404)
-
-    async def event_generator():
-        try:
-            while True:
-                if await request.is_disconnected():
-                    break
-                try:
-                    event = await asyncio.wait_for(queue.get(), timeout=30)
-                    event_type = event.get("type", "progress")
-                    html = templates.get_template(
-                        "partials/ai_stream_status.html"
-                    ).render(event=event, dedup_key=dedup_key)
-                    yield {"event": event_type, "data": html}
-                    if event_type == "done":
-                        break
-                except TimeoutError:
-                    yield {"event": "ping", "data": ""}
-        except asyncio.CancelledError:
-            pass
-
-    return EventSourceResponse(event_generator())
+```
+site/src/layouts/
+  BaseLayout.astro        # HTML <head>, OG meta, fonts, global CSS, <slot/>
 ```
 
-### 5. Database Schema Migration (v7)
+**BaseLayout.astro** handles:
+- HTML lang, charset, viewport
+- Page title (via prop), OG tags (title, description, image)
+- Google Fonts or local font loading
+- Global CSS import
+- Dark/light mode (via `prefers-color-scheme` or manual toggle)
+- Canonical URL construction using `Astro.site` + `Astro.url.pathname`
 
-```python
-# Added to webapp/db.py MIGRATIONS dict
+```astro
+---
+// site/src/layouts/BaseLayout.astro
+interface Props {
+  title: string;
+  description: string;
+  ogImage?: string;
+}
 
-7: [
-    "ALTER TABLE jobs ADD COLUMN ai_score INTEGER",
-    "ALTER TABLE jobs ADD COLUMN ai_score_breakdown TEXT",
-    "ALTER TABLE jobs ADD COLUMN ai_scored_at TEXT",
-],
+const { title, description, ogImage = '/og-default.png' } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={new URL(ogImage, Astro.site)} />
+  <link rel="canonical" href={canonicalURL} />
+  <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+</head>
+<body>
+  <slot />
+</body>
+</html>
 ```
 
-Three new columns on the `jobs` table:
-- `ai_score` (INTEGER): The AI-generated overall score (1-5), separate from the existing heuristic `score`
-- `ai_score_breakdown` (TEXT): JSON blob with dimension scores, reasoning, matched/missing skills
-- `ai_scored_at` (TEXT): ISO timestamp of when AI scoring was performed
+**Note:** `import.meta.env.BASE_URL` is critical for project pages. All static asset references in HTML must use it so paths work under `/jobs/` prefix.
 
-**The existing `score` column is untouched.** AI score is a separate dimension -- the heuristic score runs during pipeline scraping (fast, free), while AI score is on-demand from the dashboard (slower, costs API credits).
+#### Section Components (Page Sections)
+
+```
+site/src/components/sections/
+  Hero.astro              # Above-the-fold: headline, subtitle, CTA buttons
+  Features.astro          # Grid of feature cards (scraping, scoring, dashboard, AI, apply)
+  Pipeline.astro          # Visual pipeline diagram (scrape -> score -> review -> apply)
+  Screenshots.astro       # Dashboard screenshot gallery with browser chrome frames
+  TechStack.astro         # Technology badges/logos
+  CTA.astro               # Final call-to-action (GitHub link, getting started)
+  Footer.astro            # Links, license, attribution
+```
+
+Each section is a self-contained Astro component. The page composes them:
+
+```astro
+---
+// site/src/pages/index.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/sections/Hero.astro';
+import Features from '../components/sections/Features.astro';
+import Pipeline from '../components/sections/Pipeline.astro';
+import Screenshots from '../components/sections/Screenshots.astro';
+import TechStack from '../components/sections/TechStack.astro';
+import CTA from '../components/sections/CTA.astro';
+import Footer from '../components/sections/Footer.astro';
+---
+<BaseLayout title="JobFlow" description="AI-powered job search automation">
+  <Hero />
+  <Features />
+  <Pipeline />
+  <Screenshots />
+  <TechStack />
+  <CTA />
+  <Footer />
+</BaseLayout>
+```
+
+**No React/Vue needed.** A marketing landing page is entirely static. Astro components compile to zero JavaScript by default. Interactive elements (smooth scroll, mobile menu toggle) use vanilla JS in `<script>` tags within Astro components -- no framework hydration needed.
+
+#### UI Primitives
+
+```
+site/src/components/ui/
+  Button.astro            # <a> styled as button, with variant prop (primary/secondary/ghost)
+  Badge.astro             # Tech stack badges, status indicators
+  Card.astro              # Feature card wrapper
+  ScreenshotFrame.astro   # Browser chrome mockup wrapping a screenshot image
+  Section.astro           # Consistent section wrapper (padding, max-width, id for anchor)
+```
+
+### 6. Image Optimization Pipeline
+
+**Strategy:** Store screenshots as PNGs in `site/src/assets/screenshots/`. Astro's built-in image service (Sharp) optimizes them at build time.
+
+```astro
+---
+// Inside Screenshots.astro or ScreenshotFrame.astro
+import { Picture } from 'astro:assets';
+import dashboardImg from '../../assets/screenshots/dashboard.png';
+---
+<Picture
+  src={dashboardImg}
+  formats={['avif', 'webp']}
+  widths={[400, 800, 1200]}
+  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px"
+  alt="JobFlow dashboard showing scored job listings with filtering and search"
+  class="rounded-lg shadow-xl"
+/>
+```
+
+**How it works:**
+
+1. **Source images** go in `src/assets/` (NOT `public/`). Images in `src/assets/` are processed by Sharp. Images in `public/` are served as-is.
+2. **`<Picture>` component** generates a `<picture>` element with multiple `<source>` tags (avif, webp) and a `<img>` fallback (original format).
+3. **`formats={['avif', 'webp']}`** -- AVIF for modern browsers (best compression), WebP for broad support, original PNG as fallback. Order matters: list most modern first.
+4. **`widths={[400, 800, 1200]}`** -- Generates three size variants. Browser picks the best one based on viewport and device pixel ratio.
+5. **`sizes` attribute** -- Tells the browser how wide the image will be rendered at each breakpoint, so it can pick the right `srcset` entry without waiting for CSS.
+6. **Layout shift prevention** -- Astro automatically infers `width` and `height` from the source image and includes them in the `<img>` tag, preventing CLS.
+
+**Image workflow for screenshots:**
+
+```
+1. Take screenshot of running dashboard (locally)
+2. Save as PNG in site/src/assets/screenshots/dashboard.png
+3. Astro build generates:
+   site/dist/_astro/dashboard.abc123.avif (400w, 800w, 1200w)
+   site/dist/_astro/dashboard.abc123.webp (400w, 800w, 1200w)
+   site/dist/_astro/dashboard.abc123.png  (fallback)
+4. HTML references the hashed filenames automatically
+```
+
+No external image CDN. No manual conversion. No separate image optimization step.
 
 ## Patterns to Follow
 
-### Pattern 1: Queue-Based SSE Bridging (Reuse from apply_engine)
+### Pattern 1: Base Path Awareness in All Links
 
-**What:** Use `asyncio.Queue` to bridge background async tasks to SSE `EventSourceResponse` generators.
+**What:** Every internal link and asset reference must account for the `/jobs/` base path prefix.
 
-**Why:** This exact pattern already works in `apply_engine/engine.py` (lines 82-84, 112-122). The apply engine uses `_make_emitter()` with `loop.call_soon_threadsafe()` to bridge sync threads to async queues. For Claude CLI, the subprocess is already async, so the simpler direct `queue.put()` pattern works.
-
-**Example:**
-```python
-async def _run_tailor_stream(job: dict, dedup_key: str, queue: asyncio.Queue):
-    """Background task: stream resume tailoring and push events to queue."""
-    try:
-        # Emit progress events as chunks arrive
-        await queue.put({"type": "progress", "message": "Extracting resume text..."})
-
-        resume_text = await asyncio.to_thread(extract_resume_text, resume_path)
-        await queue.put({"type": "progress", "message": "Sending to Claude..."})
-
-        accumulated = ""
-        async for chunk in tailor_resume_streaming(...):
-            if not chunk.is_final:
-                accumulated += chunk.text
-                # Emit every ~200 chars to avoid flooding
-                if len(accumulated) % 200 < len(chunk.text):
-                    await queue.put({
-                        "type": "progress",
-                        "message": f"Generating... ({len(accumulated)} chars)",
-                    })
-            else:
-                # Final chunk -- do post-processing
-                await queue.put({"type": "progress", "message": "Validating output..."})
-                # ... validation, PDF generation, etc.
-                await queue.put({
-                    "type": "done",
-                    "message": "Resume tailored successfully",
-                    "html": rendered_result_html,
-                })
-    except Exception as exc:
-        await queue.put({"type": "error", "message": str(exc)})
-        await queue.put({"type": "done", "message": "Tailoring failed"})
-    finally:
-        _ai_sessions.pop(f"tailor:{dedup_key}", None)
-```
-
-### Pattern 2: Async Subprocess for Claude CLI (Not asyncio.to_thread)
-
-**What:** Use `asyncio.create_subprocess_exec()` directly instead of wrapping `subprocess.run()` in `asyncio.to_thread()`.
-
-**Why:** The Claude CLI streams output over time (10-30 seconds for resume tailoring). `asyncio.to_thread(subprocess.run)` would block the thread until the process completes, preventing incremental streaming. `create_subprocess_exec` with `readline()` gives line-by-line access to NDJSON output without blocking the event loop.
-
-**Critical distinction from apply_engine:** The apply engine uses `asyncio.to_thread()` because Playwright is synchronous and cannot be made async. The Claude CLI subprocess IS naturally async via `asyncio.subprocess`. Do not wrap it in `to_thread`.
-
-### Pattern 3: Prompt via stdin, Not CLI Argument
-
-**What:** Send the prompt to the Claude CLI via stdin (`process.stdin.write()`) rather than as a CLI argument.
-
-**Why:** Resume text + job descriptions can easily exceed 100KB. OS-level argument length limits (`ARG_MAX`) are typically 256KB on macOS but as low as 128KB on some Linux systems. Stdin has no practical limit.
+**When:** Always, when deploying as a project page (not a custom domain).
 
 **How:**
-```python
-process = await asyncio.create_subprocess_exec(
-    "claude", "-p", "--output-format", "stream-json", ...,
-    stdin=asyncio.subprocess.PIPE,
-    stdout=asyncio.subprocess.PIPE,
-    stderr=asyncio.subprocess.PIPE,
-)
-process.stdin.write(prompt.encode("utf-8"))
-await process.stdin.drain()
-process.stdin.close()
+```astro
+<!-- CORRECT: Use import.meta.env.BASE_URL for static assets in HTML -->
+<link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+
+<!-- CORRECT: Anchor links for same-page navigation -->
+<a href="#features">Features</a>  <!-- Hash links don't need base -->
+
+<!-- CORRECT: Imported images (Astro handles path automatically) -->
+import logo from '../assets/logo.svg';
+<img src={logo.src} alt="Logo" />
+
+<!-- WRONG: Hardcoded absolute path (breaks on project pages) -->
+<link rel="icon" href="/favicon.svg" />
 ```
 
-### Pattern 4: Separate Heuristic and AI Scores
+Astro automatically prefixes paths for imported assets and `<Image>`/`<Picture>` components. Manual HTML `href`/`src` attributes need `import.meta.env.BASE_URL` explicitly.
 
-**What:** Keep the existing `score` column for the fast heuristic scorer. Add `ai_score` as a separate column.
+### Pattern 2: Section Component Data Flow (Props Down, No State)
 
-**Why:** The heuristic scorer runs during pipeline scraping (milliseconds per job, free). AI scoring is on-demand (10+ seconds per job, costs API credits). They serve different purposes:
-- Heuristic score: batch triage during scraping (all jobs get one automatically)
-- AI score: deep analysis when a user is evaluating a specific job
+**What:** Section components receive data via props or define data inline. No stores, no client-side state, no fetch calls.
 
-The dashboard can display both: "Score: 4 | AI: 5" with the AI score breakdown on hover/expand.
+**Why:** This is a static marketing page. All content is known at build time. Astro components run at build time and produce static HTML.
 
-### Pattern 5: Structured Output via --json-schema (AI Scorer)
+**Example:**
+```astro
+---
+// site/src/components/sections/Features.astro
+const features = [
+  {
+    icon: '🔍',
+    title: 'Multi-Platform Discovery',
+    description: 'Scrapes Indeed, Dice, and RemoteOK simultaneously.',
+  },
+  {
+    icon: '🎯',
+    title: 'Smart Scoring',
+    description: 'Weighted scoring against your profile. 1-5 scale with explanations.',
+  },
+  // ...
+];
+---
+<section id="features">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    {features.map(f => (
+      <div class="p-6 rounded-lg border">
+        <span class="text-3xl">{f.icon}</span>
+        <h3 class="text-xl font-bold mt-4">{f.title}</h3>
+        <p class="mt-2 text-gray-600">{f.description}</p>
+      </div>
+    ))}
+  </div>
+</section>
+```
 
-**What:** Use the Claude CLI's `--json-schema` flag for AI scoring instead of parsing free-form text.
+### Pattern 3: Separate Concurrency Groups for CI and Deploy
 
-**Why:** The CLI enforces the JSON schema at the model level (equivalent to `messages.parse()` with `output_format`). This guarantees the response matches the expected structure without brittle regex parsing. The structured output appears in the `structured_output` field of the JSON response.
+**What:** CI and deploy workflows use different `concurrency.group` names.
 
-```bash
-claude -p --output-format json \
-  --json-schema '{"type":"object","properties":{"overall_score":{"type":"integer"}},...}'
+**Why:** If they share a group, a site deploy could cancel a running CI check (or vice versa). Each workflow protects its own domain.
+
+```yaml
+# ci.yml
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}  # "CI-refs/heads/main"
+  cancel-in-progress: true                          # Cancel stale CI runs
+
+# deploy-site.yml
+concurrency:
+  group: pages                                      # "pages"
+  cancel-in-progress: false                         # Let deploys finish
+```
+
+### Pattern 4: Commit the Lockfile, Gitignore node_modules
+
+**What:** `site/package-lock.json` is committed. `node_modules/` is gitignored.
+
+**Why:** The withastro/action auto-detects the package manager by scanning for a lockfile. If it finds `package-lock.json` in the `path` directory, it uses `npm`. If it finds `pnpm-lock.yaml`, it uses `pnpm`. No lockfile = action fails or falls back unpredictably.
+
+```gitignore
+# .gitignore (at repo root)
+node_modules/      # Covers site/node_modules/ recursively
+site/dist/         # Build output
+site/.astro/       # Astro cache
 ```
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Using subprocess.Popen in Sync Context
+### Anti-Pattern 1: package.json at Repo Root
 
-**What:** Wrapping `subprocess.Popen()` or `subprocess.run()` in `asyncio.to_thread()` for the Claude CLI.
+**What:** Putting Astro's `package.json` at the repo root alongside `pyproject.toml`.
 
-**Why bad:** Loses streaming capability. The thread blocks until the process completes. No incremental progress events can be emitted. The user stares at a spinner for 15+ seconds with no feedback -- exactly the problem we are solving.
+**Why bad:** Confuses contributors. Python devs run `uv sync` at root. If there is a `package.json` there too, editors auto-detect it as a JS project. ESLint, Prettier, and other JS tools may activate. CI may try to install npm deps at the wrong level. Keep the worlds separate.
 
-**Instead:** Use `asyncio.create_subprocess_exec()` with `stdout=PIPE`, read lines with `readline()` in an async loop.
+**Instead:** All Node tooling lives inside `site/`. `cd site && npm install` is the only npm command needed.
 
-### Anti-Pattern 2: Single Endpoint for Both Trigger and Stream
+### Anti-Pattern 2: Sharing CI and Deploy in One Workflow
 
-**What:** Having one POST endpoint that both starts the generation and returns the SSE stream.
+**What:** Adding the Astro build job to the existing `ci.yml` workflow.
 
-**Why bad:** htmx's SSE extension (`hx-ext="sse"`) requires a GET endpoint for `sse-connect`. The trigger must be a POST (to initiate the action), and the stream must be a separate GET (for the SSE connection). The apply engine already demonstrates this two-endpoint pattern correctly.
+**Why bad:** Different triggers (Python CI runs on all code; site deploy runs only on `site/**`). Different permissions (deploy needs `pages: write` + `id-token: write`; CI needs neither). Different concurrency semantics. Mixing them creates complex conditional logic and permission escalation.
 
-**Instead:** POST `/jobs/{key}/tailor-resume/start` returns HTML with `sse-connect` pointing to GET `/jobs/{key}/tailor-resume/stream`.
+**Instead:** Two separate workflow files. Clean separation. Each workflow has exactly the permissions it needs.
 
-### Anti-Pattern 3: Replacing the Anthropic SDK Entirely
+### Anti-Pattern 3: Using `public/` for Screenshot Images
 
-**What:** Removing `anthropic` from requirements and making the Claude CLI the only way to call the model.
+**What:** Putting dashboard screenshots in `site/public/screenshots/` instead of `site/src/assets/screenshots/`.
 
-**Why bad:** The existing sync `tailor_resume()` and `generate_cover_letter()` functions work and are used by tests. The CLI approach adds subprocess overhead and requires the `claude` binary to be installed. Keeping both paths provides fallback and testability.
+**Why bad:** Images in `public/` are served as-is with no optimization. A 2MB PNG stays a 2MB PNG. No AVIF/WebP conversion. No responsive `srcset` generation. No automatic width/height for CLS prevention.
 
-**Instead:** Add new `*_streaming()` async functions that use `claude_cli.py`. Keep existing sync functions that use the `anthropic` SDK. The SSE endpoints call the streaming variants; the original POST endpoints keep using the sync path (via `asyncio.to_thread`).
+**Instead:** All images that benefit from optimization go in `src/assets/`. Only truly static files (favicon, CNAME, robots.txt) go in `public/`.
 
-### Anti-Pattern 4: Parsing Full Resume from Streaming Text
+### Anti-Pattern 4: Hardcoded Paths Without Base URL
 
-**What:** Trying to parse the Claude CLI's streaming text output into `TailoredResume` or `CoverLetter` Pydantic models mid-stream.
+**What:** Writing `href="/about"` or `src="/images/logo.png"` in templates.
 
-**Why bad:** Streaming produces partial text. You cannot parse a half-complete JSON object into a Pydantic model. The stream is for progress feedback, not for structured parsing.
+**Why bad:** On a project page at `username.github.io/jobs/`, the path `/about` resolves to `username.github.io/about` (wrong). It should be `username.github.io/jobs/about`.
 
-**Instead:** Use streaming ONLY for progress events ("Generating... 500 chars"). When the stream completes, use the accumulated full text (or a separate `--output-format json` call) to produce the structured Pydantic model for diff/PDF generation.
+**Instead:** Use `import.meta.env.BASE_URL` for manual paths. Use Astro's `<Image>` / `<Picture>` for images (handles paths automatically). Hash links (`#features`) are fine as-is.
 
-### Anti-Pattern 5: Global Mutable State for Session Management
+### Anti-Pattern 5: Adding Framework Integrations for Simple Interactivity
 
-**What:** Using a module-level `_ai_sessions: dict` without cleanup, allowing leaked sessions to accumulate.
+**What:** Installing `@astrojs/react` or `@astrojs/vue` to add a mobile menu toggle or smooth scroll.
 
-**Why bad:** If the user navigates away or the SSE connection drops, orphaned queues persist in memory. Over time, this leaks memory.
+**Why bad:** Adds ~40KB+ of framework JS to what should be a zero-JS static page. Marketing landing pages have trivial interactivity needs.
 
-**Instead:** Always clean up sessions in `finally` blocks (like `apply_engine/engine.py` lines 98-100). Add a timeout to the queue consumer. Consider a TTL-based cleanup sweep on a periodic task.
+**Instead:** Use Astro's built-in `<script>` tag for vanilla JS. Astro bundles and optimizes `<script>` tags at build time.
+
+```astro
+<!-- Inside a component -->
+<button id="mobile-menu-toggle">Menu</button>
+<nav id="mobile-menu" class="hidden">...</nav>
+
+<script>
+  document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
+    document.getElementById('mobile-menu')?.classList.toggle('hidden');
+  });
+</script>
+```
+
+## Data Flow
+
+There is **no runtime data flow** between the Python app and the Astro site. They are completely independent:
+
+```
+Python App (localhost:8000)          Astro Site (username.github.io/jobs/)
+================================     ================================
+Dynamic web app                      Static HTML/CSS/images
+FastAPI + SQLite + htmx              Pre-rendered at build time
+Runs locally on user machine         Hosted on GitHub Pages CDN
+Contains real job data               Contains marketing copy + screenshots
+Private (localhost only)             Public (anyone can visit)
+```
+
+The only connection is **content**: screenshots of the running dashboard are captured manually and committed to `site/src/assets/screenshots/`. The site describes what the Python app does, but does not call it, fetch from it, or depend on it at build time.
 
 ## Integration Points: Existing vs New Code
 
@@ -622,102 +562,145 @@ claude -p --output-format json \
 
 | File | What Changes | Why |
 |------|-------------|-----|
-| `resume_ai/tailor.py` | Add `tailor_resume_streaming()` async function | New streaming path alongside existing sync |
-| `resume_ai/cover_letter.py` | Add `generate_cover_letter_streaming()` async function | Same pattern as tailor |
-| `webapp/app.py` | 4 new endpoints: tailor start/stream, cover letter start/stream, AI rescore | SSE streaming + scoring |
-| `webapp/db.py` | Migration v7 (3 new columns), `update_ai_score()` helper, bump `SCHEMA_VERSION` to 7 | AI score storage |
-| `webapp/templates/job_detail.html` | SSE wiring in AI Resume Tools section, AI score display | Frontend integration |
-| `config.py` | Optional: `claude_cli_model` setting in YAML | Model selection |
+| `.github/workflows/ci.yml` | Add `paths-ignore: ['site/**']` to push and pull_request triggers | Skip Python CI on site-only changes |
+| `.gitignore` | Add `node_modules/`, `site/dist/`, `site/.astro/` | Ignore Node artifacts |
 
 ### Files Created
 
 | File | Purpose | Depends On |
 |------|---------|-----------|
-| `resume_ai/claude_cli.py` | Claude CLI subprocess wrapper (streaming + non-streaming) | `asyncio`, `json` (stdlib only) |
-| `resume_ai/ai_scorer.py` | AI scoring logic, prompt construction, result parsing | `claude_cli.py` |
-| `webapp/templates/partials/ai_stream_status.html` | SSE event rendering template for AI streaming | Follows `apply_status.html` pattern |
-| `webapp/templates/partials/ai_score_result.html` | AI score display with breakdown | Standard htmx partial |
+| `.github/workflows/deploy-site.yml` | Astro build + GitHub Pages deployment | withastro/action@v5, deploy-pages@v4 |
+| `site/astro.config.mjs` | Site/base config, image optimization | Astro |
+| `site/package.json` | Dependencies (astro, @astrojs/tailwind if used) | npm |
+| `site/package-lock.json` | Lockfile (MUST commit for action detection) | npm |
+| `site/tsconfig.json` | TypeScript config (Astro defaults) | Astro |
+| `site/src/pages/index.astro` | Marketing page (composes sections) | Layout, all section components |
+| `site/src/layouts/BaseLayout.astro` | HTML shell, meta, OG, fonts, global CSS | Astro |
+| `site/src/components/sections/Hero.astro` | Above-the-fold section | BaseLayout, UI components |
+| `site/src/components/sections/Features.astro` | Feature grid | UI components |
+| `site/src/components/sections/Pipeline.astro` | Visual pipeline diagram | UI components |
+| `site/src/components/sections/Screenshots.astro` | Dashboard screenshot gallery | ScreenshotFrame, astro:assets |
+| `site/src/components/sections/TechStack.astro` | Technology badges | UI components |
+| `site/src/components/sections/CTA.astro` | Call-to-action with GitHub link | UI components |
+| `site/src/components/sections/Footer.astro` | Footer with links | None |
+| `site/src/components/ui/Button.astro` | Link styled as button | None |
+| `site/src/components/ui/Badge.astro` | Tech/status badge | None |
+| `site/src/components/ui/Card.astro` | Feature card wrapper | None |
+| `site/src/components/ui/Section.astro` | Consistent section wrapper | None |
+| `site/src/components/ui/ScreenshotFrame.astro` | Browser chrome mockup | astro:assets Picture |
+| `site/src/assets/screenshots/*.png` | Dashboard screenshots | Manual capture |
+| `site/src/styles/global.css` | Global styles, CSS custom properties | Tailwind (optional) |
+| `site/public/favicon.svg` | Site favicon | None |
 
 ### Dependencies Between New Components
 
 ```
-claude_cli.py (foundation -- no internal dependencies)
-    |
-    +---> tailor.py (adds streaming function, imports stream_prompt)
-    |
-    +---> cover_letter.py (adds streaming function, imports stream_prompt)
-    |
-    +---> ai_scorer.py (imports run_prompt for structured output)
-              |
-              v
-         webapp/db.py (migration v7 -- ai_score columns)
-              |
-              v
-         webapp/app.py (new endpoints import tailor, cover_letter, ai_scorer)
-              |
-              v
-         job_detail.html + partials (SSE wiring, score display)
+.github/workflows/deploy-site.yml (standalone -- no code dependency)
+
+site/astro.config.mjs (foundation -- configures build)
+  |
+  v
+site/src/layouts/BaseLayout.astro (depends on config for base URL)
+  |
+  v
+site/src/pages/index.astro (imports layout + all sections)
+  |
+  +---> site/src/components/sections/Hero.astro
+  |       |
+  |       +---> site/src/components/ui/Button.astro
+  |
+  +---> site/src/components/sections/Features.astro
+  |       |
+  |       +---> site/src/components/ui/Card.astro
+  |
+  +---> site/src/components/sections/Screenshots.astro
+  |       |
+  |       +---> site/src/components/ui/ScreenshotFrame.astro
+  |       |       |
+  |       |       +---> site/src/assets/screenshots/*.png (via astro:assets)
+  |       |
+  |       +---> astro:assets Picture component
+  |
+  +---> site/src/components/sections/Pipeline.astro
+  +---> site/src/components/sections/TechStack.astro
+  +---> site/src/components/sections/CTA.astro
+  +---> site/src/components/sections/Footer.astro
 ```
 
 ## Build Order
 
-The dependency graph dictates this build order:
-
 ```
-Step 1: resume_ai/claude_cli.py
-    |   Core abstraction. No dependencies on existing code.
-    |   Test: can stream "hello world" prompt, can run with json-schema.
+Step 1: Scaffold Astro project in /site
+    |   npm create astro@latest (or manual setup)
+    |   Configure astro.config.mjs with site + base
+    |   Commit package.json + package-lock.json
+    |   Verify: npm run dev serves at localhost:4321/jobs/
     v
-Step 2: webapp/db.py migration v7
-    |   Add ai_score, ai_score_breakdown, ai_scored_at columns.
-    |   Bump SCHEMA_VERSION to 7. Add update_ai_score() helper.
-    |   Test: migration runs cleanly on existing DB.
+Step 2: Create BaseLayout.astro
+    |   HTML head, meta tags, font loading, global CSS
+    |   Verify: pages render with correct <head>
     v
-Step 3: resume_ai/ai_scorer.py
-    |   Depends on: claude_cli.py (step 1), db.py (step 2 for schema).
-    |   Test: mock subprocess, verify prompt construction + parsing.
+Step 3: Create UI primitives (Button, Badge, Card, Section, ScreenshotFrame)
+    |   Small, no dependencies on each other
+    |   These can be built in parallel
     v
-Step 4: resume_ai/tailor.py + cover_letter.py modifications
-    |   Add *_streaming() async functions.
-    |   Keep existing sync functions untouched.
-    |   Depends on: claude_cli.py (step 1).
+Step 4: Create section components (Hero, Features, Pipeline, TechStack, CTA, Footer)
+    |   Depend on: UI primitives from step 3
+    |   Content is placeholder initially, refined later
     v
-Step 5: webapp/templates/partials/ (new templates)
-    |   ai_stream_status.html following apply_status.html pattern.
-    |   ai_score_result.html for score display.
-    |   No backend dependency -- pure HTML/Jinja2.
+Step 5: Create Screenshots section + capture actual screenshots
+    |   Depends on: ScreenshotFrame (step 3), running Python app locally
+    |   Save PNGs to site/src/assets/screenshots/
+    |   Use <Picture> component with formats=['avif', 'webp']
     v
-Step 6: webapp/app.py SSE endpoints + AI rescore endpoint
-    |   Depends on: steps 3, 4, 5.
-    |   New endpoints: tailor start/stream, cover letter start/stream, AI rescore.
+Step 6: Compose index.astro (import layout + all sections)
+    |   Depends on: steps 2, 3, 4, 5
+    |   Verify: npm run build succeeds, preview looks correct
     v
-Step 7: webapp/templates/job_detail.html modifications
-    |   Wire SSE for AI tools section.
-    |   Add AI score display.
-    |   Depends on: step 6 (endpoints must exist).
+Step 7: Update .gitignore + ci.yml paths-ignore
+    |   No code dependency, but needed before first push
     v
-Step 8: Integration testing
-        End-to-end: click tailor -> see streaming progress -> get result.
+Step 8: Create deploy-site.yml workflow
+    |   Depends on: site/ existing and building successfully
+    |   Verify: enable GitHub Pages (Settings > Pages > GitHub Actions)
+    v
+Step 9: Push to main, verify deployment
+    |   Check: site accessible at username.github.io/jobs/
+    |   Check: all images load, links work, base path correct
+    |   Check: Python CI still runs on Python changes
+    |   Check: Python CI skips on site-only changes
 ```
 
-**Rationale:** Each step builds on the previous with no forward dependencies. Steps 2-4 can potentially be parallelized since they only share claude_cli.py as a dependency, but the sequential order is safer for a single developer workflow.
+**Rationale:** Steps 1-2 establish the foundation. Steps 3-5 build components bottom-up (primitives before sections). Step 6 is composition. Steps 7-9 are infrastructure and deployment. Steps 3-4 can be parallelized. Step 5 requires the running Python app for screenshots, so it has an external dependency.
+
+## GitHub Pages Setup (One-Time Manual Steps)
+
+Before the workflow can deploy, you must configure the repo:
+
+1. Go to repo **Settings > Pages**
+2. Under "Build and deployment", select **Source: GitHub Actions** (not "Deploy from a branch")
+3. This enables the `actions/deploy-pages@v4` action to deploy
+
+No other manual setup needed. The withastro/action handles everything else.
 
 ## Scalability Considerations
 
-| Concern | At 1 user (current) | At 5 concurrent streams | At 10+ concurrent |
-|---------|---------------------|------------------------|-------------------|
-| Subprocess count | 1 Claude CLI process | 5 concurrent processes | Add semaphore (limit 3) |
-| Memory (queues) | Negligible | ~50KB per queue | TTL cleanup, max queue size |
-| Claude API rate limits | No concern | Check Anthropic limits | Queue/serialize requests |
-| SSE connections | 1 | 5 open connections | EventSourceResponse handles fine |
-| SQLite writes | No contention | WAL handles writes | WAL + busy_timeout already set |
+| Concern | At Launch | At 10 pages | At 50+ pages |
+|---------|-----------|-------------|-------------|
+| Build time | <10s (single page) | ~30s | Consider incremental builds |
+| Image processing | <5s (few screenshots) | ~20s (Sharp parallelizes) | Add `cache: true` in action (default) |
+| Deploy artifact size | <5MB | ~15MB | GitHub Pages limit: 1GB |
+| Base path complexity | Manageable (one page) | More internal links to manage | Consider content collections |
 
-For single-user self-hosted use, none of these are real concerns. The semaphore pattern from `apply_engine/engine.py` (line 42: `asyncio.Semaphore(1)`) can be reused if subprocess concurrency becomes an issue.
+For a single marketing landing page, none of these are concerns. The Astro build cache (enabled by default in withastro/action) speeds up subsequent builds by caching optimized images.
 
 ## Sources
 
-- [Claude Code Headless Mode / Programmatic Usage](https://code.claude.com/docs/en/headless) -- CLI flags, stream-json format, --json-schema
-- [Python asyncio Subprocess Documentation](https://docs.python.org/3/library/asyncio-subprocess.html) -- create_subprocess_exec, PIPE, readline
-- [sse-starlette GitHub](https://github.com/sysid/sse-starlette) -- EventSourceResponse, async generator pattern
-- [Claude Code streaming output issue #733](https://github.com/anthropics/claude-code/issues/733) -- stream-json NDJSON format details
-- Codebase analysis: `apply_engine/engine.py` (Queue + SSE pattern), `webapp/app.py` (existing SSE endpoints), `resume_ai/tailor.py` (current Anthropic SDK usage)
+- [Astro Deploy to GitHub Pages Guide](https://docs.astro.build/en/guides/deploy/github/) -- Official deployment docs (HIGH confidence)
+- [withastro/action GitHub](https://github.com/withastro/action) -- v5.2.0, action.yml parameters (HIGH confidence)
+- [Astro Configuration Reference](https://docs.astro.build/en/reference/configuration-reference/) -- site, base, trailingSlash, image config (HIGH confidence)
+- [Astro Images Guide](https://docs.astro.build/en/guides/images/) -- Image/Picture components, src/ vs public/, responsive images (HIGH confidence)
+- [Astro Project Structure](https://docs.astro.build/en/basics/project-structure/) -- Directory conventions (HIGH confidence)
+- [GitHub Actions Workflow Syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions) -- paths, paths-ignore filters (HIGH confidence)
+- [GitHub Actions Concurrency](https://docs.github.com/en/actions/concepts/workflows-and-actions/concurrency) -- Concurrency group naming (HIGH confidence)
+- [GitHub starter-workflows/pages/astro.yml](https://github.com/actions/starter-workflows/blob/main/pages/astro.yml) -- Official starter template (HIGH confidence)

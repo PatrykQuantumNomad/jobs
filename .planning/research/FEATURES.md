@@ -1,170 +1,156 @@
-# Feature Landscape: Claude CLI Agent Integration
+# Feature Landscape: Project Showcase Site
 
-**Domain:** CLI subprocess AI integration, SSE-streamed document generation, on-demand AI scoring
-**Researched:** 2026-02-11
-**Overall confidence:** MEDIUM (Claude CLI `--json-schema` is well-documented; SSE streaming patterns are mature; subprocess-to-SSE bridging is novel integration work)
+**Domain:** Marketing-forward GitHub Pages showcase site for a technical portfolio project
+**Researched:** 2026-02-13
+**Overall confidence:** HIGH (patterns derived from analysis of Tailwind CSS, Astro, Supabase, shadcn/ui, Cal.com homepages plus recruiter/hiring manager research)
+
+## Context
+
+JobFlow is a shipped 18K LOC Python project with 581 tests across 3 milestones. The showcase site is not the product itself -- it is a marketing surface that presents the product to recruiters, hiring managers, and fellow engineers. The audience is someone who lands on this page from a resume link or GitHub profile and needs to understand in 30 seconds: "This person built something serious."
+
+---
 
 ## Table Stakes
 
-Features users expect when AI document generation and scoring are present. Missing = experience feels broken or incomplete.
+Features visitors expect on a polished project showcase. Missing = the site feels amateur or incomplete, undermining the "serious engineer" signal.
 
-| Feature | Why Expected | Complexity | Depends On |
-|---------|--------------|------------|------------|
-| Claude CLI subprocess wrapper | Core building block -- replaces `anthropic.Anthropic()` calls with `claude -p --output-format json --json-schema <schema>` | Medium | Claude CLI installed, PATH accessible |
-| Pydantic-to-JSON-Schema bridge | Existing `TailoredResume` and `CoverLetter` Pydantic models must feed `--json-schema` flag directly via `model_json_schema()` | Low | Existing `resume_ai/models.py` |
-| System prompt passthrough | Anti-fabrication system prompts in `tailor.py` and `cover_letter.py` must pass to CLI via `--system-prompt` or `--system-prompt-file` | Low | Existing system prompts |
-| Error handling for CLI failures | Process exit codes, stderr capture, timeout handling, missing CLI binary detection | Medium | Subprocess wrapper |
-| Fallback on CLI unavailability | If `claude` binary not found or crashes, surface clear error to user (not a stack trace) | Low | Subprocess wrapper |
-| SSE streaming for resume tailoring | Replace the htmx spinner with real-time progress events during generation (connecting, generating, validating, rendering PDF, done) | Medium | Subprocess wrapper, existing SSE infrastructure from apply engine |
-| SSE streaming for cover letter generation | Same SSE pattern as resume tailoring -- progress events visible in job detail sidebar | Medium | Same as above |
-| AI Rescore button on job detail page | "AI Rescore" button next to existing score display that calls Claude CLI to analyze job fit semantically | Medium | Subprocess wrapper, new Pydantic model for AI score output |
-| AI score result display | Show AI score (1-5), reasoning, matched skills, gaps -- replaces or supplements rule-based score | Low | AI Rescore endpoint, htmx partial |
-| AI score persistence to SQLite | Store AI score, reasoning, and metadata in DB alongside rule-based score | Low | `webapp/db.py` schema extension |
+| Feature | Why Expected | Complexity | Dependencies | Notes |
+|---------|--------------|------------|--------------|-------|
+| **Hero section with value proposition** | First thing visitors see. Must communicate what JobFlow does and why it matters in under 8 seconds. Headline + subheadline + primary CTA (e.g., "View on GitHub"). Every reference site (Tailwind, Astro, Supabase, shadcn/ui) leads with this. | Low | Copywriting | One sentence: what it is. One sentence: why it matters. Do NOT write a paragraph. |
+| **Feature overview section** | Visitors need to understand capabilities at a glance. Grid or card layout showing 6-8 core features with icons and one-line descriptions. Standard on every project site studied. | Low | Icon set, feature copy | Group into logical categories: Discovery, Intelligence, Dashboard, Automation |
+| **Screenshots / visual proof** | 87% of hiring managers consider portfolios more valuable than resumes when evaluating technical skills -- but only when they can SEE the work. Screenshots of the dashboard, kanban board, analytics, SSE streaming in action. | Medium | Must capture high-quality screenshots of all major UI surfaces | This is the single highest-impact content dependency. Without screenshots the site is just claims. |
+| **Architecture / system diagram** | Engineers and technical hiring managers want to understand how the system is structured. A clean diagram showing the pipeline flow (scrape -> score -> dashboard -> apply) and component boundaries. | Medium | Create diagram (Excalidraw, Mermaid, or hand-drawn SVG) | One diagram, not five. Show the full pipeline at a high level. |
+| **Tech stack section** | Visitors want to know what technologies you chose and that you can articulate why. List with logos/icons: Python, Playwright, FastAPI, SQLite, htmx, Claude CLI, etc. | Low | Tech logos/icons | Keep it scannable. Logo + name + one-word role (e.g., "FastAPI -- API & Dashboard") |
+| **Quality signals / badges** | Build passing, test count, coverage percentage, lines of code. These are the "at a glance" credibility indicators. Shields.io badges are the standard. Projects without them look unfinished. | Low | CI pipeline already exists, shields.io badge URLs | Place prominently near hero or in a dedicated stats bar. 581 tests, 80%+ coverage, 18K LOC are strong numbers. |
+| **Stats / metrics bar** | Concrete numbers create instant credibility: "18K lines of code", "581 tests", "3 platforms", "80%+ coverage", "Built in 3 days". Supabase and Astro both use prominent metric sections. | Low | Accurate project stats | Use large typography. Numbers are more persuasive than prose. |
+| **GitHub link (prominent)** | The entire point is driving viewers to the repo. Must be unmissable -- in the nav, in the hero CTA, in the footer. GitHub Pages sites without prominent repo links are suspicious. | Low | GitHub repo URL | Primary CTA should be "View Source on GitHub", not a generic button |
+| **Responsive design** | Recruiters often view on mobile (from email links). A showcase site that breaks on mobile is disqualifying. | Low | Standard CSS | Use modern CSS (Grid, Container Queries). No need for a framework -- this is a static single page. |
+| **Dark mode support** | Expected on developer-facing sites in 2026. Every reference site studied supports it. Tailwind CSS, shadcn/ui, and Astro all default to dark. Absence feels dated. | Low-Med | CSS custom properties, prefers-color-scheme media query | Default to dark (developer audience). Toggle optional but nice. |
+| **Clean typography and spacing** | The site IS the portfolio piece. If the CSS is sloppy, visitors question the code quality. Professional font pairing, consistent spacing, readable line lengths. | Low | Font selection (Inter or similar) | This is a showcase of engineering quality. The site's own code is part of the portfolio. |
+| **Footer with contact/links** | GitHub, LinkedIn, email. Standard navigation element. Missing = dead end. | Low | Personal links | Keep minimal. Not a full "about me" -- this is a project page. |
 
 ## Differentiators
 
-Features that elevate beyond basic "call AI and display result." Not expected, but significantly improve the experience.
+Features that elevate the showcase from "adequate project page" to "this person clearly knows what they're doing." Not expected, but valued -- especially by engineering peers.
 
-| Feature | Value Proposition | Complexity | Depends On |
-|---------|-------------------|------------|------------|
-| Streaming token output during generation | Show Claude's actual text output streaming token-by-token into the UI via `--output-format stream-json`, not just phase markers | High | `asyncio.create_subprocess_exec`, stream-json parsing, SSE forwarding |
-| Side-by-side score comparison | Show rule-based score AND AI score together with a visual diff of what each found | Low | AI Rescore + existing `ScoreBreakdown` |
-| Batch AI rescore | "Rescore All" button to AI-rescore multiple jobs (queued, one at a time) with progress | Medium | AI Rescore endpoint, queue, SSE progress |
-| AI score explanation with job description highlights | AI score response highlights which parts of the job description matched or missed | Medium | Richer Pydantic output model, template rendering |
-| Generation cost tracking | Track and display token usage / cost per generation (Claude CLI JSON output includes usage metadata) | Low | Parse `usage` field from CLI JSON response |
-| Model selection in UI | Dropdown to pick model (sonnet vs opus vs haiku) before generating resume/cover letter/rescore | Low | Pass `--model` flag to CLI subprocess |
-| Retry with different prompt | If generation fails validation, offer "Retry" button that re-runs with the same inputs | Low | SSE error state with retry action |
-| CLI availability health check | Dashboard status indicator showing whether `claude` CLI is available and authenticated | Low | `claude --version` subprocess check |
+| Feature | Value Proposition | Complexity | Dependencies | Notes |
+|---------|-------------------|------------|--------------|-------|
+| **Animated terminal / pipeline demo** | Show the CLI pipeline running with a typing animation effect. Simulates `python orchestrator.py` output showing phases executing. This is the "live demo" equivalent for a CLI tool. Libraries like typed.js make this straightforward. Immediately signals "this actually works" without requiring visitors to install anything. | Medium | Script the terminal output, typed.js or custom JS | Most impactful differentiator. A 15-second animation showing the pipeline phases (Setup -> Login -> Search -> Score -> Apply) with realistic output counts is worth more than 500 words of description. |
+| **Before/after narrative** | "Without JobFlow: 2 hours/day on job boards. With JobFlow: 19 scored matches delivered to your dashboard overnight." Concrete problem -> solution framing. Supabase does this well ("Build in a weekend, scale to millions"). | Low | Copywriting | Frame around the pain point: manual job searching is tedious, repetitive, and error-prone. |
+| **Interactive architecture diagram** | Hover/click on pipeline stages to see details about each component. Transforms a static diagram into an explorable system overview. Shows the engineer thinks about UX even for documentation. | Medium-High | SVG with JS interactions, or CSS-only hover states | Can be done with pure CSS hover states on an SVG -- no framework needed. Fall back to static diagram if time-constrained. |
+| **Code snippets with syntax highlighting** | Show 2-3 carefully chosen code samples: the `@register_platform` decorator pattern, a Pydantic model, the scoring engine. Demonstrates code quality directly. Tailwind CSS uses code examples extensively and effectively. | Low-Med | Prism.js or highlight.js, curated code samples | Choose snippets that show design decisions, not boilerplate. The platform Protocol + decorator registry is ideal -- it shows extensibility thinking. |
+| **"How it works" walkthrough** | 4-5 step visual walkthrough: Configure -> Discover -> Score -> Review -> Apply. Each step with a screenshot or illustration and 1-2 sentences. Astro and Tailwind both structure their homepages around "how it works" narratives. | Medium | Screenshots of each pipeline stage | This is more persuasive than a feature grid because it tells a story. |
+| **Milestone timeline / build narrative** | "v1.0: MVP in 1 day. v1.1: 428 tests + CI. v1.2: Claude CLI integration." Shows velocity, iteration discipline, and growing sophistication. This is uniquely powerful for a portfolio piece -- it demonstrates engineering process, not just output. | Low | Milestone data (already documented in MILESTONES.md) | Use a visual timeline. Include stats per milestone. The "built in 1 day" fact for v1.0 is extraordinary and should be highlighted. |
+| **Scroll-triggered animations** | Sections fade/slide in as the visitor scrolls. Subtle motion signals polish. Can be done with CSS `@scroll-timeline` or IntersectionObserver + CSS classes. No library needed. | Low-Med | IntersectionObserver JS (~20 lines) | Keep animations subtle and fast (200-300ms). Aggressive animation feels like a template, not a serious project. |
+| **Performance metrics** | Lighthouse score badge, page weight, load time. A showcase site that itself scores 100/100 on Lighthouse demonstrates front-end competency even though the main project is Python. | Low | Run Lighthouse after deployment | Target: 100 Performance, 100 Accessibility, 100 Best Practices, 100 SEO. Achievable for a static site with no framework. |
+| **Comparison table vs manual process** | Feature matrix: Manual Job Search vs JobFlow. Rows: time spent, jobs reviewed, match quality, resume customization, application tracking. Makes the value proposition concrete and scannable. | Low | Content creation | Effective for non-technical viewers (recruiters) who may not appreciate the architecture. |
 
 ## Anti-Features
 
-Features to explicitly NOT build. Avoiding these keeps scope manageable and architecture clean.
+Features to explicitly NOT build. These either waste time, undermine credibility, or distract from the goal.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| Claude Agent SDK Python package integration | Adds a heavy dependency (`claude-agent-sdk`) when the CLI subprocess approach is simpler, lighter, and more debuggable. The SDK is still pre-1.0 with breaking changes. | Use `claude -p --output-format json --json-schema` via subprocess. Same structured output, no dependency. |
-| WebSocket for streaming | Overkill for single-user app. SSE already works for apply engine, adding WebSocket introduces new infrastructure. | Use SSE via sse-starlette (already a dependency). htmx SSE extension already in use. |
-| Real-time token-by-token rendering for resume | Resume is structured output (JSON schema enforced) -- tokens arrive as partial JSON that cannot be rendered until complete. Partial rendering would show garbage. | Stream phase-level progress events (connecting, generating, validating, rendering). Show final result when complete. |
-| Agentic multi-turn CLI calls | Claude CLI with `--max-turns` enables multi-turn agentic workflows where the model uses tools. For document generation and scoring, single-turn is sufficient. Multi-turn adds unpredictable latency and cost. | Use `--max-turns 1` (or omit) and `--tools ""` to disable tool use. Keep calls deterministic and fast. |
-| Parallel CLI subprocess calls | Running multiple `claude` processes simultaneously risks API rate limits, unclear cost control, and race conditions on output. | Serialize AI operations. One at a time. Apply engine already uses `asyncio.Semaphore(1)` for this pattern. |
-| Auto-rescore on import | Automatically AI-rescoring all newly imported jobs would be expensive (API costs) and slow. The rule-based scorer handles bulk well. | AI Rescore is on-demand, user-triggered. Rule-based score remains the default for bulk pipeline. |
-| Replace rule-based scoring entirely | Rule-based scoring is instant, free, and deterministic. Replacing it with AI scoring makes the pipeline slow and expensive. | Keep both. Rule-based for pipeline/bulk. AI for on-demand deep analysis of individual jobs. |
-| Store full Claude CLI response in DB | Raw JSON responses are large and mostly metadata. Storing them wastes DB space. | Extract and store only: AI score, reasoning, matched_skills, gaps, model_used, tokens_used. |
+| **Live demo / hosted instance** | JobFlow requires credentials (Indeed login, Claude CLI auth). A live demo is either fake (undermines trust) or a security nightmare. Interactive demos grew 35% in 2025 for SaaS, but this is a personal tool, not SaaS. | Use animated terminal demo + screenshots + video walkthrough instead. Show the tool working without exposing real credentials. |
+| **Blog / content section** | This is a project showcase, not a personal site. A blog with 1-2 posts looks abandoned. Content maintenance is a liability. | Link to the GitHub repo's README and docs. If you write about the project, do it on your actual blog or dev.to. |
+| **Pricing / signup / waitlist** | JobFlow is a personal tool, not a product. Any commercial framing is misleading and confusing. | "View Source on GitHub" as the primary CTA. Self-hosted, open-source framing. |
+| **Complex JavaScript framework** | React/Vue/Svelte for a single static page is overkill. Adds bundle size, build complexity, and signals poor judgment about tool selection. The site itself is a code sample. | Plain HTML + CSS + minimal vanilla JS. Maybe a static site generator (Astro, 11ty) if multi-page, but a single-page showcase needs no framework. |
+| **Testimonials / social proof from users** | This is a personal project. Fake testimonials are obviously fake. "Used by 0 companies" is not social proof. | Use quality signals instead: test count, coverage, LOC, build status, milestone velocity. These are verifiable and more credible than quotes. |
+| **Newsletter / email capture** | No audience to nurture. An email form on a portfolio project page looks desperate. | GitHub stars and repo follows are the natural engagement mechanism. |
+| **Multi-page site** | Unnecessary complexity. Recruiters will not click through 5 pages. Everything should be visible in one scroll. | Single-page with smooth scroll navigation to sections. Anchor links in the nav. |
+| **Heavy animations / parallax** | Looks like a template. Undermines the "serious engineer" signal. Motion should be functional (draw attention to key content), not decorative. | Subtle scroll-triggered fades. One animated terminal demo. That's it. |
+| **ChatGPT / AI chatbot widget** | Trendy but useless on a project showcase. What would it answer? It's a gimmick. | Clear, well-written copy that answers questions before they're asked. |
+| **Video auto-play** | Jarring UX. Slows page load. Often blocked by browsers. | Optional video with play button, or animated terminal demo that runs on scroll-into-view. |
 
 ## Feature Dependencies
 
 ```
-claude_cli_wrapper (new module)
-  -> resume tailoring SSE endpoint (replaces spinner)
-  -> cover letter SSE endpoint (replaces spinner)
-  -> AI rescore endpoint (new feature)
-
-SSE infrastructure (adapt from apply engine)
-  -> resume tailoring SSE
-  -> cover letter SSE
-  -> AI rescore SSE (optional -- rescore may be fast enough for spinner)
-
-Pydantic models
-  -> TailoredResume.model_json_schema() -> --json-schema for resume CLI call
-  -> CoverLetter.model_json_schema() -> --json-schema for cover letter CLI call
-  -> AIScoreResult (new model) -> --json-schema for rescore CLI call
-
-DB schema extension
-  -> ai_score column on jobs table (nullable int, 1-5)
-  -> ai_score_reasoning column (nullable text)
-  -> ai_score_metadata column (nullable JSON: model, tokens, timestamp)
-
-htmx templates
-  -> partials/resume_stream.html (SSE progress during generation)
-  -> partials/cover_letter_stream.html (SSE progress during generation)
-  -> partials/ai_score_result.html (AI score display)
-  -> job_detail.html updates (AI Rescore button, SSE containers)
+Screenshots (capture) --> Hero section (needs hero image)
+Screenshots (capture) --> Feature overview (needs feature illustrations)
+Screenshots (capture) --> "How it works" walkthrough (needs stage screenshots)
+Architecture diagram (create) --> Architecture section
+Terminal output script --> Animated terminal demo
+Copywriting (headline, subheadline, feature descriptions) --> Every text section
+Tech logos/icons --> Tech stack section
+CI badges (shields.io URLs) --> Quality signals section
+Milestone data (from MILESTONES.md) --> Timeline section
+Code snippet selection --> Code examples section
 ```
+
+**Critical path:** Screenshots and copywriting block the most sections. The animated terminal demo and architecture diagram can be built in parallel.
+
+## Content Assets Required (Pre-Build)
+
+These must exist BEFORE the site can be built. They are the primary constraint.
+
+| Asset | Description | Effort | Blocking |
+|-------|-------------|--------|----------|
+| Dashboard screenshot (light + dark) | Main job listing view with data | 15 min | Hero, Features |
+| Kanban board screenshot | Drag-and-drop board with jobs in multiple columns | 15 min | Features, How it works |
+| Analytics screenshot | Chart.js charts with meaningful data | 15 min | Features |
+| SSE streaming screenshot or GIF | Resume/cover letter generation with progress events visible | 30 min | Features, differentiator |
+| Terminal pipeline output | Real or representative CLI output from `python orchestrator.py` | 15 min | Terminal demo |
+| Architecture diagram | Pipeline flow diagram (Excalidraw or Mermaid) | 45 min | Architecture section |
+| Feature copy | Headline, subheadline, 8 feature descriptions, comparison table | 60 min | Every section |
+| Code snippets (2-3) | Platform protocol, scoring engine, decorator registry | 30 min | Code examples section |
+
+**Total content prep estimate:** ~4 hours before any HTML is written.
 
 ## MVP Recommendation
 
-Prioritize (in build order):
+Build in this order, stopping when time runs out. Each tier is independently shippable.
 
-1. **Claude CLI subprocess wrapper** -- Foundation for all three features. Handles `asyncio.create_subprocess_exec`, JSON parsing, error handling, timeout, schema injection. Single module, tested independently.
+### Tier 1: Credible Project Page (minimum viable showcase)
+1. **Hero section** with headline, subheadline, GitHub CTA, and one dashboard screenshot
+2. **Stats bar** (18K LOC, 581 tests, 80%+ coverage, 3 platforms)
+3. **Feature grid** (6-8 features with icons and one-liners)
+4. **Tech stack row** (logos + names)
+5. **Footer** with GitHub + LinkedIn + email
 
-2. **AI Rescore button + endpoint** -- Smallest integration surface. New Pydantic model (`AIScoreResult`), new endpoint, new htmx partial. Does not change existing code paths. Good validation that the CLI wrapper works.
+**Why this first:** Gets a professional page live. Every section after this is incremental improvement.
 
-3. **SSE streaming for resume tailoring** -- Replace spinner with real-time progress. Adapts existing SSE patterns from apply engine. Changes the existing `/jobs/{key}/tailor-resume` endpoint from synchronous POST to SSE-streaming flow.
+### Tier 2: Engineering Depth (what impresses technical viewers)
+6. **Architecture diagram** section
+7. **Code snippets** section (2-3 examples with syntax highlighting)
+8. **Milestone timeline** (v1.0 -> v1.1 -> v1.2 with stats)
+9. **Quality badges** (Shields.io build, coverage, Python version)
 
-4. **SSE streaming for cover letter generation** -- Same pattern as resume tailoring. Minimal incremental effort once the first SSE document endpoint works.
+**Why this second:** Adds the technical depth that differentiates from "template portfolio page." The milestone timeline in particular is unique to this project and tells the build story.
 
-5. **DB schema for AI scores** -- Add columns, migration, display in templates. Low risk, low effort, but depends on AI Rescore being functional.
+### Tier 3: Polish and Delight (what makes it memorable)
+10. **Animated terminal demo** (typed.js pipeline simulation)
+11. **"How it works" walkthrough** (5-step visual narrative)
+12. **Dark mode toggle**
+13. **Scroll-triggered section animations**
+14. **Before/after comparison** or comparison table
 
-Defer:
-- **Token-by-token streaming**: High complexity, low value for structured output (partial JSON is not renderable). Phase-level progress is sufficient.
-- **Batch AI rescore**: Nice-to-have but not needed for initial release. Individual rescore proves the value first.
-- **Model selection UI**: Default to sonnet. Add dropdown later if users want to choose.
-- **Cost tracking**: Parse and log it, but don't build a UI for it in MVP.
+**Why this last:** These are differentiators, not requirements. A site with Tiers 1+2 is already strong. Tier 3 makes it outstanding.
 
-## Key Technical Decisions
+### Defer Indefinitely
+- Live demo / hosted instance
+- Blog / content section
+- Multi-page structure
+- Video production
+- Any JavaScript framework
 
-### CLI Invocation Pattern
-```python
-# Use asyncio.create_subprocess_exec (not subprocess.run) because:
-# 1. FastAPI is async -- blocking subprocess.run freezes the event loop
-# 2. Streaming stdout line-by-line feeds SSE events
-# 3. Timeout handling via asyncio.wait_for
+## Audience-Specific Value
 
-proc = await asyncio.create_subprocess_exec(
-    "claude", "-p",
-    "--output-format", "json",
-    "--json-schema", schema_json,
-    "--system-prompt-file", prompt_file,
-    "--model", model,
-    "--max-turns", "1",
-    "--tools", "",                          # disable tool use
-    "--no-session-persistence",             # don't save session
-    "--dangerously-skip-permissions",       # no permission prompts in -p mode
-    stdin=asyncio.subprocess.PIPE,
-    stdout=asyncio.subprocess.PIPE,
-    stderr=asyncio.subprocess.PIPE,
-)
-stdout, stderr = await asyncio.wait_for(
-    proc.communicate(input=prompt_bytes),
-    timeout=120,
-)
-```
-
-### SSE Streaming Architecture
-```
-Browser                FastAPI                  Claude CLI
-  |                      |                         |
-  |-- POST /tailor ----->|                         |
-  |<-- HTML (sse-connect)|                         |
-  |                      |                         |
-  |-- GET /tailor/stream>|                         |
-  |                      |-- subprocess_exec ----->|
-  |<-- SSE: "starting"   |                         |
-  |                      |<-- stdout (json) -------|
-  |<-- SSE: "validating" |                         |
-  |<-- SSE: "rendering"  |                         |
-  |<-- SSE: "done" + HTML|                         |
-  |                      |                         |
-```
-
-### AI Score Output Model
-```python
-class AIScoreResult(BaseModel):
-    """Structured output for AI-powered job scoring."""
-    score: int = Field(ge=1, le=5, description="Overall fit score 1-5")
-    reasoning: str = Field(description="2-3 sentence explanation of the score")
-    matched_skills: list[str] = Field(description="Skills from resume that match the job")
-    missing_skills: list[str] = Field(description="Skills the job wants that are not in resume")
-    culture_fit_notes: str = Field(description="Notes on company/role culture alignment")
-```
+| Audience | What They Care About | Key Sections |
+|----------|---------------------|--------------|
+| **Recruiters** (non-technical) | "Is this impressive? Does it look professional? Can I understand what it does?" | Hero, stats bar, comparison table, screenshots |
+| **Hiring managers** (semi-technical) | "Did they build something real? How complex is it? Do they ship?" | Feature grid, milestone timeline, stats bar, architecture diagram |
+| **Engineering peers** (technical) | "Is the code good? Are the design decisions sound? Would I want to work with this person?" | Code snippets, architecture diagram, tech stack, test coverage, platform protocol pattern |
+| **Themselves** (future reference) | "I can point anyone to this link and they'll understand what I built." | Everything -- the site is the canonical description of the project |
 
 ## Sources
 
-- [Claude Code CLI Reference](https://code.claude.com/docs/en/cli-reference) -- Authoritative docs for `-p`, `--output-format json`, `--json-schema`, `--system-prompt` flags (HIGH confidence)
-- [Claude Code Headless/Programmatic Usage](https://code.claude.com/docs/en/headless) -- Subprocess patterns, structured output examples (HIGH confidence)
-- [Agent SDK Structured Outputs](https://platform.claude.com/docs/en/agent-sdk/structured-outputs) -- `structured_output` field in JSON response, Pydantic integration, error handling subtypes (HIGH confidence)
-- [sse-starlette GitHub](https://github.com/sysid/sse-starlette) -- EventSourceResponse API, ping, send_timeout, async generator pattern (HIGH confidence)
-- [htmx SSE Extension](https://htmx.org/extensions/sse/) -- `sse-connect`, `sse-swap`, `sse-close`, lifecycle events (HIGH confidence)
-- [Python asyncio subprocess docs](https://docs.python.org/3/library/asyncio-subprocess.html) -- `create_subprocess_exec`, PIPE, readline patterns (HIGH confidence)
-- [AI Hiring with LLMs: Multi-Agent Framework](https://arxiv.org/html/2504.02870v1) -- Context-aware resume scoring patterns (MEDIUM confidence)
-- Codebase analysis: `resume_ai/tailor.py`, `resume_ai/cover_letter.py`, `scorer.py`, `webapp/app.py`, `apply_engine/engine.py`, `apply_engine/events.py`
+- Tailwind CSS homepage analysis (https://tailwindcss.com/) -- sections, code examples, feature grid patterns [HIGH confidence, direct analysis]
+- Astro homepage analysis (https://astro.build/) -- stats, social proof, CTA patterns [HIGH confidence, direct analysis]
+- shadcn/ui homepage analysis (https://ui.shadcn.com/) -- dashboard preview, component demo patterns [HIGH confidence, direct analysis]
+- Supabase hero section pattern (https://supabase.com/) -- "Build in a weekend, Scale to millions" value prop structure [HIGH confidence, direct analysis]
+- typed.js terminal animation library (https://github.com/mattboldt/typed.js) -- animated terminal demo implementation [HIGH confidence, well-established library]
+- Shields.io badge service (https://shields.io/) -- quality signal badges [HIGH confidence, industry standard]
+- GitHub community discussion on portfolio engagement (https://github.com/orgs/community/discussions/169760) -- 40% engagement increase from personal sites [MEDIUM confidence, community data]
+- Final Round AI article on GitHub as portfolio (https://www.finalroundai.com/articles/github-developer-portfolio) -- recruiter preferences, quality signals [MEDIUM confidence, single source]
+- Codecademy portfolio guide (https://www.codecademy.com/resources/blog/software-developer-portfolio-tips) -- 87% hiring managers value portfolios over resumes [MEDIUM confidence, single source]
+- TODO Group guide on marketing open source projects (https://todogroup.org/resources/guides/marketing-open-source-projects/) -- authentic presentation patterns [MEDIUM confidence]
