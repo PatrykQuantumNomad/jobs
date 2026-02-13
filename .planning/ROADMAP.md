@@ -62,6 +62,11 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 **Requirements:** SETUP-01, SETUP-02, SETUP-03, SETUP-04, SETUP-05, DSGN-01, SEO-01, SEO-02
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 20-01-PLAN.md — Scaffold Astro project with Tailwind v4, design tokens, BaseLayout with SEO meta tags, and minimal index page
+
 **Success Criteria:**
 1. Running `npm run dev` inside `/site` serves a page at `localhost:4321/jobs/` with the correct base path prefix visible in all asset URLs
 2. Running `npm run build && npm run preview` produces identical output to dev (no broken paths, no missing assets)
@@ -159,7 +164,7 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 | 17. AI Scoring | v1.2 | 2/2 | Complete | 2026-02-11 |
 | 18. Resume Tailoring via CLI + SSE | v1.2 | 1/1 | Complete | 2026-02-11 |
 | 19. Cover Letter via CLI + SSE & Cleanup | v1.2 | 2/2 | Complete | 2026-02-11 |
-| 20. Foundation and Configuration | v1.3 | 0/? | Pending | — |
+| 20. Foundation and Configuration | v1.3 | 0/1 | Pending | — |
 | 21. Core Sections and Responsive Design | v1.3 | 0/? | Pending | — |
 | 22. Engineering Depth Sections | v1.3 | 0/? | Pending | — |
 | 23. CI/CD, Deployment, and Dark Mode | v1.3 | 0/? | Pending | — |
