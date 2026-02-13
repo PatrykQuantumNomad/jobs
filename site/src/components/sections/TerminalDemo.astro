@@ -1,0 +1,146 @@
+---
+---
+
+<div class="rounded-lg overflow-hidden shadow-2xl border border-surface-700">
+  <!-- Title bar -->
+  <div class="flex items-center gap-2 px-4 py-3 bg-surface-800 border-b border-surface-700">
+    <span class="w-3 h-3 rounded-full bg-red-400"></span>
+    <span class="w-3 h-3 rounded-full bg-yellow-400"></span>
+    <span class="w-3 h-3 rounded-full bg-green-400"></span>
+    <span class="flex-1 text-center text-xs text-surface-400 font-mono">Terminal</span>
+  </div>
+  <!-- Content area (always dark -- terminals are dark) -->
+  <div class="bg-surface-950 p-4 font-mono text-sm text-green-400 leading-relaxed min-h-[320px]">
+    <div id="terminal-output">
+      <div data-line="input" data-text="$ python orchestrator.py --platforms indeed remoteok" data-delay="0" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="============================================================" data-delay="300" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  JOB SEARCH AUTOMATION PIPELINE" data-delay="50" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="============================================================" data-delay="50" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="" data-delay="200" style="visibility: hidden;">&nbsp;</div>
+      <div data-line="output" data-text="[Phase 0] Environment Setup" data-delay="300" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="------------------------------------------------------------" data-delay="50" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  Python 3.14.0" data-delay="200" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  Credentials:" data-delay="100" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="    indeed    OK" data-delay="150" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="    remoteok  OK" data-delay="150" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  Setup complete." data-delay="200" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="" data-delay="100" style="visibility: hidden;">&nbsp;</div>
+      <div data-line="output" data-text="[Phase 1] Platform Login" data-delay="300" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="------------------------------------------------------------" data-delay="50" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  Indeed: logged in" data-delay="800" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  RemoteOK: no login required" data-delay="200" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="" data-delay="100" style="visibility: hidden;">&nbsp;</div>
+      <div data-line="output" data-text="[Phase 2] Job Search" data-delay="300" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="------------------------------------------------------------" data-delay="50" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  Indeed: 22 jobs found" data-delay="1200" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  RemoteOK: 91 jobs found" data-delay="600" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="" data-delay="100" style="visibility: hidden;">&nbsp;</div>
+      <div data-line="output" data-text="[Phase 3] Scoring & Deduplication" data-delay="300" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="------------------------------------------------------------" data-delay="50" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  Total raw jobs: 113" data-delay="200" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  After dedup:    106" data-delay="400" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  Score 3+:       19" data-delay="600" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="" data-delay="100" style="visibility: hidden;">&nbsp;</div>
+      <div data-line="output" data-text="============================================================" data-delay="300" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  PIPELINE COMPLETE" data-delay="50" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="============================================================" data-delay="50" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  Total scored jobs (3+): 19" data-delay="100" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="  Score 5: 3  |  Score 4: 8" data-delay="100" style="visibility: hidden;"></div>
+      <div data-line="output" data-text="============================================================" data-delay="50" style="visibility: hidden;"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  .terminal-cursor {
+    animation: blink 1s step-end infinite;
+  }
+</style>
+
+<script>
+  function wait(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async function typeTerminal(container: HTMLElement): Promise<void> {
+    const lines = container.querySelectorAll<HTMLElement>("[data-line]");
+
+    for (const line of lines) {
+      const type = line.dataset.line;
+      const text = line.dataset.text ?? "";
+      const delay = parseInt(line.dataset.delay ?? "0", 10);
+
+      await wait(delay);
+
+      if (type === "input") {
+        // Type character-by-character with blinking cursor
+        line.style.visibility = "visible";
+        line.textContent = "";
+
+        const cursor = document.createElement("span");
+        cursor.classList.add("terminal-cursor");
+        cursor.textContent = "\u2588"; // full block character
+        line.appendChild(cursor);
+
+        for (const char of text) {
+          const charNode = document.createTextNode(char);
+          line.insertBefore(charNode, cursor);
+          await wait(30 + Math.random() * 40);
+        }
+
+        cursor.remove();
+        line.textContent = text;
+      } else {
+        // Output lines: reveal instantly
+        line.style.visibility = "visible";
+        if (text) {
+          line.textContent = text;
+        }
+      }
+    }
+  }
+
+  function initTerminal(): void {
+    const container = document.getElementById("terminal-output");
+    if (!container) return;
+
+    // Respect prefers-reduced-motion
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const lines = container.querySelectorAll<HTMLElement>("[data-line]");
+      for (const line of lines) {
+        line.style.visibility = "visible";
+        const text = line.dataset.text ?? "";
+        if (text) {
+          line.textContent = text;
+        }
+      }
+      container.dataset.animated = "true";
+      return;
+    }
+
+    // Already animated -- skip
+    if (container.dataset.animated === "true") return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            container.dataset.animated = "true";
+            observer.unobserve(container);
+            typeTerminal(container);
+          }
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(container);
+  }
+
+  initTerminal();
+  document.addEventListener("astro:page-load", initTerminal);
+</script>
