@@ -1,0 +1,98 @@
+---
+import SearchIcon from "../../icons/search.svg";
+import FilterIcon from "../../icons/filter.svg";
+import BrainIcon from "../../icons/brain.svg";
+import FileTextIcon from "../../icons/file-text.svg";
+import LayoutIcon from "../../icons/layout.svg";
+import BarChartIcon from "../../icons/bar-chart.svg";
+import ZapIcon from "../../icons/zap.svg";
+import ShieldIcon from "../../icons/shield.svg";
+
+const features = [
+  {
+    title: "Multi-Platform Scraping",
+    description:
+      "Scrapes Indeed, Dice, and RemoteOK with Playwright stealth automation. Handles login, pagination, and deduplication.",
+    category: "Discovery",
+    Icon: SearchIcon,
+  },
+  {
+    title: "Smart Filtering",
+    description:
+      "Configurable search queries with location, salary, and keyword filters. YAML-driven configuration, no code changes needed.",
+    category: "Discovery",
+    Icon: FilterIcon,
+  },
+  {
+    title: "AI-Powered Scoring",
+    description:
+      "Claude CLI scores each job 1-5 against your candidate profile with explainable breakdowns and weighted criteria.",
+    category: "Intelligence",
+    Icon: BrainIcon,
+  },
+  {
+    title: "Resume Tailoring",
+    description:
+      "Generates role-specific resumes via Claude with anti-fabrication validation. Never invents experience or qualifications.",
+    category: "Intelligence",
+    Icon: FileTextIcon,
+  },
+  {
+    title: "Web Dashboard",
+    description:
+      "FastAPI + htmx real-time dashboard with Kanban board, search management, and one-click apply controls.",
+    category: "Dashboard",
+    Icon: LayoutIcon,
+  },
+  {
+    title: "Analytics & Insights",
+    description:
+      "Score distribution, platform breakdown, salary ranges, and application funnel metrics at a glance.",
+    category: "Dashboard",
+    Icon: BarChartIcon,
+  },
+  {
+    title: "One-Click Apply",
+    description:
+      "Background apply engine with SSE progress streaming and human-in-the-loop confirmation gates.",
+    category: "Automation",
+    Icon: ZapIcon,
+  },
+  {
+    title: "Safety First",
+    description:
+      "Never auto-submits without approval. CAPTCHA detection, credential gating, and screenshot debugging built in.",
+    category: "Automation",
+    Icon: ShieldIcon,
+  },
+];
+---
+
+<section id="features" class="py-20 bg-white">
+  <div class="max-w-6xl mx-auto px-4">
+    <h2 class="font-display text-3xl font-bold text-surface-900 text-center">
+      What It Does
+    </h2>
+    <p class="mt-3 text-surface-600 text-center max-w-2xl mx-auto">
+      A complete pipeline from job discovery to application submission
+    </p>
+    <div class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {features.map((feature) => (
+        <div class="p-6 rounded-xl bg-surface-50 border border-surface-200 hover:border-primary-300 hover:shadow-sm transition-all">
+          <div class="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600">
+            <feature.Icon width="20" height="20" />
+          </div>
+          <h3 class="mt-4 font-display text-lg font-semibold text-surface-900">
+            {feature.title}
+          </h3>
+          <span class="mt-1 text-xs text-primary-500 uppercase tracking-wider font-semibold">
+            {feature.category}
+          </span>
+          <p class="mt-2 text-sm text-surface-600 leading-relaxed">
+            {feature.description}
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
