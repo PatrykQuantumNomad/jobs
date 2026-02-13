@@ -1,0 +1,41 @@
+---
+import ScreenshotFrame from "../ui/ScreenshotFrame.astro";
+import GithubIcon from "../../icons/github.svg";
+---
+
+<section id="hero" class="py-16 md:py-24 lg:py-32">
+  <div class="max-w-6xl mx-auto px-4 md:px-8">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:gap-12">
+      <!-- Left column: Copy + CTAs -->
+      <div class="lg:w-1/2">
+        <h1 class="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-surface-900 leading-tight">
+          Job Search, Automated
+        </h1>
+        <p class="mt-4 text-lg md:text-xl text-surface-600 leading-relaxed">
+          Self-hosted pipeline that scrapes job boards, scores matches against your profile, and automates applications with human-in-the-loop safety.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-4">
+          <a
+            href="https://github.com/patrykgolabek/jobs"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 transition-colors"
+          >
+            <GithubIcon width="20" height="20" fill="currentColor" />
+            View on GitHub
+          </a>
+          <a
+            href="#features"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-surface-300 text-surface-700 font-semibold hover:border-surface-400 hover:text-surface-900 transition-colors"
+          >
+            See Features
+          </a>
+        </div>
+      </div>
+      <!-- Right column: Browser mockup -->
+      <div class="mt-10 lg:mt-0 lg:w-1/2">
+        <ScreenshotFrame />
+      </div>
+    </div>
+  </div>
+</section>

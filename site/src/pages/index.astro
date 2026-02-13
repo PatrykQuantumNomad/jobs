@@ -1,22 +1,13 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import Hero from "../components/sections/Hero.astro";
+import Stats from "../components/sections/Stats.astro";
 ---
 
 <BaseLayout
   title="JobFlow — Job Search Automation"
   description="Self-hosted pipeline that scrapes job boards, scores matches against your profile, and automates applications. 18K LOC, 581 tests, 3 platforms."
 >
-  <main class="max-w-4xl mx-auto px-4 py-16">
-    <h1 class="font-display text-4xl font-bold text-primary-900">
-      JobFlow
-    </h1>
-    <p class="mt-4 text-lg text-surface-600">
-      From discovery to application in one tool.
-    </p>
-    <p class="mt-2 text-surface-500">
-      Self-hosted job search automation pipeline. Scrapes Indeed, Dice, and RemoteOK,
-      scores matches against your candidate profile, manages listings through a web
-      dashboard, generates AI-tailored resumes, and automates applications.
-    </p>
-  </main>
+  <Hero />
+  <Stats />
 </BaseLayout>
