@@ -129,6 +129,13 @@ Plans:
 
 **Requirements:** DPLY-01, DPLY-02, DPLY-03, DPLY-04, DSGN-03, SEO-03, SEO-04
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 23-01-PLAN.md — GitHub Actions deploy workflow, CI path isolation, sitemap integration, and JSON-LD structured data
+- [ ] 23-02-PLAN.md — Dark mode infrastructure and dark: utility classes on all section components
+- [ ] 23-03-PLAN.md — Deployment verification: enable Pages, push, and verify production site
+
 **Success Criteria:**
 1. Pushing a change to `site/**` on main triggers the deploy workflow and the site is accessible at `username.github.io/jobs/` with all sections, images, and styles loading correctly
 2. Pushing a change to Python files (outside `site/`) does NOT trigger the deploy workflow, and pushing site-only changes does NOT trigger the Python CI workflow
@@ -179,5 +186,5 @@ Plans:
 | 20. Foundation and Configuration | v1.3 | 1/1 | Complete | 2026-02-13 |
 | 21. Core Sections and Responsive Design | v1.3 | 2/2 | Complete | 2026-02-13 |
 | 22. Engineering Depth Sections | v1.3 | 2/2 | Complete | 2026-02-13 |
-| 23. CI/CD, Deployment, and Dark Mode | v1.3 | 0/? | Pending | — |
-| 24. Polish and Animations | v1.3 | 0/? | Pending | — |
+| 23. CI/CD, Deployment, and Dark Mode | v1.3 | 0/3 | Pending | -- |
+| 24. Polish and Animations | v1.3 | 0/? | Pending | -- |
