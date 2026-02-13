@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 20 -- Foundation and Configuration
-Plan: Not yet planned
-Status: Roadmap created, awaiting phase planning
-Last activity: 2026-02-13 -- Roadmap created for v1.3 (5 phases, 29 requirements)
+Plan: 20-01 COMPLETE
+Status: Phase 20 complete (1/1 plans). Ready for Phase 21 planning.
+Last activity: 2026-02-13 -- Completed 20-01 (Astro scaffold, Tailwind v4, BaseLayout with SEO)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 20% (1/5 phases)
 
 ### v1.3 Phase Overview
 
 | Phase | Name | Requirements | Status |
 |-------|------|-------------|--------|
-| 20 | Foundation and Configuration | 8 | Pending |
+| 20 | Foundation and Configuration | 8 | Complete |
 | 21 | Core Sections and Responsive Design | 7 | Pending |
 | 22 | Engineering Depth Sections | 4 | Pending |
 | 23 | CI/CD, Deployment, and Dark Mode | 7 | Pending |
@@ -50,16 +50,26 @@ Progress: [░░░░░░░░░░] 0%
 | 19-01 | 4 min | 2 | 5 | 581 (full suite) |
 | 19-02 | 3 min | 1 | 4 | 575 (full suite) |
 
+**Velocity (v1.3):**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| 20-01 | 4 min | 2 | 8 |
+
 ## Accumulated Context
 
 ### Decisions
 
 All decisions logged in PROJECT.md Key Decisions table (23 entries across v1.0 + v1.1 + v1.2, plus 3 pending for v1.3).
 
-v1.3 pending decisions:
+v1.3 decisions:
 - Astro for site (not Starlight) -- marketing-forward, not docs-heavy
 - Same-repo /site folder -- one repo, GitHub Pages from subfolder
 - Blues/grays professional palette -- distinct from personal site (orange) and networking-tools (dark orange)
+- Tailwind v4 via @tailwindcss/vite (not deprecated @astrojs/tailwind)
+- CSS-first @theme tokens with OKLCH values (no tailwind.config.js)
+- ClientRouter (Astro 5 rename of ViewTransitions)
+- Self-hosted fonts via @fontsource-variable (no Google Fonts CDN)
 
 ### Pending Todos
 
@@ -82,5 +92,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Roadmap created for v1.3 milestone. 5 phases (20-24), 29 requirements mapped. Ready for phase 20 planning.
-Resume file: .planning/ROADMAP.md -- Phase 20: Foundation and Configuration
+Stopped at: Completed 20-01-PLAN.md (Foundation and Configuration). Phase 20 done. Ready for Phase 21 planning.
+Resume file: .planning/ROADMAP.md -- Phase 21: Core Sections and Responsive Design
