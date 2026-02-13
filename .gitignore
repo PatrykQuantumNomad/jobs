@@ -33,3 +33,8 @@ job_pipeline/descriptions/*.md
 .idea/
 *.swp
 *.swo
+
+# Astro site
+node_modules/
+site/dist/
+site/.astro/
