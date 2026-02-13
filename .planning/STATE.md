@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 ## Current Position
 
-Phase: 22 -- Engineering Depth Sections COMPLETE
-Plan: 22-02 COMPLETE (2/2 plans)
-Status: Phase 22 complete. All engineering depth sections built and composed. Ready for Phase 23.
-Last activity: 2026-02-13 -- Completed 22-02 (Timeline, QuickStart, page composition)
+Phase: 23 -- CI/CD, Deployment, and Dark Mode IN PROGRESS
+Plan: 23-01 COMPLETE (1/3 plans)
+Status: Plan 23-01 complete. Deploy workflow, CI path isolation, sitemap, and JSON-LD done. Continuing Phase 23.
+Last activity: 2026-02-13 -- Completed 23-01 (CI/CD and SEO foundations)
 
-Progress: [██████░░░░] 60% (3/5 phases)
+Progress: [██████░░░░] 64% (3/5 phases, 1/3 plans in phase 23)
 
 ### v1.3 Phase Overview
 
@@ -23,7 +23,7 @@ Progress: [██████░░░░] 60% (3/5 phases)
 | 20 | Foundation and Configuration | 8 | Complete |
 | 21 | Core Sections and Responsive Design | 7 | Complete |
 | 22 | Engineering Depth Sections | 4 | Complete |
-| 23 | CI/CD, Deployment, and Dark Mode | 7 | Pending |
+| 23 | CI/CD, Deployment, and Dark Mode | 7 | In Progress (1/3) |
 | 24 | Polish and Animations | 3 | Pending |
 
 ## Performance Metrics
@@ -59,6 +59,7 @@ Progress: [██████░░░░] 60% (3/5 phases)
 | 21-02 | 3 min | 2 | 4 |
 | 22-01 | 2 min | 2 | 3 |
 | 22-02 | 2 min | 2 | 3 |
+| 23-01 | 3 min | 2 | 6 |
 
 ## Accumulated Context
 
@@ -85,6 +86,9 @@ v1.3 decisions:
 - Curated real source code excerpts for code snippet showcase (not fabricated)
 - Narrower max-w-3xl container for text-heavy Timeline and QuickStart sections
 - Vertical timeline at all breakpoints -- natural reading flow, no mobile breakpoint changes needed
+- Path-based workflow isolation: site/** triggers deploy, Python CI ignores site/**
+- Deploy workflow also triggers on .github/workflows/deploy-site.yml changes
+- Concurrency group 'pages' with cancel-in-progress: false for safe deploys
 
 ### Pending Todos
 
@@ -107,5 +111,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 22-02-PLAN.md (Timeline, QuickStart, page composition). Phase 22 complete. Ready for Phase 23.
-Resume file: .planning/phases/22-engineering-depth-sections/
+Stopped at: Completed 23-01-PLAN.md (CI/CD and SEO foundations). Continuing Phase 23 with plans 02 and 03.
+Resume file: .planning/phases/23-ci-cd-deployment-and-dark-mode/
