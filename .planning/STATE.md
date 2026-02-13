@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 ## Current Position
 
-Phase: 20 -- Foundation and Configuration
-Plan: 20-01 COMPLETE
-Status: Phase 20 complete (1/1 plans). Ready for Phase 21 planning.
-Last activity: 2026-02-13 -- Completed 20-01 (Astro scaffold, Tailwind v4, BaseLayout with SEO)
+Phase: 21 -- Core Sections and Responsive Design
+Plan: 21-01 COMPLETE (1/2 plans)
+Status: Executing Phase 21. Plan 01 complete, Plan 02 remaining.
+Last activity: 2026-02-13 -- Completed 21-01 (Hero, Stats, ScreenshotFrame, 12 SVG icons)
 
-Progress: [██░░░░░░░░] 20% (1/5 phases)
+Progress: [███░░░░░░░] 30% (1.5/5 phases)
 
 ### v1.3 Phase Overview
 
 | Phase | Name | Requirements | Status |
 |-------|------|-------------|--------|
 | 20 | Foundation and Configuration | 8 | Complete |
-| 21 | Core Sections and Responsive Design | 7 | Pending |
+| 21 | Core Sections and Responsive Design | 7 | In Progress (1/2) |
 | 22 | Engineering Depth Sections | 4 | Pending |
 | 23 | CI/CD, Deployment, and Dark Mode | 7 | Pending |
 | 24 | Polish and Animations | 3 | Pending |
@@ -55,6 +55,7 @@ Progress: [██░░░░░░░░] 20% (1/5 phases)
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | 20-01 | 4 min | 2 | 8 |
+| 21-01 | 4 min | 2 | 16 |
 
 ## Accumulated Context
 
@@ -70,6 +71,9 @@ v1.3 decisions:
 - CSS-first @theme tokens with OKLCH values (no tailwind.config.js)
 - ClientRouter (Astro 5 rename of ViewTransitions)
 - Self-hosted fonts via @fontsource-variable (no Google Fonts CDN)
+- GitHub icon uses fill (filled logo) vs stroke (Feather/Lucide style) for other UI icons
+- Stats 2-col mobile / 4-col tablet+ grid to prevent text overflow at 375px
+- ScreenshotFrame gradient placeholder with slot for future screenshot injection
 
 ### Pending Todos
 
@@ -92,5 +96,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 20-01-PLAN.md (Foundation and Configuration). Phase 20 done. Ready for Phase 21 planning.
-Resume file: .planning/ROADMAP.md -- Phase 21: Core Sections and Responsive Design
+Stopped at: Completed 21-01-PLAN.md (Hero, Stats, ScreenshotFrame, 12 SVG icons). Ready for 21-02.
+Resume file: .planning/phases/21-core-sections-and-responsive-design/21-02-PLAN.md

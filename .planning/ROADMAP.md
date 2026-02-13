@@ -87,7 +87,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 21-01-PLAN.md — ScreenshotFrame component, SVG icon library, Hero section, and Stats bar (above the fold)
+- [x] 21-01-PLAN.md — ScreenshotFrame component, SVG icon library, Hero section, and Stats bar (above the fold)
 - [ ] 21-02-PLAN.md — Features grid, TechStack badges, Footer, and full page composition with responsive verification
 
 **Success Criteria:**
@@ -171,7 +171,7 @@ Plans:
 | 18. Resume Tailoring via CLI + SSE | v1.2 | 1/1 | Complete | 2026-02-11 |
 | 19. Cover Letter via CLI + SSE & Cleanup | v1.2 | 2/2 | Complete | 2026-02-11 |
 | 20. Foundation and Configuration | v1.3 | 1/1 | Complete | 2026-02-13 |
-| 21. Core Sections and Responsive Design | v1.3 | 0/2 | Pending | — |
+| 21. Core Sections and Responsive Design | v1.3 | 1/2 | In Progress | — |
 | 22. Engineering Depth Sections | v1.3 | 0/? | Pending | — |
 | 23. CI/CD, Deployment, and Dark Mode | v1.3 | 0/? | Pending | — |
 | 24. Polish and Animations | v1.3 | 0/? | Pending | — |
