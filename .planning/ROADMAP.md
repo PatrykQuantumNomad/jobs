@@ -153,6 +153,12 @@ Plans:
 
 **Requirements:** PLSH-01, PLSH-02, PLSH-03
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 24-01-PLAN.md — NavBar with smooth scroll anchor links + TerminalDemo with typing animation
+- [ ] 24-02-PLAN.md — Scroll-triggered fade-in animations via IntersectionObserver + CSS transitions
+
 **Success Criteria:**
 1. An animated terminal section simulates `python orchestrator.py` output with a typing effect, showing pipeline phases executing with realistic timing
 2. Sections fade in as the visitor scrolls down the page, with animations triggered only when elements enter the viewport (not on page load)
@@ -187,4 +193,4 @@ Plans:
 | 21. Core Sections and Responsive Design | v1.3 | 2/2 | Complete | 2026-02-13 |
 | 22. Engineering Depth Sections | v1.3 | 2/2 | Complete | 2026-02-13 |
 | 23. CI/CD, Deployment, and Dark Mode | v1.3 | 3/3 | Complete | 2026-02-13 |
-| 24. Polish and Animations | v1.3 | 0/? | Pending | -- |
+| 24. Polish and Animations | v1.3 | 0/2 | Pending | -- |
