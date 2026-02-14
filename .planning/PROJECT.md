@@ -93,7 +93,7 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 
 **v1.2 shipped:** 2026-02-11. 4 phases, 7 plans, 15 requirements. Replaced Anthropic SDK with Claude CLI subprocess for all AI features. Added on-demand AI scoring, SSE streaming for resume/cover letter. 18 new tests (563 -> 581). Zero production files import anthropic SDK.
 
-**v1.3 shipped:** 2026-02-13. 5 phases, 10 plans, 21 tasks. GitHub Pages showcase site built with Astro v5 + Tailwind v4 in `/site`. 9 responsive content sections, animated terminal demo, dark mode, scroll animations, path-isolated CI/CD. Deployed at patrykquantumnomad.github.io/jobs/.
+**v1.3 shipped:** 2026-02-13. 5 phases, 10 plans, 21 tasks. GitHub Pages showcase site built with Astro v5 + Tailwind v4 in `/site`. 9 responsive content sections, dark mode, scroll animations, path-isolated CI/CD. Deployed at patrykquantumnomad.github.io/jobs/. Post-milestone redesign: emerald + gold palette, glassmorphism UI, animated counters, gradient blobs, product showcase with real dashboard screenshots, tabbed code snippets, animated SVG pipeline, mobile slide-in menu.
 
 **Tech stack:** Python 3.14, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), pydantic-settings + YAML, Claude CLI (subprocess with structured output), WeasyPrint, sse-starlette, Chart.js, SortableJS, pytest + factory-boy + respx + pytest-playwright | Site: Astro v5, Tailwind v4, @fontsource, @astrojs/sitemap, Shiki
 
@@ -106,8 +106,8 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 - 4 analytics routes lack integration tests
 - SSE endpoint testing relies on background task testing pattern (direct Queue testing), not actual SSE stream parsing
 - scorer.py score_batch_with_breakdown uncovered (8 lines)
-- ScreenshotFrame.astro unused in production (replaced by TerminalDemo, kept for future screenshots)
-- Site uses placeholder gradient in ScreenshotFrame instead of real dashboard screenshots
+- ~~ScreenshotFrame.astro unused~~ RESOLVED: now used in Hero and ProductShowcase with real screenshots
+- ~~Placeholder gradients instead of real screenshots~~ RESOLVED: real dashboard screenshots in hero + tabbed showcase
 
 ## Constraints
 
@@ -154,6 +154,10 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 | Path-based CI workflow isolation | site/** triggers deploy, Python CI ignores site/** -- no unnecessary builds | ✓ Good |
 | IntersectionObserver for animations | Zero-dependency, fire-once, prefers-reduced-motion support built-in | ✓ Good |
 | .js-enabled CSS gate | Progressive enhancement: content visible without JS, animations are additive | ✓ Good |
+| Emerald + Gold palette redesign | Warm, memorable identity vs generic blue; oklch perceptual uniformity | ✓ Good |
+| Glassmorphism UI pattern | backdrop-blur + semi-transparent borders: modern, depth-creating, works in both themes | ✓ Good |
+| Global IntersectionObserver + fallback | Fixes invisible sections bug; 3s fallback ensures content always visible | ✓ Good |
+| Real dashboard screenshots in hero | Product proof immediately visible; builds credibility faster than terminal demo | ✓ Good |
 
 ---
 *Last updated: 2026-02-13 after v1.3 milestone*

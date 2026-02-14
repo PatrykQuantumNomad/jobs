@@ -3,36 +3,57 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme {
-  /* Primary palette (blues) */
-  --color-primary-50: oklch(0.97 0.014 254.604);
-  --color-primary-100: oklch(0.932 0.032 255.585);
-  --color-primary-200: oklch(0.882 0.059 254.128);
-  --color-primary-300: oklch(0.809 0.105 251.813);
-  --color-primary-400: oklch(0.707 0.165 254.624);
-  --color-primary-500: oklch(0.623 0.214 259.815);
-  --color-primary-600: oklch(0.546 0.245 262.881);
-  --color-primary-700: oklch(0.488 0.243 264.376);
-  --color-primary-800: oklch(0.424 0.199 265.638);
-  --color-primary-900: oklch(0.379 0.146 265.522);
-  --color-primary-950: oklch(0.282 0.091 267.935);
+  /* ─── Emerald primary palette (hue 155) ─── */
+  --color-primary-50:  oklch(0.97 0.018 155);
+  --color-primary-100: oklch(0.935 0.04 155);
+  --color-primary-200: oklch(0.885 0.08 155);
+  --color-primary-300: oklch(0.79 0.14 155);
+  --color-primary-400: oklch(0.70 0.175 155);
+  --color-primary-500: oklch(0.60 0.19 155);
+  --color-primary-600: oklch(0.52 0.175 155);
+  --color-primary-700: oklch(0.44 0.15 155);
+  --color-primary-800: oklch(0.36 0.12 155);
+  --color-primary-900: oklch(0.30 0.09 155);
+  --color-primary-950: oklch(0.20 0.06 155);
 
-  /* Surface palette (grays/slate) */
-  --color-surface-50: oklch(0.984 0.003 247.858);
-  --color-surface-100: oklch(0.968 0.007 247.896);
-  --color-surface-200: oklch(0.929 0.013 255.508);
-  --color-surface-300: oklch(0.869 0.022 252.894);
-  --color-surface-400: oklch(0.704 0.04 256.788);
-  --color-surface-500: oklch(0.554 0.046 257.417);
-  --color-surface-600: oklch(0.446 0.043 257.281);
-  --color-surface-700: oklch(0.372 0.044 257.287);
-  --color-surface-800: oklch(0.279 0.041 260.031);
-  --color-surface-900: oklch(0.208 0.042 265.755);
-  --color-surface-950: oklch(0.129 0.042 264.695);
+  /* ─── Gold accent palette (hue 85→45) ─── */
+  --color-accent-50:  oklch(0.98 0.02 85);
+  --color-accent-100: oklch(0.95 0.05 85);
+  --color-accent-200: oklch(0.90 0.10 85);
+  --color-accent-300: oklch(0.84 0.15 80);
+  --color-accent-400: oklch(0.78 0.17 75);
+  --color-accent-500: oklch(0.72 0.16 70);
+  --color-accent-600: oklch(0.62 0.14 65);
+  --color-accent-700: oklch(0.52 0.12 60);
+  --color-accent-800: oklch(0.42 0.09 55);
+  --color-accent-900: oklch(0.34 0.07 50);
+  --color-accent-950: oklch(0.24 0.05 45);
 
-  /* Font families */
+  /* ─── Warm surface palette (hue ~160) ─── */
+  --color-surface-50:  oklch(0.985 0.004 160);
+  --color-surface-100: oklch(0.968 0.008 160);
+  --color-surface-200: oklch(0.929 0.014 160);
+  --color-surface-300: oklch(0.869 0.022 160);
+  --color-surface-400: oklch(0.704 0.035 160);
+  --color-surface-500: oklch(0.554 0.035 160);
+  --color-surface-600: oklch(0.446 0.032 160);
+  --color-surface-700: oklch(0.372 0.032 160);
+  --color-surface-800: oklch(0.279 0.030 165);
+  --color-surface-900: oklch(0.208 0.030 170);
+  --color-surface-950: oklch(0.129 0.030 170);
+
+  /* ─── Font families ─── */
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
   --font-display: "DM Sans Variable", ui-sans-serif, system-ui, sans-serif;
+
+  /* ─── Animation durations ─── */
+  --animate-blob-1: blob-drift-1 20s ease-in-out infinite;
+  --animate-blob-2: blob-drift-2 25s ease-in-out infinite;
+  --animate-fade-up: fade-up 0.7s ease-out both;
+  --animate-gradient-shift: gradient-shift 3s ease infinite;
 }
+
+/* ─── Base ─── */
 
 html {
   scroll-behavior: smooth;
@@ -48,10 +69,40 @@ section[id] {
   scroll-margin-top: 4rem;
 }
 
-/* Scroll-triggered fade-in animations */
+/* ─── Gradient text utility ─── */
+
+.gradient-text {
+  background: linear-gradient(135deg,
+    oklch(0.70 0.175 155),
+    oklch(0.78 0.17 75),
+    oklch(0.60 0.19 155)
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* ─── Glass card utility ─── */
+
+.glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: oklch(0.985 0.004 160 / 0.6);
+  border: 1px solid oklch(0.929 0.014 160 / 0.3);
+}
+
+:where([data-theme=dark], [data-theme=dark] *) .glass {
+  background: oklch(0.15 0.030 170 / 0.6);
+  border-color: oklch(0.372 0.032 160 / 0.3);
+}
+
+/* ─── Scroll-triggered animations ─── */
+
 .js-enabled [data-animate] {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(24px);
   transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 }
 
@@ -60,10 +111,91 @@ section[id] {
   transform: translateY(0);
 }
 
+/* Staggered children reveal */
+.js-enabled .stagger-children > [data-stagger] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.js-enabled .stagger-children.animate-in > [data-stagger] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.js-enabled .stagger-children.animate-in > [data-stagger]:nth-child(1) { transition-delay: 0ms; }
+.js-enabled .stagger-children.animate-in > [data-stagger]:nth-child(2) { transition-delay: 80ms; }
+.js-enabled .stagger-children.animate-in > [data-stagger]:nth-child(3) { transition-delay: 160ms; }
+.js-enabled .stagger-children.animate-in > [data-stagger]:nth-child(4) { transition-delay: 240ms; }
+.js-enabled .stagger-children.animate-in > [data-stagger]:nth-child(5) { transition-delay: 320ms; }
+.js-enabled .stagger-children.animate-in > [data-stagger]:nth-child(6) { transition-delay: 400ms; }
+.js-enabled .stagger-children.animate-in > [data-stagger]:nth-child(7) { transition-delay: 480ms; }
+.js-enabled .stagger-children.animate-in > [data-stagger]:nth-child(8) { transition-delay: 560ms; }
+.js-enabled .stagger-children.animate-in > [data-stagger]:nth-child(9) { transition-delay: 640ms; }
+
 @media (prefers-reduced-motion: reduce) {
   .js-enabled [data-animate] {
     opacity: 1;
     transform: none;
     transition: none;
   }
+  .js-enabled .stagger-children > [data-stagger] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ─── Keyframes ─── */
+
+@keyframes blob-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+@keyframes blob-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-40px, 30px) scale(0.95); }
+  66% { transform: translate(25px, -40px) scale(1.05); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes count-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shine-sweep {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+@keyframes draw-line {
+  from { stroke-dashoffset: var(--line-length, 100); }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes blob-drift-1 { 0%, 100% { transform: none; } }
+  @keyframes blob-drift-2 { 0%, 100% { transform: none; } }
+  @keyframes gradient-shift { 0%, 100% { background-position: 0% 50%; } }
+  @keyframes shine-sweep { 0%, 100% { transform: none; } }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: none; } }
 }

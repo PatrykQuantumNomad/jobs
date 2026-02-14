@@ -1,10 +1,12 @@
 ---
 import { Code } from "astro:components";
 
-const THEME = "github-dark-default";
+const THEME = "one-dark-pro";
 
 const snippets = [
   {
+    id: "protocol",
+    tab: "Protocol",
     title: "Platform Protocol",
     filename: "platforms/protocols.py",
     description:
@@ -24,6 +26,8 @@ class BrowserPlatform(Protocol):
     def apply(self, job: Job, resume_path: Path | None = None) -> bool: ...`,
   },
   {
+    id: "registry",
+    tab: "Registry",
     title: "Decorator Registry",
     filename: "platforms/registry.py",
     description:
@@ -52,6 +56,8 @@ class BrowserPlatform(Protocol):
     return decorator`,
   },
   {
+    id: "scoring",
+    tab: "Scoring",
     title: "Scoring Engine",
     filename: "scorer.py",
     description:
@@ -87,25 +93,53 @@ class BrowserPlatform(Protocol):
 ---
 
 <section id="code" data-animate class="py-20 bg-surface-900 dark:bg-surface-950">
-  <div class="max-w-6xl mx-auto px-4">
+  <div class="max-w-4xl mx-auto px-4">
     <h2 class="font-display text-3xl font-bold text-white text-center">
       Under the Hood
     </h2>
     <p class="mt-3 text-surface-400 text-center max-w-2xl mx-auto">
-      Real code from the project -- protocol-driven architecture with pluggable platforms
+      Real code from the project &mdash; protocol-driven architecture with pluggable platforms
     </p>
 
-    <div class="mt-12 space-y-8">
-      {snippets.map((snippet) => (
-        <div class="rounded-xl overflow-hidden border border-surface-700">
-          <div class="bg-surface-800 px-6 py-4">
-            <h3 class="font-display font-semibold text-white">
-              {snippet.title}
-            </h3>
-            <p class="mt-1 text-sm text-surface-400">
-              {snippet.description}
-            </p>
-            <span class="mt-2 inline-block text-xs text-surface-500 font-mono">
+    <!-- Tab buttons -->
+    <div class="mt-10 flex justify-center gap-2" id="code-tabs">
+      {snippets.map((snippet, i) => (
+        <button
+          data-code-tab={snippet.id}
+          class:list={[
+            "px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
+            i === 0
+              ? "bg-primary-600 text-white shadow-md"
+              : "text-surface-400 hover:text-white hover:bg-surface-800",
+          ]}
+        >
+          {snippet.tab}
+        </button>
+      ))}
+    </div>
+
+    <!-- Tab panels -->
+    <div class="mt-6 relative">
+      {snippets.map((snippet, i) => (
+        <div
+          data-code-panel={snippet.id}
+          class:list={[
+            "rounded-xl overflow-hidden border border-surface-700/50",
+            "shadow-[0_0_20px_oklch(0.52_0.175_155_/_0.08)]",
+            "transition-opacity duration-300",
+            i === 0 ? "opacity-100 relative" : "opacity-0 absolute inset-0 pointer-events-none",
+          ]}
+        >
+          <div class="bg-surface-800/80 px-6 py-4 flex items-start justify-between">
+            <div>
+              <h3 class="font-display font-semibold text-white">
+                {snippet.title}
+              </h3>
+              <p class="mt-1 text-sm text-surface-400">
+                {snippet.description}
+              </p>
+            </div>
+            <span class="shrink-0 ml-4 bg-accent-900/30 text-accent-300 font-mono text-xs px-2 py-1 rounded">
               {snippet.filename}
             </span>
           </div>
@@ -117,3 +151,44 @@ class BrowserPlatform(Protocol):
     </div>
   </div>
 </section>
+
+<script>
+  function initCodeTabs() {
+    const container = document.getElementById('code-tabs');
+    if (!container) return;
+
+    const section = container.closest('section');
+    if (!section) return;
+
+    const buttons = section.querySelectorAll<HTMLElement>('[data-code-tab]');
+    const panels = section.querySelectorAll<HTMLElement>('[data-code-panel]');
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.codeTab;
+
+        buttons.forEach(b => {
+          const isActive = b.dataset.codeTab === tab;
+          b.classList.toggle('bg-primary-600', isActive);
+          b.classList.toggle('text-white', isActive);
+          b.classList.toggle('shadow-md', isActive);
+          b.classList.toggle('text-surface-400', !isActive);
+          b.classList.toggle('hover:text-white', !isActive);
+          b.classList.toggle('hover:bg-surface-800', !isActive);
+        });
+
+        panels.forEach(p => {
+          const isActive = p.dataset.codePanel === tab;
+          p.classList.toggle('opacity-100', isActive);
+          p.classList.toggle('relative', isActive);
+          p.classList.toggle('opacity-0', !isActive);
+          p.classList.toggle('absolute', !isActive);
+          p.classList.toggle('pointer-events-none', !isActive);
+        });
+      });
+    });
+  }
+
+  initCodeTabs();
+  document.addEventListener('astro:page-load', initCodeTabs);
+</script>

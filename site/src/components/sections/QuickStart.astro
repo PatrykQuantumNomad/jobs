@@ -1,7 +1,7 @@
 ---
 import { Code } from "astro:components";
 
-const THEME = "github-dark-default";
+const THEME = "one-dark-pro";
 
 const steps = [
   {
@@ -48,22 +48,63 @@ const steps = [
       Up and running in five steps
     </p>
 
-    <div class="mt-12 space-y-8">
-      {steps.map((step) => (
-        <div>
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-display font-bold text-sm shrink-0">
-              {step.number}
+    <div class="mt-12 relative">
+      {/* Dashed connecting line */}
+      <div class="absolute left-4 top-6 bottom-6 w-px border-l-2 border-dashed border-primary-200 dark:border-primary-800 hidden sm:block"></div>
+
+      <div class="space-y-8">
+        {steps.map((step) => (
+          <div class="relative">
+            <div class="flex items-center gap-3">
+              <div class="relative z-10 w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600
+                          text-white flex items-center justify-center font-display font-bold text-sm shrink-0
+                          shadow-md shadow-primary-600/20">
+                {step.number}
+              </div>
+              <h3 class="font-display font-semibold text-surface-900 dark:text-surface-50">
+                {step.title}
+              </h3>
             </div>
-            <h3 class="font-display font-semibold text-surface-900 dark:text-surface-50">
-              {step.title}
-            </h3>
+            <div class="ml-11 mt-2 rounded-lg overflow-hidden relative group">
+              <button
+                class="copy-btn absolute top-2 right-2 z-10 px-2 py-1 rounded text-xs
+                       bg-surface-700/80 text-surface-300 hover:bg-surface-600 hover:text-white
+                       opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                data-code={step.code}
+              >
+                Copy
+              </button>
+              <Code code={step.code} lang={step.lang} theme={THEME} />
+            </div>
           </div>
-          <div class="ml-11 mt-2 rounded-lg overflow-hidden">
-            <Code code={step.code} lang={step.lang} theme={THEME} />
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   </div>
 </section>
+
+<script>
+  function initCopyButtons() {
+    document.querySelectorAll<HTMLButtonElement>('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const code = btn.dataset.code;
+        if (!code) return;
+        try {
+          await navigator.clipboard.writeText(code);
+          btn.textContent = 'Copied!';
+          btn.classList.add('bg-primary-600', 'text-white');
+          setTimeout(() => {
+            btn.textContent = 'Copy';
+            btn.classList.remove('bg-primary-600', 'text-white');
+          }, 2000);
+        } catch {
+          btn.textContent = 'Failed';
+          setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+        }
+      });
+    });
+  }
+
+  initCopyButtons();
+  document.addEventListener('astro:page-load', initCopyButtons);
+</script>

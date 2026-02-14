@@ -1,19 +1,124 @@
 ---
 import ThemeToggle from "./ThemeToggle.astro";
+
+const navLinks = [
+  { href: "#features", label: "Features" },
+  { href: "#showcase", label: "Dashboard" },
+  { href: "#architecture", label: "How It Works" },
+  { href: "#code", label: "Code" },
+  { href: "#timeline", label: "Timeline" },
+  { href: "#quickstart", label: "Quick Start" },
+];
 ---
 
-<nav class="fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-surface-950/80 backdrop-blur-sm border-b border-surface-200 dark:border-surface-800">
+<nav class="fixed top-0 left-0 right-0 z-40 backdrop-blur-xl
+            bg-surface-50/60 dark:bg-surface-950/60
+            border-b border-primary-200/20 dark:border-primary-800/20">
   <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
-    <a href="#hero" class="font-display font-bold text-lg text-surface-900 dark:text-surface-50 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+    <a href="#hero" class="font-display font-bold text-lg
+                           bg-gradient-to-r from-primary-500 to-accent-500
+                           bg-clip-text text-transparent
+                           hover:from-primary-400 hover:to-accent-400 transition-all">
       JobFlow
     </a>
+
+    {/* Desktop nav */}
     <div class="hidden md:flex items-center gap-6">
-      <a href="#features" class="text-sm text-surface-600 dark:text-surface-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Features</a>
-      <a href="#architecture" class="text-sm text-surface-600 dark:text-surface-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">How It Works</a>
-      <a href="#code" class="text-sm text-surface-600 dark:text-surface-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Code</a>
-      <a href="#timeline" class="text-sm text-surface-600 dark:text-surface-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Timeline</a>
-      <a href="#quickstart" class="text-sm text-surface-600 dark:text-surface-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Quick Start</a>
+      {navLinks.map(link => (
+        <a href={link.href}
+           class="relative text-sm text-surface-600 dark:text-surface-300
+                  hover:text-primary-600 dark:hover:text-primary-400 transition-colors
+                  after:absolute after:left-0 after:-bottom-1 after:h-0.5
+                  after:w-0 hover:after:w-full after:bg-primary-500
+                  after:transition-all after:duration-300">
+          {link.label}
+        </a>
+      ))}
       <ThemeToggle />
+    </div>
+
+    {/* Mobile hamburger */}
+    <div class="flex items-center gap-3 md:hidden">
+      <ThemeToggle />
+      <button id="mobile-menu-btn" class="p-2 text-surface-600 dark:text-surface-300
+                                           hover:text-primary-600 dark:hover:text-primary-400"
+              aria-label="Open menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
     </div>
   </div>
 </nav>
+
+{/* Mobile slide-in menu */}
+<div id="mobile-menu-overlay" class="fixed inset-0 z-50 bg-surface-950/50 backdrop-blur-sm
+                                      opacity-0 pointer-events-none transition-opacity duration-300 md:hidden">
+  <div id="mobile-menu-panel" class="absolute right-0 top-0 bottom-0 w-72
+                                      bg-surface-50 dark:bg-surface-900
+                                      border-l border-surface-200 dark:border-surface-700
+                                      shadow-2xl transform translate-x-full transition-transform duration-300 ease-out">
+    <div class="flex items-center justify-between p-4 border-b border-surface-200 dark:border-surface-700">
+      <span class="font-display font-bold text-lg gradient-text">JobFlow</span>
+      <button id="mobile-menu-close" class="p-2 text-surface-500 hover:text-surface-900 dark:hover:text-surface-100"
+              aria-label="Close menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    <div class="p-4 space-y-1">
+      {navLinks.map(link => (
+        <a href={link.href}
+           class="mobile-menu-link block px-4 py-3 rounded-lg text-surface-700 dark:text-surface-200
+                  hover:bg-primary-50 dark:hover:bg-primary-950/50
+                  hover:text-primary-600 dark:hover:text-primary-400
+                  transition-colors font-medium">
+          {link.label}
+        </a>
+      ))}
+    </div>
+  </div>
+</div>
+
+<script>
+  function initMobileMenu() {
+    const btn = document.getElementById('mobile-menu-btn');
+    const overlay = document.getElementById('mobile-menu-overlay');
+    const panel = document.getElementById('mobile-menu-panel');
+    const closeBtn = document.getElementById('mobile-menu-close');
+    if (!btn || !overlay || !panel || !closeBtn) return;
+
+    function open() {
+      overlay.classList.remove('opacity-0', 'pointer-events-none');
+      overlay.classList.add('opacity-100', 'pointer-events-auto');
+      panel.classList.remove('translate-x-full');
+      panel.classList.add('translate-x-0');
+    }
+
+    function close() {
+      overlay.classList.add('opacity-0', 'pointer-events-none');
+      overlay.classList.remove('opacity-100', 'pointer-events-auto');
+      panel.classList.add('translate-x-full');
+      panel.classList.remove('translate-x-0');
+    }
+
+    btn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close();
+    });
+
+    document.querySelectorAll('.mobile-menu-link').forEach(link => {
+      link.addEventListener('click', close);
+    });
+  }
+
+  initMobileMenu();
+  document.addEventListener('astro:page-load', initMobileMenu);
+</script>

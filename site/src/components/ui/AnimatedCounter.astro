@@ -1,0 +1,92 @@
+---
+interface Props {
+  target: number;
+  suffix?: string;
+  label: string;
+}
+
+const { target, suffix = "", label } = Astro.props;
+---
+
+<div data-counter={JSON.stringify({ target, suffix })}>
+  <div class="font-display text-4xl md:text-5xl font-bold">
+    <span class="counter-value border-b-2 border-accent-400/60 pb-1 inline-block">0</span>
+  </div>
+  <div class="mt-2 text-sm text-primary-200 uppercase tracking-wider">{label}</div>
+</div>
+
+<script>
+  function easeOutExpo(t: number): number {
+    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  }
+
+  function initCounters() {
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+
+    const counters = document.querySelectorAll<HTMLElement>('[data-counter]');
+
+    counters.forEach((el) => {
+      const { target, suffix } = JSON.parse(el.dataset.counter || '{}');
+      const valueEl = el.querySelector('.counter-value');
+      if (!valueEl) return;
+
+      if (prefersReducedMotion) {
+        valueEl.textContent = `${target}${suffix}`;
+        return;
+      }
+
+      // Skip if already animated
+      if (el.dataset.counted === 'true') return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              el.dataset.counted = 'true';
+              observer.unobserve(el);
+
+              const duration = 1500;
+              let startTime: number | null = null;
+
+              function animate(currentTime: number) {
+                if (startTime === null) startTime = currentTime;
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easedProgress = easeOutExpo(progress);
+                const currentValue = Math.round(easedProgress * target);
+
+                valueEl!.textContent = `${currentValue}${suffix}`;
+
+                if (progress < 1) {
+                  requestAnimationFrame(animate);
+                } else {
+                  valueEl!.textContent = `${target}${suffix}`;
+                  valueEl!.classList.add('count-pop-active');
+                  setTimeout(() => {
+                    valueEl!.classList.remove('count-pop-active');
+                  }, 300);
+                }
+              }
+
+              requestAnimationFrame(animate);
+            }
+          });
+        },
+        { threshold: 0.5 }
+      );
+
+      observer.observe(el);
+    });
+  }
+
+  initCounters();
+  document.addEventListener('astro:page-load', initCounters);
+</script>
+
+<style>
+  .count-pop-active {
+    animation: count-pop 0.3s ease-out;
+  }
+</style>

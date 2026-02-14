@@ -1,4 +1,6 @@
 ---
+import AnimatedCounter from "../ui/AnimatedCounter.astro";
+
 interface Props {
   class?: string;
 }
@@ -6,21 +8,34 @@ interface Props {
 const { class: className } = Astro.props;
 
 const stats = [
-  { value: "18K+", label: "Lines of Code" },
-  { value: "581", label: "Tests" },
-  { value: "80%+", label: "Coverage" },
-  { value: "3", label: "Platforms" },
+  { target: 465, suffix: "+", label: "Jobs Tracked" },
+  { target: 581, label: "Tests" },
+  { target: 80, suffix: "%+", label: "Coverage" },
+  { target: 3, label: "Platforms" },
 ];
 ---
 
-<section id="stats" class:list={["py-12 bg-primary-900 text-white", className]}>
-  <div class="max-w-6xl mx-auto px-4">
+<section
+  id="stats"
+  class:list={[
+    "py-12 bg-gradient-to-r from-primary-800 via-primary-700 to-primary-800 text-white relative overflow-hidden",
+    className,
+  ]}
+  data-animate
+>
+  <!-- Shine sweep overlay -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div
+      class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+      style="animation: shine-sweep 1.5s ease-out 0.5s 1 both;"
+    >
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-4 relative z-10">
     <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
       {stats.map((stat) => (
-        <div>
-          <div class="font-display text-4xl font-bold">{stat.value}</div>
-          <div class="mt-1 text-sm text-primary-200 uppercase tracking-wider">{stat.label}</div>
-        </div>
+        <AnimatedCounter target={stat.target} suffix={stat.suffix} label={stat.label} />
       ))}
     </div>
   </div>

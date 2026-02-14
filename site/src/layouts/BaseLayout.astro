@@ -98,8 +98,59 @@ const absoluteImageURL = new URL(image, Astro.site);
         document.documentElement.style.colorScheme = theme;
       });
     </script>
+
+    <!-- Global scroll animation observer (fixes invisible sections bug) -->
+    <script>
+      function initGlobalScrollAnimations() {
+        const prefersReducedMotion = window.matchMedia(
+          '(prefers-reduced-motion: reduce)'
+        ).matches;
+
+        if (prefersReducedMotion) {
+          document.querySelectorAll('[data-animate]').forEach((el) => {
+            el.classList.add('animate-in');
+          });
+          document.querySelectorAll('.stagger-children').forEach((el) => {
+            el.classList.add('animate-in');
+          });
+          return;
+        }
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('animate-in');
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.05, rootMargin: '0px 0px -30px 0px' }
+        );
+
+        document.querySelectorAll('[data-animate]').forEach((el) => {
+          observer.observe(el);
+        });
+        document.querySelectorAll('.stagger-children').forEach((el) => {
+          observer.observe(el);
+        });
+
+        // Fallback: force-show everything after 3 seconds in case observer fails
+        setTimeout(() => {
+          document.querySelectorAll('[data-animate]:not(.animate-in)').forEach((el) => {
+            el.classList.add('animate-in');
+          });
+          document.querySelectorAll('.stagger-children:not(.animate-in)').forEach((el) => {
+            el.classList.add('animate-in');
+          });
+        }, 3000);
+      }
+
+      initGlobalScrollAnimations();
+      document.addEventListener('astro:page-load', initGlobalScrollAnimations);
+    </script>
   </head>
-  <body class="bg-surface-50 dark:bg-surface-950 text-surface-900 dark:text-surface-50 font-sans antialiased">
+  <body class="bg-surface-50 dark:bg-surface-950 text-surface-900 dark:text-surface-50 font-sans antialiased overflow-x-hidden">
     <slot />
   </body>
 </html>

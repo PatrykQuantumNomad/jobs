@@ -43,11 +43,25 @@ const milestones = [
       "Anti-fabrication validation",
     ],
   },
+  {
+    version: "v1.3",
+    title: "Product Site",
+    date: "Feb 13, 2026",
+    stats: "Astro 5 | Tailwind v4 | GitHub Pages",
+    description:
+      "Professional product page with emerald branding, animations, and live dashboard screenshots.",
+    features: [
+      "Emerald + Gold theme",
+      "Glassmorphism UI",
+      "Animated pipeline",
+      "Dashboard showcase",
+    ],
+  },
 ];
 ---
 
 <section id="timeline" data-animate class="py-20 bg-surface-50 dark:bg-surface-900">
-  <div class="max-w-3xl mx-auto px-4">
+  <div class="max-w-4xl mx-auto px-4">
     <h2 class="font-display text-3xl font-bold text-surface-900 dark:text-surface-50 text-center">
       Built in Public
     </h2>
@@ -55,10 +69,71 @@ const milestones = [
       From MVP to production in one week
     </p>
 
-    <div class="mt-12 border-l-2 border-primary-200 dark:border-primary-800 ml-4 space-y-12">
+    {/* Desktop: alternating centered layout */}
+    <div class="mt-14 hidden md:block relative">
+      {/* Center gradient line */}
+      <div class="absolute left-1/2 top-0 bottom-0 w-0.5 -translate-x-1/2
+                  bg-gradient-to-b from-primary-400 via-primary-600 to-accent-500"></div>
+
+      <div class="space-y-16">
+        {milestones.map((milestone, i) => {
+          const isLeft = i % 2 === 0;
+          return (
+            <div class="relative flex items-start">
+              {/* Dot on center line */}
+              <div class="absolute left-1/2 -translate-x-1/2 top-2 z-10">
+                <div class="w-10 h-10 rounded-full bg-accent-500 text-surface-950
+                            flex items-center justify-center font-display text-xs font-bold
+                            shadow-lg shadow-accent-500/30 ring-4 ring-surface-50 dark:ring-surface-900">
+                  {milestone.version}
+                </div>
+              </div>
+
+              {/* Content card */}
+              <div class:list={[
+                "w-[calc(50%-2rem)]",
+                isLeft ? "mr-auto pr-8 text-right" : "ml-auto pl-8 text-left",
+              ]}>
+                <div class="backdrop-blur-md bg-white/60 dark:bg-surface-800/60
+                            border border-white/20 dark:border-surface-700/30
+                            rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300">
+                  <h3 class="font-display text-xl font-semibold text-surface-900 dark:text-surface-50">
+                    {milestone.title}
+                  </h3>
+                  <p class="mt-1 text-sm text-surface-500 dark:text-surface-400">
+                    {milestone.date}
+                  </p>
+                  <p class="mt-1 text-sm text-surface-500 dark:text-surface-400 font-mono">
+                    {milestone.stats}
+                  </p>
+                  <p class="mt-3 text-surface-600 dark:text-surface-300 leading-relaxed text-sm">
+                    {milestone.description}
+                  </p>
+                  <div class:list={[
+                    "mt-3 flex flex-wrap gap-2",
+                    isLeft ? "justify-end" : "justify-start",
+                  ]}>
+                    {milestone.features.map((feature) => (
+                      <span class="bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300
+                                   rounded-full px-2.5 py-0.5 text-xs">
+                        {feature}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+
+    {/* Mobile: simple vertical timeline */}
+    <div class="mt-12 md:hidden border-l-2 border-primary-200 dark:border-primary-800 ml-4 space-y-10">
       {milestones.map((milestone) => (
         <div class="relative pl-8">
-          <span class="absolute -left-4 top-0 bg-primary-600 text-white rounded-full px-3 py-1 text-sm font-display font-bold">
+          <span class="absolute -left-4 top-0 bg-accent-500 text-surface-950 rounded-full
+                       px-2.5 py-1 text-xs font-display font-bold shadow-md">
             {milestone.version}
           </span>
           <div class="pt-1">
@@ -69,12 +144,13 @@ const milestones = [
             <p class="mt-1 text-sm text-surface-500 dark:text-surface-400 font-mono">
               {milestone.stats}
             </p>
-            <p class="mt-3 text-surface-600 dark:text-surface-300 leading-relaxed">
+            <p class="mt-3 text-surface-600 dark:text-surface-300 leading-relaxed text-sm">
               {milestone.description}
             </p>
             <div class="mt-3 flex flex-wrap gap-2">
               {milestone.features.map((feature) => (
-                <span class="bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 rounded-full px-2 py-0.5 text-xs">
+                <span class="bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300
+                             rounded-full px-2 py-0.5 text-xs">
                   {feature}
                 </span>
               ))}
