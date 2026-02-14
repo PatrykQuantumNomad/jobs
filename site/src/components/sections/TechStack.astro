@@ -9,12 +9,12 @@ const technologies = [
 ];
 ---
 
-<section id="tech-stack" data-animate class="py-20 bg-surface-50 dark:bg-surface-900">
+<section id="tech-stack" data-animate class="py-20 bg-surface-50">
   <div class="max-w-6xl mx-auto px-4 text-center">
-    <h2 class="font-display text-3xl font-bold text-surface-900 dark:text-surface-50">
+    <h2 class="font-display text-3xl font-bold text-surface-900">
       Built With
     </h2>
-    <p class="mt-3 text-surface-600 dark:text-surface-300">
+    <p class="mt-3 text-surface-600">
       The tools that power the pipeline
     </p>
     <div class="mt-12 flex flex-wrap justify-center gap-6 stagger-children">
@@ -22,25 +22,24 @@ const technologies = [
         <div
           data-stagger
           class="group flex flex-col items-center gap-3 px-8 py-5 rounded-xl
-                 backdrop-blur-md bg-white/60 dark:bg-surface-800/60
-                 border border-white/20 dark:border-surface-700/30
+                 backdrop-blur-md bg-white/60
+                 border border-white/20
                  shadow-sm hover:shadow-lg transition-all duration-300
                  hover:-translate-y-1"
           style={`--ring-color: ${tech.color}`}
         >
           <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-50 to-primary-100
-                      dark:from-primary-950 dark:to-primary-900
                       flex items-center justify-center
                       group-hover:ring-2 transition-all duration-300"
                style={`--tw-ring-color: ${tech.color}`}>
-            <span class="font-display font-bold text-primary-600 dark:text-primary-400 text-lg">
+            <span class="font-display font-bold text-primary-600 text-lg">
               {tech.name.charAt(0)}
             </span>
           </div>
-          <span class="font-display font-semibold text-surface-900 dark:text-surface-50">
+          <span class="font-display font-semibold text-surface-900">
             {tech.name}
           </span>
-          <span class="text-xs text-surface-500 dark:text-surface-400 uppercase tracking-wider">
+          <span class="text-xs text-surface-500 uppercase tracking-wider">
             {tech.role}
           </span>
         </div>

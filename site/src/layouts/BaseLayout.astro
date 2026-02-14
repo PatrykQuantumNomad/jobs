@@ -25,18 +25,13 @@ const absoluteImageURL = new URL(image, Astro.site);
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script is:inline>
-      ;(function() {
-        const stored = localStorage.getItem('theme');
-        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = stored === 'dark' || stored === 'light'
-          ? stored
-          : (systemDark ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', theme);
-        document.documentElement.style.colorScheme = theme;
-        document.documentElement.classList.add('js-enabled');
-      })();
-    </script>
+    <!-- Favicons -->
+    <link rel="icon" href="/jobs/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/jobs/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/jobs/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/jobs/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/jobs/apple-touch-icon.png" />
+    <script is:inline>document.documentElement.classList.add('js-enabled');</script>
     <meta name="generator" content={Astro.generator} />
 
     <!-- Primary Meta Tags -->
@@ -86,18 +81,6 @@ const absoluteImageURL = new URL(image, Astro.site);
     })} />
 
     <ClientRouter />
-
-    <script>
-      document.addEventListener('astro:after-swap', () => {
-        const stored = localStorage.getItem('theme');
-        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = stored === 'dark' || stored === 'light'
-          ? stored
-          : (systemDark ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', theme);
-        document.documentElement.style.colorScheme = theme;
-      });
-    </script>
 
     <!-- Global scroll animation observer (fixes invisible sections bug) -->
     <script>
@@ -150,7 +133,7 @@ const absoluteImageURL = new URL(image, Astro.site);
       document.addEventListener('astro:page-load', initGlobalScrollAnimations);
     </script>
   </head>
-  <body class="bg-surface-50 dark:bg-surface-950 text-surface-900 dark:text-surface-50 font-sans antialiased overflow-x-hidden">
+  <body class="bg-surface-50 text-surface-900 font-sans antialiased overflow-x-hidden">
     <slot />
   </body>
 </html>

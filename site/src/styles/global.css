@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
-
 @theme {
   /* ─── Emerald primary palette (hue 155) ─── */
   --color-primary-50:  oklch(0.97 0.018 155);
@@ -91,11 +89,6 @@ section[id] {
   -webkit-backdrop-filter: blur(12px);
   background: oklch(0.985 0.004 160 / 0.6);
   border: 1px solid oklch(0.929 0.014 160 / 0.3);
-}
-
-:where([data-theme=dark], [data-theme=dark] *) .glass {
-  background: oklch(0.15 0.030 170 / 0.6);
-  border-color: oklch(0.372 0.032 160 / 0.3);
 }
 
 /* ─── Scroll-triggered animations ─── */
