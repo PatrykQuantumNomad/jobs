@@ -4,30 +4,26 @@ const navLinks = [
   { href: "#showcase", label: "Dashboard" },
   { href: "#architecture", label: "How It Works" },
   { href: "#code", label: "Code" },
-  { href: "#timeline", label: "Timeline" },
+  { href: "#project", label: "Project" },
   { href: "#quickstart", label: "Quick Start" },
 ];
 ---
 
-<nav class="fixed top-0 left-0 right-0 z-40 backdrop-blur-xl
-            bg-surface-50/60
-            border-b border-primary-200/20">
+<nav id="main-nav" class="fixed top-0 left-0 right-0 z-40 transition-all duration-300
+            border-b border-transparent">
   <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
-    <a href="#hero" class="font-display font-bold text-lg
-                           bg-gradient-to-r from-primary-500 to-accent-500
-                           bg-clip-text text-transparent
-                           hover:from-primary-400 hover:to-accent-400 transition-all">
-      JobFlow
+    <a href="#hero" class="font-display font-bold text-lg transition-all">
+      <span class="nav-logo-job text-primary-400 transition-colors duration-300">Job</span><span class="nav-logo-flow text-accent-400 transition-colors duration-300">Flow</span>
     </a>
 
     {/* Desktop nav */}
     <div class="hidden md:flex items-center gap-6">
       {navLinks.map(link => (
         <a href={link.href}
-           class="relative text-sm text-surface-600
-                  hover:text-primary-600 transition-colors
+           class="nav-link relative text-sm text-white/90 transition-colors
+                  hover:text-white
                   after:absolute after:left-0 after:-bottom-1 after:h-0.5
-                  after:w-0 hover:after:w-full after:bg-primary-500
+                  after:w-0 hover:after:w-full after:bg-primary-400
                   after:transition-all after:duration-300">
           {link.label}
         </a>
@@ -36,8 +32,8 @@ const navLinks = [
 
     {/* Mobile hamburger */}
     <div class="flex items-center gap-3 md:hidden">
-      <button id="mobile-menu-btn" class="p-2 text-surface-600
-                                           hover:text-primary-600"
+      <button id="mobile-menu-btn" class="p-2 text-white/90
+                                           hover:text-white transition-colors"
               aria-label="Open menu">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -58,7 +54,7 @@ const navLinks = [
                                       border-l border-surface-200
                                       shadow-2xl transform translate-x-full transition-transform duration-300 ease-out">
     <div class="flex items-center justify-between p-4 border-b border-surface-200">
-      <span class="font-display font-bold text-lg gradient-text">JobFlow</span>
+      <span class="font-display font-bold text-lg"><span class="text-primary-600">Job</span><span class="text-accent-500">Flow</span></span>
       <button id="mobile-menu-close" class="p-2 text-surface-500 hover:text-surface-900"
               aria-label="Close menu">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -115,6 +111,67 @@ const navLinks = [
     });
   }
 
+  function initNavScroll() {
+    const nav = document.getElementById('main-nav');
+    if (!nav) return;
+
+    function onScroll() {
+      const scrolled = window.scrollY > 80;
+      if (scrolled) {
+        nav.classList.add('backdrop-blur-xl', 'bg-surface-50/90', 'border-primary-200/20');
+        nav.classList.remove('border-transparent');
+        nav.querySelectorAll('.nav-link').forEach(el => {
+          el.classList.remove('text-white/90');
+          el.classList.add('text-surface-600');
+          el.classList.remove('hover:text-white');
+          el.classList.add('hover:text-primary-600');
+        });
+        nav.querySelectorAll('.nav-logo-job').forEach(el => {
+          el.classList.remove('text-primary-400');
+          el.classList.add('text-primary-600');
+        });
+        nav.querySelectorAll('.nav-logo-flow').forEach(el => {
+          el.classList.remove('text-accent-400');
+          el.classList.add('text-accent-500');
+        });
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        if (menuBtn) {
+          menuBtn.classList.remove('text-white/90', 'hover:text-white');
+          menuBtn.classList.add('text-surface-600', 'hover:text-primary-600');
+        }
+      } else {
+        nav.classList.remove('backdrop-blur-xl', 'bg-surface-50/90', 'border-primary-200/20');
+        nav.classList.add('border-transparent');
+        nav.querySelectorAll('.nav-link').forEach(el => {
+          el.classList.add('text-white/90');
+          el.classList.remove('text-surface-600');
+          el.classList.add('hover:text-white');
+          el.classList.remove('hover:text-primary-600');
+        });
+        nav.querySelectorAll('.nav-logo-job').forEach(el => {
+          el.classList.add('text-primary-400');
+          el.classList.remove('text-primary-600');
+        });
+        nav.querySelectorAll('.nav-logo-flow').forEach(el => {
+          el.classList.add('text-accent-400');
+          el.classList.remove('text-accent-500');
+        });
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        if (menuBtn) {
+          menuBtn.classList.add('text-white/90', 'hover:text-white');
+          menuBtn.classList.remove('text-surface-600', 'hover:text-primary-600');
+        }
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll(); // initial state
+  }
+
   initMobileMenu();
-  document.addEventListener('astro:page-load', initMobileMenu);
+  initNavScroll();
+  document.addEventListener('astro:page-load', () => {
+    initMobileMenu();
+    initNavScroll();
+  });
 </script>

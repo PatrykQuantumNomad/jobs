@@ -1,20 +1,156 @@
 ---
-// Decorative animated gradient blobs — purely visual, no interactivity.
+// Dark hero background with animated particle network canvas.
+// Particles connect when near each other, creating a technical "automation pipeline" feel.
+// Respects prefers-reduced-motion: shows static frame.
 ---
 
 <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-  <!-- Blob 1: emerald, top-left -->
-  <div
-    class="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full
-           bg-gradient-to-br from-primary-400 to-primary-600
-           opacity-30 blur-[80px]"
-    style="animation: blob-drift-1 20s ease-in-out infinite;"
-  ></div>
-  <!-- Blob 2: gold-to-teal, bottom-right -->
-  <div
-    class="absolute -bottom-32 -right-32 w-[400px] h-[400px] rounded-full
-           bg-gradient-to-br from-accent-400 to-primary-500
-           opacity-30 blur-[80px]"
-    style="animation: blob-drift-2 25s ease-in-out infinite;"
-  ></div>
+  <!-- Dark gradient base -->
+  <div class="absolute inset-0 bg-gradient-to-b from-[oklch(0.15_0.04_160)] via-[oklch(0.18_0.05_155)] to-[oklch(0.15_0.04_160)]"></div>
+
+  <!-- Subtle radial glow spots -->
+  <div class="absolute inset-0"
+       style="background:
+         radial-gradient(ellipse 40% 50% at 20% 30%, oklch(0.30 0.12 155 / 0.4), transparent),
+         radial-gradient(ellipse 35% 45% at 75% 60%, oklch(0.30 0.10 75 / 0.25), transparent);">
+  </div>
+
+  <!-- Canvas for particle network -->
+  <canvas id="hero-particles" class="absolute inset-0 w-full h-full"></canvas>
+
+  <!-- Bottom fade to light -->
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-surface-50 to-transparent"></div>
 </div>
+
+<script>
+  function initParticles() {
+    const canvas = document.getElementById('hero-particles') as HTMLCanvasElement;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let width: number, height: number;
+    let particles: Array<{
+      x: number; y: number;
+      vx: number; vy: number;
+      r: number;
+      color: string;
+      glowColor: string;
+    }> = [];
+
+    const PARTICLE_COUNT = 50;
+    const CONNECTION_DIST = 150;
+    const SPEED = 0.3;
+
+    const COLORS = [
+      { dot: 'rgba(52, 211, 153, 0.8)', glow: 'rgba(52, 211, 153, 0.15)', line: 'rgba(52, 211, 153,' },  // emerald
+      { dot: 'rgba(52, 211, 153, 0.6)', glow: 'rgba(52, 211, 153, 0.10)', line: 'rgba(52, 211, 153,' },  // emerald dim
+      { dot: 'rgba(217, 179, 60, 0.7)', glow: 'rgba(217, 179, 60, 0.12)', line: 'rgba(217, 179, 60,' },  // gold
+    ];
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function createParticles() {
+      particles = [];
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const colorSet = COLORS[Math.floor(Math.random() * COLORS.length)];
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * SPEED * 2,
+          vy: (Math.random() - 0.5) * SPEED * 2,
+          r: Math.random() * 1.5 + 1,
+          color: colorSet.dot,
+          glowColor: colorSet.glow,
+        });
+      }
+    }
+
+    function draw() {
+      ctx!.clearRect(0, 0, width, height);
+
+      // Draw connections
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < CONNECTION_DIST) {
+            const opacity = (1 - dist / CONNECTION_DIST) * 0.2;
+            ctx!.beginPath();
+            ctx!.moveTo(particles[i].x, particles[i].y);
+            ctx!.lineTo(particles[j].x, particles[j].y);
+            ctx!.strokeStyle = `rgba(52, 211, 153, ${opacity})`;
+            ctx!.lineWidth = 0.5;
+            ctx!.stroke();
+          }
+        }
+      }
+
+      // Draw particles with glow
+      for (const p of particles) {
+        // Glow
+        ctx!.beginPath();
+        ctx!.arc(p.x, p.y, p.r * 8, 0, Math.PI * 2);
+        ctx!.fillStyle = p.glowColor;
+        ctx!.fill();
+
+        // Dot
+        ctx!.beginPath();
+        ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx!.fillStyle = p.color;
+        ctx!.fill();
+      }
+    }
+
+    function update() {
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+      }
+    }
+
+    let animId: number;
+    function loop() {
+      update();
+      draw();
+      animId = requestAnimationFrame(loop);
+    }
+
+    resize();
+    createParticles();
+
+    if (reducedMotion) {
+      draw(); // single static frame
+    } else {
+      loop();
+    }
+
+    window.addEventListener('resize', () => {
+      resize();
+      createParticles();
+    });
+
+    // Cleanup on Astro page transitions
+    document.addEventListener('astro:before-swap', () => {
+      cancelAnimationFrame(animId);
+    });
+  }
+
+  initParticles();
+  document.addEventListener('astro:page-load', initParticles);
+</script>

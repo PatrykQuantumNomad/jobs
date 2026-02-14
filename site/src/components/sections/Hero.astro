@@ -3,31 +3,31 @@ import GradientBlobs from "../ui/GradientBlobs.astro";
 import GithubIcon from "../../icons/github.svg";
 ---
 
-<section id="hero" class="relative py-20 md:py-28 lg:py-36 overflow-hidden">
-  <!-- Animated gradient blobs behind everything -->
+<section id="hero" class="relative pt-28 pb-20 md:pt-36 md:pb-28 lg:pt-44 lg:pb-36 overflow-hidden">
+  <!-- Dark animated particle network background -->
   <GradientBlobs />
 
   <div class="relative max-w-5xl mx-auto px-4 md:px-8 text-center">
     <!-- Eyebrow -->
     <div class="inline-flex items-center gap-2 mb-6">
       <span
-        class="w-2 h-2 rounded-full bg-primary-500"
+        class="w-2 h-2 rounded-full bg-primary-400"
         style="animation: pulse-dot 2s ease-in-out infinite;"
       ></span>
-      <span class="text-sm font-semibold text-primary-600 uppercase tracking-wider">
+      <span class="text-sm font-semibold text-primary-400 uppercase tracking-wider">
         Open Source Job Automation
       </span>
     </div>
 
     <!-- Headline -->
     <h1 class="font-display text-4xl md:text-5xl lg:text-7xl font-bold leading-tight">
-      <span class="text-surface-900">Stop Searching.</span>
+      <span class="text-white">Stop Searching.</span>
       <br />
-      <span class="gradient-text">Start Automating.</span>
+      <span class="text-primary-400">Start </span><span class="text-accent-400">Automating.</span>
     </h1>
 
     <!-- Subtext -->
-    <p class="mt-6 text-lg md:text-xl text-surface-500 max-w-2xl mx-auto leading-relaxed">
+    <p class="mt-6 text-lg md:text-xl text-surface-300 max-w-2xl mx-auto leading-relaxed">
       Scrapes 3 platforms. Scores every job. Tailors your resume.
       Applies with one click. All self-hosted, all yours.
     </p>
@@ -35,30 +35,31 @@ import GithubIcon from "../../icons/github.svg";
     <!-- CTAs -->
     <div class="mt-8 flex flex-wrap justify-center gap-4">
       <a
-        href="https://github.com/patrykgolabek/jobs"
+        href="https://github.com/PatrykQuantumNomad/jobs"
         target="_blank"
         rel="noopener noreferrer"
-        class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary-600 text-white font-semibold
-               hover:bg-primary-500 hover:-translate-y-0.5 transition-all shadow-lg shadow-primary-600/25"
+        class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary-500 text-white font-semibold
+               hover:bg-primary-400 hover:-translate-y-0.5 transition-all shadow-lg shadow-primary-500/30"
       >
         <GithubIcon width="20" height="20" fill="currentColor" />
         View on GitHub
       </a>
       <a
         href="#showcase"
-        class="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-primary-400/50
-               text-primary-700 font-semibold
-               hover:bg-primary-50 hover:-translate-y-0.5 transition-all"
+        class="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/20
+               text-white font-semibold
+               hover:bg-white/10 hover:-translate-y-0.5 transition-all"
       >
         See it in action
       </a>
     </div>
 
-    <!-- Stat pills -->
+    <!-- Tagline pills -->
     <div class="mt-8 flex flex-wrap justify-center gap-3">
-      {["465 Jobs Tracked", "3 Platforms", "581 Tests"].map(stat => (
-        <span class="glass rounded-full px-4 py-1.5 text-sm font-medium text-surface-600">
-          {stat}
+      {["Self-Hosted", "Open Source", "AI-Powered"].map(tag => (
+        <span class="rounded-full px-4 py-1.5 text-sm font-medium text-surface-300
+                     bg-white/5 border border-white/10 backdrop-blur-sm">
+          {tag}
         </span>
       ))}
     </div>
@@ -66,9 +67,9 @@ import GithubIcon from "../../icons/github.svg";
     <!-- Dashboard screenshot with perspective -->
     <div class="mt-14 relative">
       <div
-        class="transform perspective-[1200px] [transform:rotateX(2deg)] shadow-2xl shadow-primary-900/10
-               rounded-lg overflow-hidden border border-surface-200
-               ring-1 ring-primary-200/20"
+        class="transform perspective-[1200px] [transform:rotateX(2deg)] shadow-2xl shadow-black/30
+               rounded-lg overflow-hidden border border-white/10
+               ring-1 ring-primary-400/20"
       >
         <!-- Browser frame bar -->
         <div class="flex items-center gap-2 px-4 py-3 bg-surface-100 border-b border-surface-200">
@@ -88,7 +89,7 @@ import GithubIcon from "../../icons/github.svg";
       <!-- Floating analytics card -->
       <div
         class="hidden md:block absolute -bottom-6 -left-6 w-72 rounded-lg overflow-hidden shadow-xl
-               border border-surface-200 ring-1 ring-primary-200/20
+               border border-white/10 ring-1 ring-primary-400/20
                transform hover:-translate-y-1 transition-transform"
       >
         <div class="flex items-center gap-2 px-3 py-2 bg-surface-100 border-b border-surface-200">

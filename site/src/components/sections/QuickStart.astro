@@ -7,7 +7,7 @@ const steps = [
   {
     number: 1,
     title: "Clone the repository",
-    code: "git clone https://github.com/patrykgolabek/jobs.git && cd jobs",
+    code: "git clone https://github.com/PatrykQuantumNomad/jobs.git && cd jobs",
     lang: "bash" as const,
   },
   {
@@ -52,10 +52,10 @@ const steps = [
       {/* Dashed connecting line */}
       <div class="absolute left-4 top-6 bottom-6 w-px border-l-2 border-dashed border-primary-200 hidden sm:block"></div>
 
-      <div class="space-y-8">
+      <div class="space-y-10">
         {steps.map((step) => (
           <div class="relative">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 mb-3">
               <div class="relative z-10 w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600
                           text-white flex items-center justify-center font-display font-bold text-sm shrink-0
                           shadow-md shadow-primary-600/20">
@@ -65,9 +65,10 @@ const steps = [
                 {step.title}
               </h3>
             </div>
-            <div class="ml-11 mt-2 rounded-lg overflow-hidden relative group">
+            <div class="ml-11 rounded-xl overflow-hidden relative group border border-surface-200 shadow-sm
+                        [&_pre]:py-4 [&_pre]:px-5 [&_pre]:m-0 [&_pre]:text-sm">
               <button
-                class="copy-btn absolute top-2 right-2 z-10 px-2 py-1 rounded text-xs
+                class="copy-btn absolute top-3 right-3 z-10 px-2.5 py-1 rounded-md text-xs font-medium
                        bg-surface-700/80 text-surface-300 hover:bg-surface-600 hover:text-white
                        opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                 data-code={step.code}

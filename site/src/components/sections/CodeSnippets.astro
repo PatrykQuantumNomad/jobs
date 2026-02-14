@@ -26,42 +26,12 @@ class BrowserPlatform(Protocol):
     def apply(self, job: Job, resume_path: Path | None = None) -> bool: ...`,
   },
   {
-    id: "registry",
-    tab: "Registry",
-    title: "Decorator Registry",
-    filename: "platforms/registry.py",
-    description:
-      "Fail-fast decorator validates protocol compliance at import time -- no silent runtime failures.",
-    lang: "python" as const,
-    code: `def register_platform(
-    key: str, *, name: str | None = None,
-    platform_type: str = "browser",
-    capabilities: list[str] | None = None,
-) -> Any:
-    """Register and validate a platform adapter class."""
-
-    def decorator(cls: type) -> type:
-        from platforms.protocols import APIPlatform, BrowserPlatform
-
-        protocol = BrowserPlatform if platform_type == "browser" else APIPlatform
-        _validate_against_protocol(cls, protocol)
-
-        _REGISTRY[key] = PlatformInfo(
-            key=key, name=name or key.title(),
-            platform_type=platform_type, cls=cls,
-            capabilities=capabilities or [],
-        )
-        return cls
-
-    return decorator`,
-  },
-  {
     id: "scoring",
     tab: "Scoring",
     title: "Scoring Engine",
     filename: "scorer.py",
     description:
-      "Weighted multi-factor scoring rates each job 1-5 against the candidate profile.",
+      "Weighted multi-factor scoring rates each job 1\u20135 against the candidate profile.",
     lang: "python" as const,
     code: `class JobScorer:
     """Score jobs 1-5 against candidate profile."""
@@ -81,13 +51,98 @@ class BrowserPlatform(Protocol):
             + salary_pts * w.salary
         )
 
-        total = 5 if raw >= 5 else 4 if raw >= 4 else 3 if raw >= 3 else 2 if raw >= 2 else 1
+        total = 5 if raw >= 5 else 4 if raw >= 4 else ...
 
         return total, ScoreBreakdown(
             title_points=title_pts, tech_points=tech_pts,
             tech_matched=tech_matched, remote_points=remote_pts,
             salary_points=salary_pts, total=total,
         )`,
+  },
+  {
+    id: "pipeline",
+    tab: "Pipeline",
+    title: "Orchestrator",
+    filename: "orchestrator.py",
+    description:
+      "Five-phase pipeline with error recovery, credential validation, and run history tracking.",
+    lang: "python" as const,
+    code: `def run(self, platforms: list[str] | None = None) -> None:
+    """Execute the five-phase pipeline."""
+    if platforms is None:
+        platforms = self.settings.enabled_platforms()
+    for name in platforms:
+        get_platform(name)  # Validates registration
+
+    try:
+        self.phase_0_setup()
+        self.phase_1_login(platforms)
+        self.phase_2_search(platforms)
+        self.phase_3_score()
+        self.phase_4_apply()  # Human-in-the-loop
+    finally:
+        webdb.record_run(
+            status="success" if not self._run_errors else "partial",
+            total_raw=self._total_raw,
+            total_scored=len(self.discovered_jobs),
+        )`,
+  },
+  {
+    id: "resume",
+    tab: "Resume AI",
+    title: "Anti-Fabrication Guardrails",
+    filename: "resume_ai/tailor.py",
+    description:
+      "Claude CLI with strict rules preventing the AI from inventing experience or qualifications.",
+    lang: "python" as const,
+    code: `SYSTEM_PROMPT = """\\
+ABSOLUTE RULES \u2014 VIOLATION IS UNACCEPTABLE:
+1. MUST NOT add skills, technologies, or achievements
+   not already in the original resume.
+2. MUST NOT invent certifications, awards, or credentials.
+3. MUST NOT change dates, company names, or job titles.
+4. MUST NOT fabricate quantified results or metrics.
+"""
+
+async def tailor_resume(
+    resume_text: str, job_description: str,
+    job_title: str, company_name: str,
+) -> TailoredResume:
+    """Structured output with Pydantic schema validation."""
+    return await cli_run(
+        system_prompt=SYSTEM_PROMPT,
+        user_message=build_prompt(resume_text, job_title, company_name),
+        output_model=TailoredResume,
+        model="sonnet",
+    )`,
+  },
+  {
+    id: "apply",
+    tab: "Apply",
+    title: "SSE Apply Engine",
+    filename: "apply_engine/engine.py",
+    description:
+      "Thread-safe event bridge from Playwright to FastAPI with human confirmation gates.",
+    lang: "python" as const,
+    code: `async def apply(self, job: dict, mode: str, queue: asyncio.Queue):
+    """Serialize applies, stream events via SSE."""
+    async with self._semaphore:
+        loop = asyncio.get_running_loop()
+        emit = self._make_emitter(queue, loop)
+        await asyncio.to_thread(self._apply_sync, job, mode, emit)
+
+def _make_emitter(self, queue, loop):
+    """Bridge sync Playwright thread -> async FastAPI."""
+    def emit(event: ApplyEvent) -> None:
+        loop.call_soon_threadsafe(queue.put_nowait, event.model_dump())
+    return emit
+
+# Confirmation gate in _apply_sync:
+if config.confirm_before_submit:
+    emit(ApplyEvent(type=ApplyEventType.AWAITING_CONFIRM))
+    confirmed = self._confirmations[key].wait(timeout=300)
+    if not confirmed:
+        return  # User declined in dashboard`,
   },
 ];
 ---
@@ -102,7 +157,7 @@ class BrowserPlatform(Protocol):
     </p>
 
     <!-- Tab buttons -->
-    <div class="mt-10 flex justify-center gap-2" id="code-tabs">
+    <div class="mt-10 flex flex-wrap justify-center gap-2" id="code-tabs">
       {snippets.map((snippet, i) => (
         <button
           data-code-tab={snippet.id}

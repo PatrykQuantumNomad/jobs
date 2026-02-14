@@ -1,24 +1,22 @@
 ---
-import AnimatedCounter from "../ui/AnimatedCounter.astro";
-
 interface Props {
   class?: string;
 }
 
 const { class: className } = Astro.props;
 
-const stats = [
-  { target: 465, suffix: "+", label: "Jobs Tracked" },
-  { target: 581, label: "Tests" },
-  { target: 80, suffix: "%+", label: "Coverage" },
-  { target: 3, label: "Platforms" },
+const highlights = [
+  { icon: "🔍", text: "3 Job Boards" },
+  { icon: "🤖", text: "AI-Scored Matches" },
+  { icon: "📄", text: "Tailored Resumes" },
+  { icon: "🛡️", text: "Human-in-the-Loop" },
 ];
 ---
 
 <section
   id="stats"
   class:list={[
-    "py-12 bg-gradient-to-r from-primary-800 via-primary-700 to-primary-800 text-white relative overflow-hidden",
+    "py-10 bg-gradient-to-r from-primary-800 via-primary-700 to-primary-800 text-white relative overflow-hidden",
     className,
   ]}
   data-animate
@@ -32,10 +30,15 @@ const stats = [
     </div>
   </div>
 
-  <div class="max-w-6xl mx-auto px-4 relative z-10">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-      {stats.map((stat) => (
-        <AnimatedCounter target={stat.target} suffix={stat.suffix} label={stat.label} />
+  <div class="max-w-5xl mx-auto px-4 relative z-10">
+    <div class="flex flex-wrap justify-center gap-x-12 gap-y-4 text-center">
+      {highlights.map((item) => (
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">{item.icon}</span>
+          <span class="font-display font-semibold text-sm md:text-base tracking-wide uppercase text-white/90">
+            {item.text}
+          </span>
+        </div>
       ))}
     </div>
   </div>

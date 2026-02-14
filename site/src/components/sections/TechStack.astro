@@ -1,11 +1,18 @@
 ---
+import pythonIcon from "../../icons/python.svg?raw";
+import playwrightIcon from "../../icons/playwright.svg?raw";
+import fastapiIcon from "../../icons/fastapi.svg?raw";
+import sqliteIcon from "../../icons/sqlite.svg?raw";
+import htmxIcon from "../../icons/htmx.svg?raw";
+import anthropicIcon from "../../icons/anthropic.svg?raw";
+
 const technologies = [
-  { name: "Python 3.14", role: "Runtime", color: "oklch(0.78 0.17 75)" },
-  { name: "Playwright", role: "Automation", color: "oklch(0.60 0.19 155)" },
-  { name: "FastAPI", role: "Backend", color: "oklch(0.70 0.175 175)" },
-  { name: "SQLite", role: "Database", color: "oklch(0.62 0.14 230)" },
-  { name: "htmx", role: "Frontend", color: "oklch(0.60 0.19 155)" },
-  { name: "Claude CLI", role: "AI Engine", color: "oklch(0.72 0.16 70)" },
+  { name: "Python 3.14", role: "Runtime", color: "oklch(0.78 0.17 75)", icon: pythonIcon },
+  { name: "Playwright", role: "Automation", color: "oklch(0.60 0.19 155)", icon: playwrightIcon },
+  { name: "FastAPI", role: "Backend", color: "oklch(0.70 0.175 175)", icon: fastapiIcon },
+  { name: "SQLite", role: "Database", color: "oklch(0.62 0.14 230)", icon: sqliteIcon },
+  { name: "htmx", role: "Frontend", color: "oklch(0.60 0.19 155)", icon: htmxIcon },
+  { name: "Claude CLI", role: "AI Engine", color: "oklch(0.72 0.16 70)", icon: anthropicIcon },
 ];
 ---
 
@@ -32,9 +39,7 @@ const technologies = [
                       flex items-center justify-center
                       group-hover:ring-2 transition-all duration-300"
                style={`--tw-ring-color: ${tech.color}`}>
-            <span class="font-display font-bold text-primary-600 text-lg">
-              {tech.name.charAt(0)}
-            </span>
+            <div class="w-6 h-6 text-primary-600" set:html={tech.icon} />
           </div>
           <span class="font-display font-semibold text-surface-900">
             {tech.name}
