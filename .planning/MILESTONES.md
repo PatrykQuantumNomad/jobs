@@ -1,5 +1,34 @@
 # Milestones: JobFlow
 
+## v1.3 Project Showcase Site (Shipped: 2026-02-13)
+
+**Delivered:** Professional GitHub Pages showcase site built with Astro v5 and Tailwind v4, featuring 9 responsive sections, animated terminal demo, dark mode, scroll animations, and automated deployment -- a portfolio centerpiece communicating engineering depth in under 30 seconds.
+
+**Phases completed:** 20-24 (10 plans total)
+
+**Key accomplishments:**
+
+- Scaffolded Astro v5 project with Tailwind v4 CSS-first config, OKLCH design tokens, and self-hosted Inter/DM Sans fonts -- entirely separate tech stack coexisting in same repo
+- Built 9 responsive content sections (Hero, Stats, Features, TechStack, Architecture, CodeSnippets, Timeline, QuickStart, Footer) with responsive 375px/768px/1440px breakpoint coverage
+- Created animated terminal demo simulating `orchestrator.py` pipeline output with per-character typing via IntersectionObserver
+- Implemented full dark mode with `@custom-variant` directive, FOUC prevention, localStorage persistence, and system preference detection across all 9 sections
+- Deployed to GitHub Pages with path-isolated CI workflows -- site changes trigger deploy only, Python changes trigger CI only
+- Added scroll-triggered fade-in animations, smooth scroll NavBar, JSON-LD SoftwareApplication schema, and sitemap SEO
+
+**Stats:**
+
+- 41 files created/modified (+8,383 lines)
+- 1,113 lines of site source (Astro + CSS + SVG)
+- 5 phases, 10 plans, 21 tasks
+- 29 requirements satisfied (29/29)
+- 1 day (2026-02-13)
+
+**Git range:** `feat(20-01)` -> `docs(phase-24)`
+
+**What's next:** Real dashboard screenshots, interactive architecture diagram, custom domain setup, Lighthouse 100/100/100/100 optimization
+
+---
+
 ## v1.2 Claude CLI Agent Integration (Shipped: 2026-02-11)
 
 **Delivered:** Replaced all Anthropic SDK API calls with Claude CLI subprocess invocations so AI features run on the user's existing subscription with no per-token costs, plus added SSE streaming for resume/cover letter generation and on-demand AI scoring.

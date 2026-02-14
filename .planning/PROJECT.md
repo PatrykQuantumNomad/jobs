@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A self-hosted, single-user job search automation platform with comprehensive test coverage and AI features powered by Claude CLI. Clone the repo, install Claude CLI, drop in your resume and a YAML config file, and the system scrapes job boards (Indeed, Dice, RemoteOK), scores matches against your profile (rule-based + on-demand AI semantic analysis), manages listings through a web dashboard with analytics and kanban views, generates AI-tailored resumes and cover letters with real-time SSE progress streaming, and automates applications with configurable control levels -- from one-click auto-apply to careful manual review. Runs daily via launchd scheduler. Backed by 581 automated tests and CI pipeline.
+A self-hosted, single-user job search automation platform with comprehensive test coverage, AI features powered by Claude CLI, and a professional showcase site. Clone the repo, install Claude CLI, drop in your resume and a YAML config file, and the system scrapes job boards (Indeed, Dice, RemoteOK), scores matches against your profile (rule-based + on-demand AI semantic analysis), manages listings through a web dashboard with analytics and kanban views, generates AI-tailored resumes and cover letters with real-time SSE progress streaming, and automates applications with configurable control levels -- from one-click auto-apply to careful manual review. Runs daily via launchd scheduler. Backed by 581 automated tests and CI pipeline. Includes a deployed GitHub Pages showcase site at patrykquantumnomad.github.io/jobs/.
 
 ## Core Value
 
@@ -61,21 +61,16 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 - ✓ SCR-03: AI score, reasoning, strengths, gaps stored and displayed -- v1.2
 - ✓ CFG-01: Anthropic SDK removed from runtime dependencies -- v1.2
 - ✓ CFG-02: Documentation updated for Claude CLI prerequisite -- v1.2
+- ✓ SETUP-01..05: Astro v5 project with Tailwind v4, design tokens, BaseLayout, SEO meta -- v1.3
+- ✓ CONT-01..09: 9 content sections (Hero, Stats, Features, TechStack, Architecture, Code, Timeline, QuickStart, Footer) -- v1.3
+- ✓ DSGN-01..04: Professional palette, responsive design, dark mode, ScreenshotFrame -- v1.3
+- ✓ DPLY-01..04: GitHub Actions deploy, path isolation, CI separation, production deployment -- v1.3
+- ✓ SEO-01..04: OpenGraph, Twitter Card, JSON-LD, sitemap -- v1.3
+- ✓ PLSH-01..03: Terminal animation, scroll fade-ins, smooth scroll NavBar -- v1.3
 
 ### Active
 
-## Current Milestone: v1.3 Project Showcase Site
-
-**Goal:** A professional, marketing-forward GitHub Pages site that showcases JobFlow as a portfolio centerpiece — feature highlights, screenshots, tech stack, architecture, and quick start guide.
-
-**Target features:**
-- Marketing landing page with hero, stats, and CTAs
-- Feature showcase sections with dashboard/kanban/AI screenshots
-- Demo/video walkthrough section
-- Tech stack and architecture deep-dive
-- Quick start setup guide
-- GitHub Actions deployment to GitHub Pages
-- Unique professional identity (blues/grays, clean, enterprise-feeling)
+(None -- define in next milestone via `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -98,11 +93,11 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 
 **v1.2 shipped:** 2026-02-11. 4 phases, 7 plans, 15 requirements. Replaced Anthropic SDK with Claude CLI subprocess for all AI features. Added on-demand AI scoring, SSE streaming for resume/cover letter. 18 new tests (563 -> 581). Zero production files import anthropic SDK.
 
-**v1.3 started:** 2026-02-13. GitHub Pages project showcase site. Astro-based, marketing-forward with docs support. Same repo under `/site`.
+**v1.3 shipped:** 2026-02-13. 5 phases, 10 plans, 21 tasks. GitHub Pages showcase site built with Astro v5 + Tailwind v4 in `/site`. 9 responsive content sections, animated terminal demo, dark mode, scroll animations, path-isolated CI/CD. Deployed at patrykquantumnomad.github.io/jobs/.
 
-**Tech stack:** Python 3.14, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), pydantic-settings + YAML, Claude CLI (subprocess with structured output), WeasyPrint, sse-starlette, Chart.js, SortableJS, pytest + factory-boy + respx + pytest-playwright
+**Tech stack:** Python 3.14, Playwright + playwright-stealth, FastAPI + Jinja2 + htmx, SQLite (FTS5), pydantic-settings + YAML, Claude CLI (subprocess with structured output), WeasyPrint, sse-starlette, Chart.js, SortableJS, pytest + factory-boy + respx + pytest-playwright | Site: Astro v5, Tailwind v4, @fontsource, @astrojs/sitemap, Shiki
 
-**Codebase:** 18,022 LOC (16,258 Python + 1,764 HTML). 581 automated tests.
+**Codebase:** ~19,100 LOC (16,258 Python + 1,764 HTML + 1,113 Astro/CSS/SVG). 581 automated tests. Site: 41 files, 1,113 LOC.
 
 **Known technical debt:**
 - CDN-loaded JS libraries (htmx, Chart.js, SortableJS) rather than bundled
@@ -111,6 +106,8 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 - 4 analytics routes lack integration tests
 - SSE endpoint testing relies on background task testing pattern (direct Queue testing), not actual SSE stream parsing
 - scorer.py score_batch_with_breakdown uncovered (8 lines)
+- ScreenshotFrame.astro unused in production (replaced by TerminalDemo, kept for future screenshots)
+- Site uses placeholder gradient in ScreenshotFrame instead of real dashboard screenshots
 
 ## Constraints
 
@@ -149,9 +146,14 @@ A self-hosted, single-user job search automation platform with comprehensive tes
 | CLIError -> RuntimeError at boundary | Backward compatibility with webapp's generic exception handler | ✓ Good |
 | Single-module ai_scorer.py | Feature is small enough, parallels existing scorer.py | ✓ Good |
 
-| Astro for site (not Starlight) | Marketing-forward, not docs-heavy; custom components over framework constraints | — Pending |
-| Same-repo /site folder | One repo, GitHub Pages from subfolder, simpler maintenance | — Pending |
-| Blues/grays professional palette | Unique identity distinct from personal site (orange) and networking-tools (dark orange) | — Pending |
+| Astro for site (not Starlight) | Marketing-forward, not docs-heavy; custom components over framework constraints | ✓ Good |
+| Same-repo /site folder | One repo, GitHub Pages from subfolder, simpler maintenance | ✓ Good |
+| Blues/grays professional palette | Unique identity distinct from personal site (orange) and networking-tools (dark orange) | ✓ Good |
+| Tailwind v4 CSS-first @theme tokens | No tailwind.config.js needed, OKLCH for perceptual uniformity | ✓ Good |
+| data-theme attribute for dark mode | Tailwind v4 @custom-variant requires CSS selector, data attributes more semantic | ✓ Good |
+| Path-based CI workflow isolation | site/** triggers deploy, Python CI ignores site/** -- no unnecessary builds | ✓ Good |
+| IntersectionObserver for animations | Zero-dependency, fire-once, prefers-reduced-motion support built-in | ✓ Good |
+| .js-enabled CSS gate | Progressive enhancement: content visible without JS, animations are additive | ✓ Good |
 
 ---
-*Last updated: 2026-02-13 after v1.3 milestone start*
+*Last updated: 2026-02-13 after v1.3 milestone*

@@ -5,26 +5,25 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** From discovery to application in one tool -- reliably find relevant jobs, present them clearly, make applying frictionless.
-**Current focus:** v1.3 Project Showcase Site -- SHIPPED 2026-02-13. GitHub Pages marketing landing page showcasing JobFlow as a portfolio centerpiece.
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 24 -- Polish and Animations COMPLETE
-Plan: 24-02 COMPLETE (2/2 plans)
-Status: v1.3 Project Showcase Site milestone COMPLETE. All 5 phases shipped.
-Last activity: 2026-02-13 -- Completed 24-02 (Scroll Animations)
+Phase: 24 of 24 -- all phases complete through v1.3
+Plan: N/A -- milestone complete
+Status: Ready for next milestone
+Last activity: 2026-02-13 -- v1.3 milestone complete
 
-Progress: [██████████] 100% (5/5 phases)
+Progress: [██████████] 100% (24/24 phases across 4 milestones)
 
-### v1.3 Phase Overview
+### Milestone History
 
-| Phase | Name | Requirements | Status |
-|-------|------|-------------|--------|
-| 20 | Foundation and Configuration | 8 | Complete |
-| 21 | Core Sections and Responsive Design | 7 | Complete |
-| 22 | Engineering Depth Sections | 4 | Complete |
-| 23 | CI/CD, Deployment, and Dark Mode | 7 | Complete |
-| 24 | Polish and Animations | 3 | Complete |
+| Milestone | Phases | Plans | Shipped |
+|-----------|--------|-------|---------|
+| v1.0 MVP | 1-8 | 24 | 2026-02-08 |
+| v1.1 Test Web App | 9-15 | 14 | 2026-02-08 |
+| v1.2 Claude CLI Integration | 16-19 | 7 | 2026-02-11 |
+| v1.3 Project Showcase Site | 20-24 | 10 | 2026-02-13 |
 
 ## Performance Metrics
 
@@ -69,40 +68,7 @@ Progress: [██████████] 100% (5/5 phases)
 
 ### Decisions
 
-All decisions logged in PROJECT.md Key Decisions table (23 entries across v1.0 + v1.1 + v1.2, plus 3 pending for v1.3).
-
-v1.3 decisions:
-- Astro for site (not Starlight) -- marketing-forward, not docs-heavy
-- Same-repo /site folder -- one repo, GitHub Pages from subfolder
-- Blues/grays professional palette -- distinct from personal site (orange) and networking-tools (dark orange)
-- Tailwind v4 via @tailwindcss/vite (not deprecated @astrojs/tailwind)
-- CSS-first @theme tokens with OKLCH values (no tailwind.config.js)
-- ClientRouter (Astro 5 rename of ViewTransitions)
-- Self-hosted fonts via @fontsource-variable (no Google Fonts CDN)
-- GitHub icon uses fill (filled logo) vs stroke (Feather/Lucide style) for other UI icons
-- Stats 2-col mobile / 4-col tablet+ grid to prevent text overflow at 375px
-- ScreenshotFrame gradient placeholder with slot for future screenshot injection
-- Icon components stored in data arrays for clean map-based rendering
-- Footer uses <footer> element (not <section>) for semantic HTML landmarks
-- Features grid uses CSS Grid for equal-height rows (not Flexbox)
-- Horizontal scroll (overflow-x-auto) over wrapping for code blocks
-- github-dark-default Shiki theme on bg-surface-900 for code section visual break
-- Curated real source code excerpts for code snippet showcase (not fabricated)
-- Narrower max-w-3xl container for text-heavy Timeline and QuickStart sections
-- Vertical timeline at all breakpoints -- natural reading flow, no mobile breakpoint changes needed
-- Path-based workflow isolation: site/** triggers deploy, Python CI ignores site/**
-- Deploy workflow also triggers on .github/workflows/deploy-site.yml changes
-- Concurrency group 'pages' with cancel-in-progress: false for safe deploys
-- data-theme attribute (not .dark class) for Tailwind v4 @custom-variant dark mode
-- Two theme scripts: is:inline for FOUC prevention, non-inline for astro:after-swap
-- ThemeToggle fixed top-right z-50 for always-visible theme switching
-- Deployment verification as separate checkpoint plan (not part of implementation plan)
-- ThemeToggle moved into NavBar (not floating separately)
-- No mobile hamburger menu -- single-page site, mobile users scroll naturally
-- Terminal always dark-themed regardless of page theme
-- Custom IntersectionObserver typing animation (not typed.js) for terminal demo
-- .js-enabled CSS gate for progressive enhancement (content visible without JS)
-- data-animate + IntersectionObserver pattern for scroll-triggered fade-in animations
+All decisions logged in PROJECT.md Key Decisions table (31 entries across v1.0 + v1.1 + v1.2 + v1.3).
 
 ### Pending Todos
 
@@ -110,9 +76,9 @@ None.
 
 ### Blockers/Concerns
 
-- Screenshot capture workflow not specified (need running app for dashboard/kanban/analytics screenshots)
-- OG image creation tool not decided (Figma, Canva, or screenshot + crop)
-- Terminal animation: resolved -- custom IntersectionObserver + per-character typing (no typed.js dependency)
+None active. Previous milestone blockers resolved:
+- Screenshot capture workflow (deferred to future milestone)
+- OG image creation (using placeholder)
 
 ### Quick Tasks Completed
 
@@ -125,5 +91,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 24-02 (Scroll Animations). v1.3 milestone COMPLETE.
-Resume file: .planning/phases/24-polish-and-animations/
+Stopped at: v1.3 milestone archived. Ready for next milestone.
+Resume with: `/gsd:new-milestone`
