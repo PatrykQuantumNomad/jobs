@@ -5,8 +5,7 @@ import sitemap from "@astrojs/sitemap";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://patrykquantumnomad.github.io",
-  base: "/jobs",
+  site: "https://jobflow.patrykgolabek.dev",
   trailingSlash: "always",
   integrations: [sitemap()],
   vite: {
