@@ -1,0 +1,77 @@
+# JobFlow — Job Search Automation
+
+> Self-hosted pipeline that scrapes job boards, scores matches with AI, tailors your resume, and automates applications — all with human-in-the-loop safety.
+
+Built by Patryk Golabek — Cloud-Native Software Architect
+GitHub: https://github.com/PatrykQuantumNomad/jobs
+Live: https://jobflow.patrykgolabek.dev/
+Author: https://patrykgolabek.dev
+
+## What It Does
+
+JobFlow automates the end-to-end job search pipeline:
+
+1. **Scrapes 3 platforms** — Indeed, Dice, and RemoteOK
+2. **Scores every job** — AI-powered matching (1–5 scale) against your candidate profile with explainable breakdowns
+3. **Tailors your resume** — Claude CLI generates role-specific resumes with anti-fabrication validation
+4. **Applies with one click** — Human-in-the-loop automation with confirmation gates before every submission
+5. **Tracks everything** — Web dashboard with filters, analytics, and real-time SSE progress updates
+
+## Tech Stack
+
+- **Language**: Python 3.14
+- **Browser Automation**: Playwright + playwright-stealth (Chromium)
+- **Web Dashboard**: FastAPI + Jinja2 + htmx + SSE (sse-starlette)
+- **Database**: SQLite with FTS5 full-text search
+- **AI/ML**: Claude CLI (subprocess) for scoring and resume generation
+- **Config**: Pydantic v2 + pydantic-settings with YAML
+- **PDF Generation**: WeasyPrint for resume output
+
+## Architecture
+
+Five-phase pipeline with pluggable platform adapters:
+
+1. **Setup** — Load config, initialize browser contexts
+2. **Login** — Authenticate to job platforms (with CAPTCHA detection)
+3. **Search** — Execute search queries, extract job listings
+4. **Score** — AI-powered scoring with configurable weights
+5. **Apply** — Human-approved application submission
+
+Platform adapters are registered via `@register_platform` decorator and implement Protocol interfaces for consistency.
+
+## Key Features
+
+- Multi-platform job scraping (Indeed, Dice, RemoteOK)
+- AI-powered job scoring with Claude CLI
+- Resume tailoring with anti-fabrication validation
+- Web dashboard with real-time SSE updates
+- Human-in-the-loop application automation
+- SQLite FTS5 full-text job search
+- Configurable scoring weights and candidate profiles
+- Rate-limited, stealth browser automation
+
+## Safety & Ethics
+
+- NEVER fabricates experience or qualifications
+- NEVER bypasses CAPTCHAs — stops and asks human
+- NEVER submits applications without explicit human approval
+- All credentials stored locally in .env (never committed)
+- Rate-limited requests to respect platform terms
+
+## FAQ
+
+**What job boards does JobFlow support?**
+JobFlow currently supports Indeed, Dice, and RemoteOK. The pluggable adapter architecture makes it easy to add new platforms.
+
+**How does the AI scoring work?**
+Each job is scored 1–5 against your candidate profile using configurable weights for skills match, experience level, salary range, location, and role alignment. The scorer provides explainable breakdowns showing why each score was assigned.
+
+**Is JobFlow free and open source?**
+Yes. JobFlow is released under the MIT License and is completely self-hosted — your data never leaves your machine.
+
+**Does JobFlow auto-apply to jobs?**
+Only with your explicit approval. Before every application, JobFlow displays the job title, company, salary, and match score, then waits for you to confirm. This is a non-negotiable safety feature.
+
+## License
+
+MIT License. Source code: https://github.com/PatrykQuantumNomad/jobs

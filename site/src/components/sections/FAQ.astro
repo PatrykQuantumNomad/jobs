@@ -1,0 +1,76 @@
+---
+const faqs = [
+  {
+    question: "What job boards does JobFlow support?",
+    answer: "JobFlow currently scrapes Indeed, Dice, and RemoteOK. The pluggable adapter architecture makes it easy to add new platforms — each platform is a self-contained module behind a shared Protocol interface.",
+  },
+  {
+    question: "How does the AI scoring work?",
+    answer: "Each job is scored 1–5 against your candidate profile using configurable weights for skills match, experience level, salary range, location, and role alignment. The scorer uses Claude CLI and provides explainable breakdowns showing why each score was assigned.",
+  },
+  {
+    question: "Is JobFlow free and open source?",
+    answer: "Yes. JobFlow is released under the MIT License and is completely self-hosted — your data never leaves your machine. No SaaS subscription, no data collection.",
+  },
+  {
+    question: "Does JobFlow auto-apply to jobs without permission?",
+    answer: "Never. Before every application, JobFlow displays the job title, company, salary, and match score, then waits for your explicit approval. This human-in-the-loop safety gate is a non-negotiable design principle.",
+  },
+  {
+    question: "What tech stack does JobFlow use?",
+    answer: "Python 3.14 with Playwright for browser automation, FastAPI + htmx for the web dashboard, SQLite with FTS5 for search, Claude CLI for AI scoring and resume tailoring, and WeasyPrint for PDF resume generation.",
+  },
+  {
+    question: "Can JobFlow tailor my resume for each job?",
+    answer: "Yes. JobFlow uses Claude CLI to generate role-specific resume versions with built-in anti-fabrication validation — it will never invent experience or qualifications you don't have.",
+  },
+];
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faqs.map(faq => ({
+    "@type": "Question",
+    "name": faq.question,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": faq.answer,
+    },
+  })),
+};
+---
+
+<section id="faq" class="py-20 bg-surface-50" data-animate>
+  <div class="max-w-4xl mx-auto px-4 md:px-8">
+    <h2 class="font-display text-3xl md:text-4xl font-bold text-center mb-12">
+      <span class="text-white">Frequently Asked </span>
+      <span class="text-primary-400">Questions</span>
+    </h2>
+
+    <div class="space-y-4">
+      {faqs.map((faq, i) => (
+        <details
+          class="group rounded-lg border border-surface-200 bg-surface-100 overflow-hidden"
+        >
+          <summary class="flex items-center justify-between px-6 py-4 cursor-pointer
+                          text-white font-medium hover:bg-surface-200/50 transition-colors
+                          list-none [&::-webkit-details-marker]:hidden">
+            <span>{faq.question}</span>
+            <svg
+              class="w-5 h-5 text-surface-400 group-open:rotate-180 transition-transform shrink-0 ml-4"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div class="px-6 pb-4 text-surface-300 text-sm leading-relaxed">
+            {faq.answer}
+          </div>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- FAQPage structured data -->
+<script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />

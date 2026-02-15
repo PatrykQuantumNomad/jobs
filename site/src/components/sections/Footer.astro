@@ -6,6 +6,11 @@ const personalSite = "https://patrykgolabek.dev";
 const currentYear = new Date().getFullYear();
 
 const techBadges = ["Python", "Astro", "Tailwind CSS", "Playwright", "FastAPI"];
+
+const moreProjects = [
+  { name: "Networking & Pentesting Tools", href: "https://networking-tools.patrykgolabek.dev/" },
+  { name: "Financial Data Extractor", href: "https://financial-data-extractor.patrykgolabek.dev/" },
+];
 ---
 
 {/* Gradient divider line */}
@@ -38,6 +43,23 @@ const techBadges = ["Python", "Astro", "Tailwind CSS", "Playwright", "FastAPI"];
         >
           patrykgolabek.dev
         </a>
+      </div>
+    </div>
+
+    {/* More projects by Patryk */}
+    <div class="mt-6 pt-6 border-t border-surface-700/50">
+      <p class="text-xs text-surface-500 mb-2">More projects by Patryk</p>
+      <div class="flex flex-wrap gap-4">
+        {moreProjects.map(project => (
+          <a
+            href={project.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-sm text-surface-400 hover:text-primary-400 transition-colors"
+          >
+            {project.name} &rarr;
+          </a>
+        ))}
       </div>
     </div>
 
