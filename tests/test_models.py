@@ -12,7 +12,7 @@ Tests cover:
 import pytest
 from pydantic import ValidationError
 
-from models import CandidateProfile, Job, JobStatus, SearchQuery
+from core.models import CandidateProfile, Job, JobStatus, SearchQuery
 
 # ---------------------------------------------------------------------------
 # JobStatus enum

@@ -283,14 +283,36 @@ async def _run_resume_tailor(
 
         # Stage 4: Render PDF
         _emit("progress", "Rendering PDF...")
+        from core.config import get_settings
+
+        settings = get_settings()
+        profile = settings.build_candidate_profile()
+        candidate_name = f"{profile.first_name} {profile.last_name}".strip() or "Candidate"
+        name_slug = candidate_name.replace(" ", "_")
         company_slug = job["company"].replace(" ", "_")[:30]
-        filename = f"Patryk_Golabek_Resume_{company_slug}_{date.today().isoformat()}.pdf"
+        filename = f"{name_slug}_Resume_{company_slug}_{date.today().isoformat()}.pdf"
         RESUMES_TAILORED_DIR.mkdir(parents=True, exist_ok=True)
         output_path = RESUMES_TAILORED_DIR / filename
 
-        contact_info = "pgolabek@gmail.com | 416-708-9839 | Springwater, ON, Canada"
+        contact_parts = [p for p in [profile.email, profile.phone, profile.location] if p]
+        contact_info = " | ".join(contact_parts)
+
+        links: list[dict[str, str]] = []
+        if profile.website:
+            label = profile.website.replace("https://", "").replace("http://", "").rstrip("/")
+            links.append({"label": label, "url": profile.website})
+        if profile.github:
+            label = profile.github.replace("https://github.com/", "GitHub: ")
+            links.append({"label": label, "url": profile.github})
+        if profile.x:
+            handle = profile.x.replace("https://x.com/", "@").replace("https://twitter.com/", "@")
+            links.append({"label": f"X: {handle}", "url": profile.x})
+        if profile.youtube:
+            label = profile.youtube.replace("https://youtube.com/", "YouTube: ")
+            links.append({"label": label, "url": profile.youtube})
+
         await asyncio.to_thread(
-            _render_resume_pdf, tailored, "Patryk Golabek", contact_info, output_path
+            _render_resume_pdf, tailored, candidate_name, contact_info, output_path, links
         )
 
         # Save version and log activity (fast sync, ok inline)
@@ -299,7 +321,7 @@ async def _run_resume_tailor(
             resume_type="resume",
             file_path=str(output_path),
             original_resume_path=str(resume_path),
-            model_used="claude-sonnet-4-5-20250929",
+            model_used="claude-opus-4-6",
         )
         db.log_activity(
             dedup_key, "resume_tailored", detail=f"Generated tailored resume: {filename}"
@@ -347,7 +369,7 @@ async def tailor_resume_endpoint(request: Request, dedup_key: str):
     # Resolve resume path
     resume_path = DEFAULT_RESUME_PATH
     try:
-        from config import get_settings
+        from core.config import get_settings
 
         settings = get_settings()
         if settings.candidate_resume_path:
@@ -400,9 +422,13 @@ async def resume_tailor_stream(request: Request, dedup_key: str):
                     html = templates.get_template("partials/resume_tailor_status.html").render(
                         event=event, dedup_key=dedup_key
                     )
-                    yield {"event": event_type, "data": html}
                     if event_type == "done":
+                        # Send final HTML as "progress" so sse-swap picks it up,
+                        # then send empty "done" to trigger sse-close.
+                        yield {"event": "progress", "data": html}
+                        yield {"event": "done", "data": ""}
                         break
+                    yield {"event": event_type, "data": html}
                 except TimeoutError:
                     yield {"event": "ping", "data": ""}
         except asyncio.CancelledError:
@@ -448,17 +474,23 @@ async def _run_cover_letter(
 
         # Stage 3: Render PDF
         _emit("progress", "Rendering PDF...")
+        from core.config import get_settings
+
+        settings = get_settings()
+        profile = settings.build_candidate_profile()
+        candidate_name = f"{profile.first_name} {profile.last_name}".strip() or "Candidate"
+        name_slug = candidate_name.replace(" ", "_")
         company_slug = job["company"].replace(" ", "_")[:30]
-        filename = f"Patryk_Golabek_CoverLetter_{company_slug}_{date.today().isoformat()}.pdf"
+        filename = f"{name_slug}_CoverLetter_{company_slug}_{date.today().isoformat()}.pdf"
         RESUMES_TAILORED_DIR.mkdir(parents=True, exist_ok=True)
         output_path = RESUMES_TAILORED_DIR / filename
 
         await asyncio.to_thread(
             _render_cover_letter_pdf,
             letter,
-            "Patryk Golabek",
-            "pgolabek@gmail.com",
-            "416-708-9839",
+            candidate_name,
+            profile.email,
+            profile.phone,
             output_path,
         )
 
@@ -468,14 +500,14 @@ async def _run_cover_letter(
             resume_type="cover_letter",
             file_path=str(output_path),
             original_resume_path=str(resume_path),
-            model_used="claude-sonnet-4-5-20250929",
+            model_used="claude-opus-4-6",
         )
         db.log_activity(
             dedup_key, "cover_letter_generated", detail=f"Generated cover letter: {filename}"
         )
 
         # Build final result HTML
-        letter_preview = format_cover_letter_as_text(letter, "Patryk Golabek")
+        letter_preview = format_cover_letter_as_text(letter, candidate_name)
         result_html = templates.get_template("partials/cover_letter_result.html").render(
             download_url=f"/resumes/tailored/{filename}",
             filename=filename,
@@ -512,7 +544,7 @@ async def cover_letter_endpoint(request: Request, dedup_key: str):
     # Resolve resume path
     resume_path = DEFAULT_RESUME_PATH
     try:
-        from config import get_settings
+        from core.config import get_settings
 
         settings = get_settings()
         if settings.candidate_resume_path:
@@ -565,9 +597,13 @@ async def cover_letter_stream(request: Request, dedup_key: str):
                     html = templates.get_template("partials/cover_letter_status.html").render(
                         event=event, dedup_key=dedup_key
                     )
-                    yield {"event": event_type, "data": html}
                     if event_type == "done":
+                        # Send final HTML as "progress" so sse-swap picks it up,
+                        # then send empty "done" to trigger sse-close.
+                        yield {"event": "progress", "data": html}
+                        yield {"event": "done", "data": ""}
                         break
+                    yield {"event": event_type, "data": html}
                 except TimeoutError:
                     yield {"event": "ping", "data": ""}
         except asyncio.CancelledError:
@@ -600,13 +636,13 @@ async def ai_rescore_endpoint(request: Request, dedup_key: str):
         )
 
     try:
-        from ai_scorer import score_job_ai
+        from core.ai_scorer import score_job_ai
         from resume_ai.extractor import extract_resume_text
 
         # Resolve resume path (same pattern as tailor_resume_endpoint)
         resume_path = DEFAULT_RESUME_PATH
         try:
-            from config import get_settings
+            from core.config import get_settings
 
             settings = get_settings()
             if settings.candidate_resume_path:
@@ -712,7 +748,7 @@ async def trigger_apply(request: Request, dedup_key: str, mode: str = Form("")):
     # Default mode from settings
     if not mode:
         try:
-            from config import get_settings
+            from core.config import get_settings
 
             mode = get_settings().apply.default_mode.value
         except Exception:
@@ -808,6 +844,12 @@ async def apply_cancel(dedup_key: str):
     return HTMLResponse('<p class="text-sm text-yellow-600">Apply cancelled.</p>')
 
 
+@app.get("/jobs/{dedup_key:path}/notes", response_class=HTMLResponse)
+async def get_notes(request: Request, dedup_key: str):
+    saved_notes = db.get_notes(dedup_key)
+    return templates.TemplateResponse(request, "partials/notes_list.html", {"notes": saved_notes})
+
+
 @app.get("/jobs/{dedup_key:path}", response_class=HTMLResponse)
 async def job_detail(request: Request, dedup_key: str):
     job = db.get_job(dedup_key)
@@ -841,10 +883,20 @@ async def update_status(dedup_key: str, status: str = Form(...)):
     return response
 
 
-@app.post("/jobs/{dedup_key:path}/notes")
-async def update_notes(dedup_key: str, notes: str = Form(...)):
+@app.post("/jobs/{dedup_key:path}/notes", response_class=HTMLResponse)
+async def update_notes(request: Request, dedup_key: str, notes: str = Form(...)):
     db.update_job_notes(dedup_key, notes)
-    return HTMLResponse('<span class="text-green-600 text-sm">Saved</span>')
+    saved_notes = db.get_notes(dedup_key)
+    notes_html = templates.get_template("partials/notes_list.html").render(notes=saved_notes)
+    # Return: status message + OOB swap for notes list + OOB swap to clear textarea
+    return HTMLResponse(
+        '<span class="text-green-600 text-sm">Saved</span>'
+        f'<div id="saved-notes-list" hx-swap-oob="innerHTML">{notes_html}</div>'
+        '<textarea id="notes-input" name="notes" rows="4"'
+        ' class="w-full border rounded px-3 py-2 text-sm resize-y"'
+        ' placeholder="Add your notes here..."'
+        ' hx-swap-oob="outerHTML"></textarea>'
+    )
 
 
 @app.post("/import")

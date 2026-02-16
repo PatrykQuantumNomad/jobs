@@ -3,8 +3,8 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from config import get_settings
-from models import CandidateProfile
+from core.config import get_settings
+from core.models import CandidateProfile
 
 if TYPE_CHECKING:
     from playwright.sync_api import Frame, Page

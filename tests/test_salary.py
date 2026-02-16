@@ -11,7 +11,7 @@ Tests cover:
 
 import pytest
 
-from salary import parse_salary, parse_salary_ints
+from core.salary import parse_salary, parse_salary_ints
 
 # ---------------------------------------------------------------------------
 # parse_salary -- all documented formats

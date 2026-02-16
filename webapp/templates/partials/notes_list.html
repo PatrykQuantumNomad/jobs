@@ -1,0 +1,14 @@
+{# htmx partial: Saved notes list for a job, newest first #}
+
+{% if notes %}
+<div class="space-y-3 overflow-y-auto max-h-64 pr-1">
+    {% for note in notes %}
+    <div class="border-b border-gray-100 pb-2 last:border-b-0">
+        <div class="text-sm text-gray-700 whitespace-pre-line">{{ note.detail }}</div>
+        <div class="text-xs text-gray-400 mt-1">{{ note.created_at }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-sm text-gray-400">No notes yet.</p>
+{% endif %}

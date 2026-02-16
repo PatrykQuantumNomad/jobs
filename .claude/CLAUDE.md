@@ -14,10 +14,10 @@ uv run pytest                                            # unit + integration te
 uv run pytest -m e2e                                     # E2E browser tests (separate)
 
 # Run
-python orchestrator.py                                   # full pipeline (all platforms)
-python orchestrator.py --platforms indeed remoteok        # select platforms
-python orchestrator.py --platforms indeed --headed        # visible browser for debugging
-python -m webapp.app                                     # dashboard at localhost:8000
+uv run jobs-scrape                                       # full pipeline (all platforms)
+uv run jobs-scrape --platforms indeed remoteok            # select platforms
+uv run jobs-scrape --platforms indeed --headed            # visible browser for debugging
+uv run jobs-web                                          # dashboard at localhost:8000
 
 # Setup
 pip install -r requirements.txt && playwright install chromium
@@ -28,14 +28,15 @@ pip install -r requirements.txt && playwright install chromium
 Five-phase pipeline (setup → login → search → score → apply) with pluggable platform adapters registered via `@register_platform` decorator. Dual-track: synchronous Playwright automation for scraping, async FastAPI dashboard for UI.
 
 **Key layers:**
-- `orchestrator.py` — Pipeline coordination, phase sequencing, human-in-the-loop prompts
+- `core/` — Foundational modules: models, config, scoring, salary parsing, dedup, orchestrator
+  - `core/orchestrator.py` — Pipeline coordination, phase sequencing, human-in-the-loop prompts
+  - `core/config.py` — Pydantic settings loading from `config.yaml` (operational) + `.env` (secrets)
+  - `core/models.py` — Pydantic v2 domain models (Job, SearchQuery, CandidateProfile)
+  - `core/scorer.py` — Job scoring (1–5) with explainable breakdowns against candidate profile
 - `platforms/` — Pluggable adapters behind Protocol interfaces (`protocols.py`). Each platform has a module + `*_selectors.py` for DOM selectors
-- `scorer.py` — Job scoring (1–5) with explainable breakdowns against candidate profile
 - `webapp/` — FastAPI dashboard with SQLite, htmx partials, SSE streaming for apply progress
 - `apply_engine/` — Background thread apply orchestration with SSE events and confirmation gates
 - `resume_ai/` — Claude CLI structured outputs for resume tailoring, anti-fabrication validation
-- `config.py` — Pydantic settings loading from `config.yaml` (operational) + `.env` (secrets)
-- `models.py` — Pydantic v2 domain models (Job, SearchQuery, CandidateProfile)
 
 **Config split:** Operational settings (queries, weights, timing) in `config.yaml`. Credentials and personal data in `.env` (never committed). Singleton via `get_settings()`.
 
@@ -54,7 +55,8 @@ Five-phase pipeline (setup → login → search → score → apply) with plugga
 
 - **New platform:** `platforms/{name}.py` + `platforms/{name}_selectors.py`. Add `@register_platform` decorator. Protocol validated at import time.
 - **New dashboard route:** `webapp/app.py` (route) + `webapp/templates/partials/` (htmx partial) + `webapp/db.py` (query if needed)
-- **New scoring factor:** `scorer.py` (method + update ScoreBreakdown) + `config.yaml` (weight)
+- **New core module:** `core/{name}.py`. Add to `[tool.hatch.build.targets.wheel] packages` list in `pyproject.toml` (already includes `core`).
+- **New scoring factor:** `core/scorer.py` (method + update ScoreBreakdown) + `config.yaml` (weight)
 - **New resume AI feature:** `resume_ai/{feature}.py` + `resume_ai/models.py` (Pydantic model for structured output)
 
 ## Human-in-the-Loop Checkpoints

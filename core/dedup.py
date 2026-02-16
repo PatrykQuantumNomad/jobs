@@ -10,7 +10,7 @@ aliases are recorded in ``job.company_aliases``.
 
 from rapidfuzz import fuzz
 
-from models import Job
+from core.models import Job
 
 # ---------------------------------------------------------------------------
 # Configuration

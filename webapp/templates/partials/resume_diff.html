@@ -1,9 +1,13 @@
 {# htmx partial: Resume diff view with validation status and download link #}
 
+{# Trigger resume versions list refresh after this partial swaps in #}
+<script>document.body.dispatchEvent(new CustomEvent('refreshVersions'))</script>
+
+<!-- Status alerts -->
 {% if not validation_valid %}
-<div class="bg-amber-50 border border-amber-400 text-amber-800 px-4 py-3 rounded mb-4">
-    <p class="font-bold">Warning: Potential fabrication detected</p>
-    <p class="text-sm">The validator found entities in the tailored resume that do not appear in the original. Please review carefully before using this resume:</p>
+<div class="bg-amber-50 border border-amber-400 text-amber-800 px-4 py-3 rounded-lg mb-4">
+    <p class="font-bold text-sm">Warning: Potential fabrication detected</p>
+    <p class="text-sm mt-1">The validator found entities in the tailored resume that do not appear in the original:</p>
     <ul class="list-disc list-inside text-sm mt-2">
         {% for warning in validation_warnings %}
         <li>{{ warning }}</li>
@@ -11,23 +15,43 @@
     </ul>
 </div>
 {% else %}
-<div class="bg-green-50 border border-green-400 text-green-800 px-4 py-3 rounded mb-4">
-    <p class="text-sm font-medium">Validation passed: No fabricated content detected</p>
+<div class="flex items-center gap-2 bg-green-50 border border-green-300 text-green-800 px-4 py-3 rounded-lg mb-4">
+    <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+    </svg>
+    <p class="text-sm font-medium">Validation passed &mdash; no fabricated content detected</p>
 </div>
 {% endif %}
 
-<div class="bg-blue-50 border border-blue-400 text-blue-800 px-4 py-3 rounded mb-4">
-    <p class="text-sm font-medium">Resume tailored successfully</p>
+<!-- Action bar -->
+<div class="flex items-center justify-between mb-4">
+    <a href="{{ download_url }}"
+       class="inline-flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+       download>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Download PDF
+    </a>
+    <span class="text-xs text-gray-400">{{ filename }}</span>
 </div>
 
+<!-- Tailoring notes -->
 {% if tailoring_notes %}
-<p class="text-sm text-gray-600 italic mb-4">{{ tailoring_notes }}</p>
+<details class="mb-4 border rounded-lg" open>
+    <summary class="px-4 py-3 bg-gray-50 text-sm font-medium text-gray-700 cursor-pointer rounded-t-lg hover:bg-gray-100 transition-colors">
+        Tailoring Notes
+    </summary>
+    <div class="px-4 py-3 text-sm text-gray-600 leading-relaxed">{{ tailoring_notes }}</div>
+</details>
 {% endif %}
 
-<a href="{{ download_url }}"
-   class="inline-block bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700 mb-4"
-   download>Download PDF ({{ filename }})</a>
-
-<div class="mt-4 overflow-x-auto border rounded">
-    {{ diff_html | safe }}
-</div>
+<!-- Diff view -->
+<details class="border rounded-lg">
+    <summary class="px-4 py-3 bg-gray-50 text-sm font-medium text-gray-700 cursor-pointer rounded-t-lg hover:bg-gray-100 transition-colors">
+        View Changes (Diff)
+    </summary>
+    <div class="overflow-x-auto">
+        {{ diff_html | safe }}
+    </div>
+</details>

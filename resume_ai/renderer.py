@@ -35,6 +35,7 @@ def render_resume_pdf(
     candidate_name: str,
     contact_info: str,
     output_path: Path,
+    links: list[dict[str, str]] | None = None,
 ) -> Path:
     """Render a tailored resume as a professional PDF.
 
@@ -48,6 +49,9 @@ def render_resume_pdf(
         Contact line (e.g. ``"email | phone | location"``).
     output_path:
         Destination path for the generated PDF file.
+    links:
+        Optional list of ``{"label": "...", "url": "..."}`` dicts for social/web links
+        displayed below the contact line.
 
     Returns
     -------
@@ -60,6 +64,7 @@ def render_resume_pdf(
     html_content = template.render(
         name=candidate_name,
         contact_info=contact_info,
+        links=links or [],
         summary=tailored.professional_summary,
         skills=tailored.technical_skills,
         experience=tailored.work_experience,

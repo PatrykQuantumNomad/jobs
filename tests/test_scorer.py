@@ -16,9 +16,9 @@ scoring without relying on config.yaml values.
 
 import pytest
 
-from config import ScoringWeights
-from models import CandidateProfile, Job, JobStatus
-from scorer import JobScorer, ScoreBreakdown
+from core.config import ScoringWeights
+from core.models import CandidateProfile, Job, JobStatus
+from core.scorer import JobScorer, ScoreBreakdown
 
 # ---------------------------------------------------------------------------
 # Helpers

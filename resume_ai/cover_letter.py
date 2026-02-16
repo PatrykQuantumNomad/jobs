@@ -47,7 +47,7 @@ FORMATTING:
 """
 
 # Default model alias for cover letter generation (CLI uses short aliases)
-DEFAULT_MODEL = "sonnet"
+DEFAULT_MODEL = "opus"
 
 
 async def generate_cover_letter(

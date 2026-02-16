@@ -12,7 +12,7 @@ import yaml
 from pydantic import ValidationError
 
 from apply_engine.config import ApplyConfig
-from config import (
+from core.config import (
     AppSettings,
     ScheduleConfig,
     ScoringWeights,
@@ -20,7 +20,7 @@ from config import (
     get_settings,
     reset_settings,
 )
-from models import CandidateProfile
+from core.models import CandidateProfile
 
 # -- Test constants -----------------------------------------------------------
 

@@ -28,7 +28,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from config import DEBUG_SCREENSHOTS_DIR, get_settings
+from core.config import DEBUG_SCREENSHOTS_DIR, get_settings
 
 if TYPE_CHECKING:
     from playwright.sync_api import Page

@@ -48,7 +48,7 @@ In your tailoring_notes field, explain what you changed and why.\
 """
 
 # Default model alias for resume tailoring (CLI uses short aliases)
-DEFAULT_MODEL = "sonnet"
+DEFAULT_MODEL = "opus"
 
 
 async def tailor_resume(

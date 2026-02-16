@@ -12,8 +12,8 @@ Tests cover:
 
 import pytest
 
-from dedup import _normalize_company, fuzzy_deduplicate
-from models import Job
+from core.dedup import _normalize_company, fuzzy_deduplicate
+from core.models import Job
 
 # ---------------------------------------------------------------------------
 # Test helpers

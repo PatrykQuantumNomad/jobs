@@ -17,14 +17,14 @@ import subprocess
 import sys
 from pathlib import Path
 
-from config import get_settings
+from core.config import get_settings
 
 # -- Constants -----------------------------------------------------------------
 
 LABEL = "com.jobflow.pipeline"
 PLIST_DEST = Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
 
-PROJECT_ROOT = Path(__file__).parent.resolve()
+PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 
 
 # -- Plist generation ----------------------------------------------------------

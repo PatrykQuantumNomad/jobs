@@ -9,7 +9,7 @@ factory-boy has no native Pydantic integration, but setting
 import factory
 from faker import Faker
 
-from models import Job, JobStatus
+from core.models import Job, JobStatus
 
 fake = Faker()
 

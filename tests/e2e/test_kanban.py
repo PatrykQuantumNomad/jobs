@@ -17,7 +17,7 @@ takes.
 import pytest
 from playwright.sync_api import expect
 
-from models import JobStatus
+from core.models import JobStatus
 
 
 @pytest.fixture

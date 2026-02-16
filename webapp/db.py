@@ -528,6 +528,18 @@ def log_activity(
         )
 
 
+def get_notes(dedup_key: str) -> list[dict]:
+    """Return saved notes for a job, newest first."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT detail, created_at FROM activity_log "
+            "WHERE dedup_key = ? AND event_type = 'note_added' "
+            "ORDER BY created_at DESC, id DESC",
+            (dedup_key,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def get_activity_log(dedup_key: str) -> list[dict]:
     """Return activity log entries for a job, newest first."""
     with get_conn() as conn:

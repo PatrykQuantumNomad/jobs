@@ -6,19 +6,19 @@ import sys
 import time as _time
 from datetime import datetime
 
-from config import (
+from core.config import (
     JOB_DESCRIPTIONS_DIR,
     JOB_PIPELINE_DIR,
     PROJECT_ROOT,
     ensure_directories,
     get_settings,
 )
-from dedup import fuzzy_deduplicate
-from models import Job, JobStatus
+from core.dedup import fuzzy_deduplicate
+from core.models import Job, JobStatus
+from core.salary import parse_salary, parse_salary_ints
+from core.scorer import JobScorer
 from platforms import close_browser, get_all_platforms, get_browser_context
 from platforms.registry import PlatformInfo, get_platform
-from salary import parse_salary, parse_salary_ints
-from scorer import JobScorer
 from webapp import db as webdb
 
 

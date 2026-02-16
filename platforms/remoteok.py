@@ -6,8 +6,8 @@ from pathlib import Path
 
 import httpx
 
-from config import get_settings
-from models import Job, SearchQuery
+from core.config import get_settings
+from core.models import Job, SearchQuery
 from platforms.registry import register_platform
 
 

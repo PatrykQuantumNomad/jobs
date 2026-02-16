@@ -32,7 +32,7 @@ class ApplyEngine:
     def __init__(self, settings=None) -> None:
         # Lazy-load settings from config.get_settings() if not provided
         if settings is None:
-            from config import get_settings
+            from core.config import get_settings
 
             self._settings = get_settings()
         else:
@@ -336,7 +336,7 @@ class ApplyEngine:
                 )
 
             # Build Job model from dict for platform.apply()
-            from models import Job
+            from core.models import Job
 
             job_model = Job(**{k: v for k, v in job.items() if k in Job.model_fields})
             result = platform.apply(job_model, resume_path)
@@ -402,7 +402,7 @@ class ApplyEngine:
             page.goto(apply_url, timeout=apply_cfg.ats_form_fill_timeout * 1000)
 
             # Fill form
-            from form_filler import FormFiller
+            from core.form_filler import FormFiller
 
             filler = FormFiller()
             resume_path = self._get_resume_path(dedup_key)
@@ -447,7 +447,7 @@ class ApplyEngine:
                 try:
                     from datetime import datetime
 
-                    from config import DEBUG_SCREENSHOTS_DIR
+                    from core.config import DEBUG_SCREENSHOTS_DIR
 
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     screenshot_file = (

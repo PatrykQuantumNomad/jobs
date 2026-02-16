@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from models import Job
+from core.models import Job
 
 
 class TestFactorySmoke:
@@ -51,17 +51,17 @@ class TestSettingsIsolation:
     """Verify settings singleton resets between tests."""
 
     def test_settings_clean_a(self):
-        import config
+        import core.config as config_mod
 
         # _settings should be None at the start of each test
         # (autouse _reset_settings clears it)
-        assert config._settings is None
+        assert config_mod._settings is None
 
     def test_settings_clean_b(self):
-        import config
+        import core.config as config_mod
 
         # Even after test_a ran, test_b should start clean
-        assert config._settings is None
+        assert config_mod._settings is None
 
 
 class TestDatabaseIsolation:

@@ -19,7 +19,7 @@ import time
 import pytest
 from uvicorn import Config, Server
 
-from models import JobStatus
+from core.models import JobStatus
 from webapp.app import app
 
 

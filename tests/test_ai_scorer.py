@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from ai_scorer import AIScoreResult, score_job_ai
+from core.ai_scorer import AIScoreResult, score_job_ai
 from webapp import db as db_module
 
 

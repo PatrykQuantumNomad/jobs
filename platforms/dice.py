@@ -7,8 +7,8 @@ from urllib.parse import urlencode
 from playwright.sync_api import BrowserContext
 from playwright.sync_api import TimeoutError as PwTimeout
 
-from config import PROJECT_ROOT, get_settings
-from models import Job, SearchQuery
+from core.config import PROJECT_ROOT, get_settings
+from core.models import Job, SearchQuery
 from platforms.dice_selectors import DICE_SEARCH_PARAMS, DICE_SELECTORS, DICE_URLS
 from platforms.mixins import BrowserPlatformMixin
 from platforms.registry import register_platform

@@ -11,8 +11,8 @@ import httpx
 import pytest
 import respx
 
-from config import get_settings
-from models import SearchQuery
+from core.config import get_settings
+from core.models import SearchQuery
 from platforms.remoteok import RemoteOKPlatform
 
 

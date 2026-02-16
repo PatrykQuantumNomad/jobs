@@ -37,6 +37,11 @@
             margin-top: 4pt;
         }
 
+        .contact-info a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
         h2 {
             font-size: 13pt;
             font-weight: bold;
@@ -109,6 +114,13 @@
 <body>
     <h1>{{ name }}</h1>
     <div class="contact-info">{{ contact_info }}</div>
+    {% if links %}
+    <div class="contact-info">
+        {% for link in links %}
+        <a href="{{ link.url }}">{{ link.label }}</a>{% if not loop.last %} | {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <h2>Professional Summary</h2>
     <p class="summary-text">{{ summary }}</p>

@@ -16,7 +16,7 @@ Import chain: models -> protocols -> registry (no cycles).
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
-from models import Job, SearchQuery
+from core.models import Job, SearchQuery
 
 if TYPE_CHECKING:
     from playwright.sync_api import BrowserContext

@@ -108,6 +108,7 @@ class CandidateProfile(BaseModel):
     github: str = ""
     github_personal: str = ""
     website: str = ""
+    x: str = ""
     youtube: str = ""
     years_experience: str = ""
     current_title: str = ""

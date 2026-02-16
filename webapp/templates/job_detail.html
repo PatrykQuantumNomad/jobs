@@ -1,14 +1,17 @@
 {% extends "base.html" %}
 {% block title %}{{ job.title }} — Job Tracker{% endblock %}
 
-{% block content %}
+{# Override content with empty to skip the max-w-7xl container #}
+{% block content %}{% endblock %}
+
+{% block wide_content %}
 <div class="mb-4">
     <a href="/" class="text-sm text-indigo-600 hover:text-indigo-800">&larr; Back to dashboard</a>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
     <!-- Main Content -->
-    <div class="lg:col-span-2 space-y-6">
+    <div class="lg:col-span-3 space-y-6">
         <!-- Header -->
         <div class="bg-white rounded-lg shadow-sm border p-6">
             <div class="flex items-start justify-between gap-4">
@@ -78,6 +81,41 @@
             {% endif %}
         </div>
 
+        <!-- Notes -->
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Notes</h2>
+            <form hx-post="/jobs/{{ job.dedup_key | urlencode }}/notes"
+                  hx-target="#notes-status"
+                  hx-swap="innerHTML">
+                <textarea id="notes-input" name="notes" rows="4"
+                          class="w-full border rounded px-3 py-2 text-sm resize-y"
+                          placeholder="Add your notes here..."></textarea>
+                <div class="flex items-center justify-between mt-2">
+                    <button type="submit"
+                            class="bg-gray-800 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-900">
+                        Save Note
+                    </button>
+                    <span id="notes-status"></span>
+                </div>
+            </form>
+
+            <!-- Saved notes (lazy-loaded) -->
+            <div class="mt-4 border-t pt-4">
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Saved Notes</h3>
+                <div id="saved-notes-list"
+                     hx-get="/jobs/{{ job.dedup_key | urlencode }}/notes"
+                     hx-trigger="load"
+                     hx-target="this">
+                    <p class="text-sm text-gray-400">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="bg-white rounded-lg shadow-sm border p-6 text-xs text-gray-400">
+            <p>ID: {{ job.id }} | Dedup: {{ job.dedup_key }}{% if job.first_seen_at %} | First seen: {{ job.first_seen_at }}{% endif %}{% if job.last_seen_at %} | Last seen: {{ job.last_seen_at }}{% endif %} | Added: {{ job.created_at }} | Updated: {{ job.updated_at }}</p>
+        </div>
+
         <!-- Tags -->
         {% set tag_list = job.tags | parse_json %}
         {% if tag_list %}
@@ -92,8 +130,8 @@
         {% endif %}
     </div>
 
-    <!-- Sidebar -->
-    <div class="space-y-6">
+    <!-- Sidebar — flex column so Activity fills remaining height -->
+    <div class="flex flex-col gap-6">
         <!-- Status -->
         <div class="bg-white rounded-lg shadow-sm border p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-3">Status</h2>
@@ -116,51 +154,11 @@
             </form>
         </div>
 
-        <!-- Notes -->
-        <div class="bg-white rounded-lg shadow-sm border p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-3">Notes</h2>
-            <form hx-post="/jobs/{{ job.dedup_key | urlencode }}/notes"
-                  hx-target="#notes-status"
-                  hx-swap="innerHTML">
-                <textarea name="notes" rows="6"
-                          class="w-full border rounded px-3 py-2 text-sm resize-y"
-                          placeholder="Add your notes here...">{{ job.notes or '' }}</textarea>
-                <div class="flex items-center justify-between mt-2">
-                    <button type="submit"
-                            class="bg-gray-800 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-900">
-                        Save Notes
-                    </button>
-                    <span id="notes-status"></span>
-                </div>
-            </form>
-        </div>
-
-        <!-- AI Resume Tools -->
-        <div class="bg-white rounded-lg shadow-sm border p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-3">AI Resume Tools</h2>
-            <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/tailor-resume"
-                    hx-target="#resume-ai-result"
-                    hx-swap="innerHTML"
-                    hx-disabled-elt="this"
-                    class="w-full bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed mb-2">
-                Tailor Resume
-            </button>
-            <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/cover-letter"
-                    hx-target="#resume-ai-result"
-                    hx-swap="innerHTML"
-                    hx-disabled-elt="this"
-                    class="w-full bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed mb-2">
-                Generate Cover Letter
-            </button>
-            <div id="resume-ai-result"></div>
-        </div>
-
         <!-- AI Analysis -->
         <div class="bg-white rounded-lg shadow-sm border p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-3">AI Analysis</h2>
 
             {% if job.ai_score %}
-            {# Show persisted AI score #}
             {% set ai_bd = job.ai_score_breakdown | parse_json %}
             <div id="ai-score-result">
                 <div class="bg-blue-50 border border-blue-300 rounded-lg p-4 mb-3">
@@ -200,7 +198,6 @@
                 Rescore
             </button>
             {% else %}
-            {# No AI score yet -- show button #}
             <div id="ai-score-result"></div>
             <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/ai-rescore"
                     hx-target="#ai-score-result"
@@ -220,7 +217,6 @@
         <div class="bg-white rounded-lg shadow-sm border p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-3">Apply</h2>
 
-            <!-- Mode selector -->
             <label class="block text-xs text-gray-500 mb-1">Apply Mode</label>
             <select id="apply-mode" class="border rounded px-3 py-1.5 text-sm mb-3 w-full">
                 <option value="semi_auto" selected>Semi-Auto (fill + review)</option>
@@ -228,7 +224,6 @@
                 <option value="easy_apply_only">Easy Apply Only</option>
             </select>
 
-            <!-- Apply button -->
             <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/apply"
                     hx-vals='js:{"mode": document.getElementById("apply-mode").value}'
                     hx-target="#apply-status"
@@ -248,7 +243,6 @@
                 {% endif %}
             </button>
 
-            <!-- Quick info -->
             <p class="text-xs text-gray-400 mt-2">
                 {% if job.easy_apply %}
                 Easy Apply available via {{ job.platform | title }}
@@ -259,30 +253,18 @@
                 {% endif %}
             </p>
 
-            <!-- Loading spinner -->
             <div id="apply-spinner" class="htmx-indicator text-center py-2">
                 <span class="text-sm text-gray-500">Starting apply engine...</span>
             </div>
 
-            <!-- SSE status container -->
             <div id="apply-status" class="mt-3"></div>
         </div>
 
-        <!-- Resume Versions -->
-        <div class="bg-white rounded-lg shadow-sm border p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-3">Resume Versions</h2>
-            <div hx-get="/jobs/{{ job.dedup_key | urlencode }}/resume-versions"
-                 hx-trigger="load"
-                 hx-target="this">
-                <p class="text-sm text-gray-400">Loading...</p>
-            </div>
-        </div>
-
-        <!-- Activity Timeline -->
-        <div class="bg-white rounded-lg shadow-sm border p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-3">Activity</h2>
+        <!-- Activity Timeline — grows to fill remaining sidebar height -->
+        <div class="bg-white rounded-lg shadow-sm border p-6 flex-1 min-h-0 flex flex-col">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3 flex-shrink-0">Activity</h2>
             {% if activity %}
-            <div class="space-y-3">
+            <div class="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1">
                 {% for event in activity %}
                 <div class="flex gap-3 text-sm">
                     <div class="flex-shrink-0 w-2 h-2 mt-1.5 rounded-full
@@ -332,19 +314,44 @@
             <p class="text-sm text-gray-400">No activity recorded.</p>
             {% endif %}
         </div>
+    </div>
+</div>
 
-        <!-- Metadata -->
-        <div class="bg-white rounded-lg shadow-sm border p-6 text-xs text-gray-400">
-            <p>ID: {{ job.id }}</p>
-            <p>Dedup key: {{ job.dedup_key }}</p>
-            {% if job.first_seen_at %}
-            <p>First seen: {{ job.first_seen_at }}</p>
-            {% endif %}
-            {% if job.last_seen_at %}
-            <p>Last seen: {{ job.last_seen_at }}</p>
-            {% endif %}
-            <p>Added: {{ job.created_at }}</p>
-            <p>Updated: {{ job.updated_at }}</p>
+<!-- AI Resume Tools (full width for diff readability) -->
+<div class="mt-6 space-y-6">
+    <div class="bg-white rounded-lg shadow-sm border p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">AI Resume Tools</h2>
+            <div class="flex gap-2">
+                <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/tailor-resume"
+                        hx-target="#resume-ai-result"
+                        hx-swap="innerHTML"
+                        hx-disabled-elt="this"
+                        class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700
+                               disabled:opacity-50 disabled:cursor-not-allowed">
+                    Tailor Resume
+                </button>
+                <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/cover-letter"
+                        hx-target="#resume-ai-result"
+                        hx-swap="innerHTML"
+                        hx-disabled-elt="this"
+                        class="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700
+                               disabled:opacity-50 disabled:cursor-not-allowed">
+                    Generate Cover Letter
+                </button>
+            </div>
+        </div>
+        <div id="resume-ai-result"></div>
+    </div>
+
+    <!-- Generated Documents -->
+    <div class="bg-white rounded-lg shadow-sm border p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-3">Generated Documents</h2>
+        <div id="resume-versions-list"
+             hx-get="/jobs/{{ job.dedup_key | urlencode }}/resume-versions"
+             hx-trigger="load, refreshVersions from:body"
+             hx-target="this">
+            <p class="text-sm text-gray-400">Loading...</p>
         </div>
     </div>
 </div>

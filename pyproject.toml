@@ -36,7 +36,7 @@ dev = [
 ]
 
 [project.scripts]
-jobs-scrape = "orchestrator:main"
+jobs-scrape = "core.orchestrator:main"
 jobs-web = "webapp.app:main"
 
 [build-system]
@@ -44,16 +44,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["platforms", "webapp", "resume_ai", "claude_cli"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"orchestrator.py" = "orchestrator.py"
-"config.py" = "config.py"
-"models.py" = "models.py"
-"scorer.py" = "scorer.py"
-"form_filler.py" = "form_filler.py"
-"salary.py" = "salary.py"
-"dedup.py" = "dedup.py"
+packages = ["core", "platforms", "webapp", "resume_ai", "claude_cli", "apply_engine"]
 
 [tool.ruff]
 target-version = "py314"
@@ -80,13 +71,7 @@ addopts = [
 
 [tool.coverage.run]
 source = [
-    "config",
-    "models",
-    "scorer",
-    "salary",
-    "dedup",
-    "form_filler",
-    "orchestrator",
+    "core",
     "platforms",
     "webapp",
     "resume_ai",

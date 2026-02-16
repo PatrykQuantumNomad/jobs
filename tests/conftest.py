@@ -21,7 +21,7 @@ os.environ["JOBFLOW_TEST_DB"] = "1"
 import pytest  # noqa: E402
 
 import webapp.db as db_module  # noqa: E402
-from config import reset_settings  # noqa: E402
+from core.config import reset_settings  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Autouse fixture 1: Settings isolation

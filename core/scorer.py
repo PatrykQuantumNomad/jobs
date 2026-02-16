@@ -7,8 +7,8 @@ per-factor points and matched keywords.
 
 from dataclasses import dataclass, field
 
-from config import ScoringWeights, get_settings
-from models import CandidateProfile, Job, JobStatus
+from core.config import ScoringWeights, get_settings
+from core.models import CandidateProfile, Job, JobStatus
 
 # ---------------------------------------------------------------------------
 # Score breakdown

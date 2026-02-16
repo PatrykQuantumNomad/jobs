@@ -26,7 +26,7 @@ from pydantic_settings.main import (
 )
 
 from apply_engine.config import ApplyConfig
-from models import CandidateProfile, SearchQuery
+from core.models import CandidateProfile, SearchQuery
 
 # -- Directory constants -----------------------------------------------------
 PROJECT_ROOT = Path.cwd()
@@ -174,6 +174,7 @@ class AppSettings(BaseSettings):
     candidate_github: str = ""
     candidate_github_personal: str = ""
     candidate_website: str = ""
+    candidate_x: str = ""
     candidate_youtube: str = ""
     candidate_years_experience: str = ""
     candidate_current_title: str = ""
@@ -225,6 +226,7 @@ class AppSettings(BaseSettings):
             github=self.candidate_github,
             github_personal=self.candidate_github_personal,
             website=self.candidate_website,
+            x=self.candidate_x,
             youtube=self.candidate_youtube,
             years_experience=self.candidate_years_experience,
             current_title=self.candidate_current_title,
