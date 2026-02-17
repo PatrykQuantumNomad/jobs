@@ -41,6 +41,32 @@ def _parse_score(value: str | None) -> int | None:
 BASE_DIR = Path(__file__).parent
 RESUMES_TAILORED_DIR = Path("resumes/tailored")
 DEFAULT_RESUME_PATH = "resumes/Patryk_Golabek_Resume.pdf"
+
+
+def _name_from_resume_path(path: str) -> str:
+    """Extract candidate name from a resume file path.
+
+    Takes a path like "resumes/Patryk_Golabek_Resume.pdf" and returns
+    "Patryk Golabek" by stripping common suffixes and replacing underscores.
+
+    Returns empty string if extraction fails or produces no meaningful name.
+    """
+    try:
+        stem = Path(path).stem  # e.g. "Patryk_Golabek_Resume"
+        # Strip common suffixes (case-insensitive)
+        cleaned = re.sub(
+            r"[_\s]*(Resume|CV|Cover_Letter|CoverLetter)[_\s]*$",
+            "",
+            stem,
+            flags=re.IGNORECASE,
+        )
+        # Replace underscores with spaces and strip
+        name = cleaned.replace("_", " ").strip()
+        return name
+    except Exception:
+        return ""
+
+
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.filters["parse_json"] = lambda s: (
     json.loads(s) if isinstance(s, str) and s else (s or {})
@@ -283,7 +309,9 @@ async def _run_resume_tailor(
         # Stage 3: Validate (anti-fabrication)
         _emit("progress", "Validating for fabrication...")
         tailored_text = format_resume_as_text(tailored)
-        validation = validate_no_fabrication(resume_text, tailored_text)
+        validation = validate_no_fabrication(
+            resume_text, tailored_text, job_description=job["description"] or ""
+        )
 
         # Stage 4: Render PDF
         _emit("progress", "Rendering PDF...")
@@ -291,7 +319,11 @@ async def _run_resume_tailor(
 
         settings = get_settings()
         profile = settings.build_candidate_profile()
-        candidate_name = f"{profile.first_name} {profile.last_name}".strip() or "Candidate"
+        candidate_name = (
+            f"{profile.first_name} {profile.last_name}".strip()
+            or _name_from_resume_path(settings.candidate_resume_path)
+            or "Candidate"
+        )
         name_slug = candidate_name.replace(" ", "_")
         company_slug = job["company"].replace(" ", "_")[:30]
         filename = f"{name_slug}_Resume_{company_slug}_{date.today().isoformat()}.pdf"
@@ -482,7 +514,11 @@ async def _run_cover_letter(
 
         settings = get_settings()
         profile = settings.build_candidate_profile()
-        candidate_name = f"{profile.first_name} {profile.last_name}".strip() or "Candidate"
+        candidate_name = (
+            f"{profile.first_name} {profile.last_name}".strip()
+            or _name_from_resume_path(settings.candidate_resume_path)
+            or "Candidate"
+        )
         name_slug = candidate_name.replace(" ", "_")
         company_slug = job["company"].replace(" ", "_")[:30]
         filename = f"{name_slug}_CoverLetter_{company_slug}_{date.today().isoformat()}.pdf"
