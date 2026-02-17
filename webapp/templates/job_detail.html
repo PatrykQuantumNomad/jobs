@@ -9,9 +9,9 @@
     <a href="/" class="text-sm text-indigo-600 hover:text-indigo-800">&larr; Back to dashboard</a>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-    <!-- Main Content -->
-    <div class="lg:col-span-3 space-y-6">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left Column: Reading Content -->
+    <div class="lg:col-span-2 space-y-6">
         <!-- Header -->
         <div class="bg-white rounded-lg shadow-sm border p-6">
             <div class="flex items-start justify-between gap-4">
@@ -81,9 +81,22 @@
             {% endif %}
         </div>
 
-        <!-- Notes -->
+        <!-- Tags -->
+        {% set tag_list = job.tags | parse_json %}
+        {% if tag_list %}
         <div class="bg-white rounded-lg shadow-sm border p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-3">Notes</h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Tags</h2>
+            <div class="flex flex-wrap gap-2">
+                {% for tag in tag_list %}
+                <span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">{{ tag }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Notes & Activity -->
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Notes & Activity</h2>
             <form hx-post="/jobs/{{ job.dedup_key | urlencode }}/notes"
                   hx-target="#notes-status"
                   hx-swap="innerHTML">
@@ -109,32 +122,69 @@
                     <p class="text-sm text-gray-400">Loading...</p>
                 </div>
             </div>
-        </div>
 
-        <!-- Metadata -->
-        <div class="bg-white rounded-lg shadow-sm border p-6 text-xs text-gray-400">
-            <p>ID: {{ job.id }} | Dedup: {{ job.dedup_key }}{% if job.first_seen_at %} | First seen: {{ job.first_seen_at }}{% endif %}{% if job.last_seen_at %} | Last seen: {{ job.last_seen_at }}{% endif %} | Added: {{ job.created_at }} | Updated: {{ job.updated_at }}</p>
-        </div>
+            <div class="border-t my-4"></div>
 
-        <!-- Tags -->
-        {% set tag_list = job.tags | parse_json %}
-        {% if tag_list %}
-        <div class="bg-white rounded-lg shadow-sm border p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-3">Tags</h2>
-            <div class="flex flex-wrap gap-2">
-                {% for tag in tag_list %}
-                <span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">{{ tag }}</span>
+            <!-- Activity Timeline -->
+            <h3 class="text-sm font-medium text-gray-500 mb-3">Activity</h3>
+            {% if activity %}
+            <div class="space-y-3 overflow-y-auto max-h-96 pr-1">
+                {% for event in activity %}
+                <div class="flex gap-3 text-sm">
+                    <div class="flex-shrink-0 w-2 h-2 mt-1.5 rounded-full
+                        {% if event.event_type == 'status_change' %}bg-indigo-400
+                        {% elif event.event_type == 'discovered' %}bg-green-400
+                        {% elif event.event_type == 'note_added' %}bg-yellow-400
+                        {% elif event.event_type == 'viewed' %}bg-gray-400
+                        {% elif event.event_type == 'applied' %}bg-purple-400
+                        {% elif event.event_type == 'scored' %}bg-blue-400
+                        {% elif event.event_type == 'resume_tailored' %}bg-indigo-400
+                        {% elif event.event_type == 'cover_letter_generated' %}bg-emerald-400
+                        {% elif event.event_type == 'ai_scored' %}bg-amber-400
+                        {% else %}bg-gray-300
+                        {% endif %}"></div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-gray-700">
+                            {% if event.event_type == 'status_change' %}
+                                Status changed
+                                {% if event.old_value %}from <span class="status-badge status-{{ event.old_value }}">{{ event.old_value | replace('_', ' ') | title }}</span>{% endif %}
+                                to <span class="status-badge status-{{ event.new_value }}">{{ event.new_value | replace('_', ' ') | title }}</span>
+                            {% elif event.event_type == 'discovered' %}
+                                Discovered on {{ event.new_value }}
+                            {% elif event.event_type == 'note_added' %}
+                                Note updated
+                            {% elif event.event_type == 'viewed' %}
+                                Viewed for the first time
+                            {% elif event.event_type == 'scored' %}
+                                Scored: {{ event.new_value }}
+                            {% elif event.event_type == 'applied' %}
+                                Application submitted
+                            {% elif event.event_type == 'resume_tailored' %}
+                                Resume tailored{% if event.detail %}: {{ event.detail }}{% endif %}
+                            {% elif event.event_type == 'cover_letter_generated' %}
+                                Cover letter generated{% if event.detail %}: {{ event.detail }}{% endif %}
+                            {% elif event.event_type == 'ai_scored' %}
+                                AI scored: {{ event.new_value }}/5
+                            {% else %}
+                                {{ event.event_type }}{% if event.detail %}: {{ event.detail }}{% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ event.created_at }}</div>
+                    </div>
+                </div>
                 {% endfor %}
             </div>
+            {% else %}
+            <p class="text-sm text-gray-400">No activity recorded.</p>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 
-    <!-- Sidebar — flex column so Activity fills remaining height -->
-    <div class="flex flex-col gap-6">
-        <!-- Status -->
+    <!-- Right Column: Actions & AI Tools -->
+    <div class="space-y-6">
+        <!-- Quick Actions -->
         <div class="bg-white rounded-lg shadow-sm border p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-3">Status</h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Quick Actions</h2>
             <div id="status-display" class="mb-3">
                 <span class="status-badge status-{{ job.status }}">{{ job.status | replace('_', ' ') | title }}</span>
             </div>
@@ -152,11 +202,55 @@
                     Update
                 </button>
             </form>
+
+            <div class="border-t my-4"></div>
+
+            <label class="block text-xs text-gray-500 mb-1">Apply Mode</label>
+            <select id="apply-mode" class="border rounded px-3 py-1.5 text-sm mb-3 w-full">
+                <option value="semi_auto" selected>Semi-Auto (fill + review)</option>
+                <option value="full_auto">Full Auto (fill + confirm + submit)</option>
+                <option value="easy_apply_only">Easy Apply Only</option>
+            </select>
+
+            <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/apply"
+                    hx-vals='js:{"mode": document.getElementById("apply-mode").value}'
+                    hx-target="#apply-status"
+                    hx-swap="innerHTML"
+                    hx-indicator="#apply-spinner"
+                    id="apply-btn"
+                    class="w-full bg-purple-600 text-white px-4 py-2 rounded text-sm
+                           hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    {% if job.status in ['applied', 'phone_screen', 'technical', 'final_interview', 'offer'] %}
+                    disabled
+                    title="Already applied"
+                    {% endif %}>
+                {% if job.status in ['applied', 'phone_screen', 'technical', 'final_interview', 'offer'] %}
+                Already Applied
+                {% else %}
+                Apply Now
+                {% endif %}
+            </button>
+
+            <p class="text-xs text-gray-400 mt-2">
+                {% if job.easy_apply %}
+                Easy Apply available via {{ job.platform | title }}
+                {% elif job.apply_url %}
+                External application
+                {% else %}
+                Apply via {{ job.platform | title }}
+                {% endif %}
+            </p>
+
+            <div id="apply-spinner" class="htmx-indicator text-center py-2">
+                <span class="text-sm text-gray-500">Starting apply engine...</span>
+            </div>
+
+            <div id="apply-status" class="mt-3"></div>
         </div>
 
-        <!-- AI Analysis -->
+        <!-- AI Intelligence -->
         <div class="bg-white rounded-lg shadow-sm border p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-3">AI Analysis</h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">AI Intelligence</h2>
 
             {% if job.ai_score %}
             {% set ai_bd = job.ai_score_breakdown | parse_json %}
@@ -211,148 +305,49 @@
             <div id="ai-score-spinner" class="htmx-indicator text-center py-4">
                 <span class="text-sm text-gray-500">Analyzing job fit... this may take 10-15 seconds</span>
             </div>
-        </div>
 
-        <!-- Apply -->
-        <div class="bg-white rounded-lg shadow-sm border p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-3">Apply</h2>
+            <div class="border-t my-4"></div>
 
-            <label class="block text-xs text-gray-500 mb-1">Apply Mode</label>
-            <select id="apply-mode" class="border rounded px-3 py-1.5 text-sm mb-3 w-full">
-                <option value="semi_auto" selected>Semi-Auto (fill + review)</option>
-                <option value="full_auto">Full Auto (fill + confirm + submit)</option>
-                <option value="easy_apply_only">Easy Apply Only</option>
-            </select>
-
-            <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/apply"
-                    hx-vals='js:{"mode": document.getElementById("apply-mode").value}'
-                    hx-target="#apply-status"
-                    hx-swap="innerHTML"
-                    hx-indicator="#apply-spinner"
-                    id="apply-btn"
-                    class="w-full bg-purple-600 text-white px-4 py-2 rounded text-sm
-                           hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    {% if job.status in ['applied', 'phone_screen', 'technical', 'final_interview', 'offer'] %}
-                    disabled
-                    title="Already applied"
-                    {% endif %}>
-                {% if job.status in ['applied', 'phone_screen', 'technical', 'final_interview', 'offer'] %}
-                Already Applied
-                {% else %}
-                Apply Now
-                {% endif %}
-            </button>
-
-            <p class="text-xs text-gray-400 mt-2">
-                {% if job.easy_apply %}
-                Easy Apply available via {{ job.platform | title }}
-                {% elif job.apply_url %}
-                External application
-                {% else %}
-                Apply via {{ job.platform | title }}
-                {% endif %}
-            </p>
-
-            <div id="apply-spinner" class="htmx-indicator text-center py-2">
-                <span class="text-sm text-gray-500">Starting apply engine...</span>
-            </div>
-
-            <div id="apply-status" class="mt-3"></div>
-        </div>
-
-        <!-- Activity Timeline — grows to fill remaining sidebar height -->
-        <div class="bg-white rounded-lg shadow-sm border p-6 flex-1 min-h-0 flex flex-col">
-            <h2 class="text-lg font-semibold text-gray-900 mb-3 flex-shrink-0">Activity</h2>
-            {% if activity %}
-            <div class="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1">
-                {% for event in activity %}
-                <div class="flex gap-3 text-sm">
-                    <div class="flex-shrink-0 w-2 h-2 mt-1.5 rounded-full
-                        {% if event.event_type == 'status_change' %}bg-indigo-400
-                        {% elif event.event_type == 'discovered' %}bg-green-400
-                        {% elif event.event_type == 'note_added' %}bg-yellow-400
-                        {% elif event.event_type == 'viewed' %}bg-gray-400
-                        {% elif event.event_type == 'applied' %}bg-purple-400
-                        {% elif event.event_type == 'scored' %}bg-blue-400
-                        {% elif event.event_type == 'resume_tailored' %}bg-indigo-400
-                        {% elif event.event_type == 'cover_letter_generated' %}bg-emerald-400
-                        {% elif event.event_type == 'ai_scored' %}bg-amber-400
-                        {% else %}bg-gray-300
-                        {% endif %}"></div>
-                    <div class="flex-1 min-w-0">
-                        <div class="text-gray-700">
-                            {% if event.event_type == 'status_change' %}
-                                Status changed
-                                {% if event.old_value %}from <span class="status-badge status-{{ event.old_value }}">{{ event.old_value | replace('_', ' ') | title }}</span>{% endif %}
-                                to <span class="status-badge status-{{ event.new_value }}">{{ event.new_value | replace('_', ' ') | title }}</span>
-                            {% elif event.event_type == 'discovered' %}
-                                Discovered on {{ event.new_value }}
-                            {% elif event.event_type == 'note_added' %}
-                                Note updated
-                            {% elif event.event_type == 'viewed' %}
-                                Viewed for the first time
-                            {% elif event.event_type == 'scored' %}
-                                Scored: {{ event.new_value }}
-                            {% elif event.event_type == 'applied' %}
-                                Application submitted
-                            {% elif event.event_type == 'resume_tailored' %}
-                                Resume tailored{% if event.detail %}: {{ event.detail }}{% endif %}
-                            {% elif event.event_type == 'cover_letter_generated' %}
-                                Cover letter generated{% if event.detail %}: {{ event.detail }}{% endif %}
-                            {% elif event.event_type == 'ai_scored' %}
-                                AI scored: {{ event.new_value }}/5
-                            {% else %}
-                                {{ event.event_type }}{% if event.detail %}: {{ event.detail }}{% endif %}
-                            {% endif %}
-                        </div>
-                        <div class="text-xs text-gray-400 mt-0.5">{{ event.created_at }}</div>
-                    </div>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-semibold text-gray-700">AI Resume Tools</h3>
+                <div class="flex gap-2">
+                    <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/tailor-resume"
+                            hx-target="#resume-ai-result"
+                            hx-swap="innerHTML"
+                            hx-disabled-elt="this"
+                            class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700
+                                   disabled:opacity-50 disabled:cursor-not-allowed">
+                        Tailor Resume
+                    </button>
+                    <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/cover-letter"
+                            hx-target="#resume-ai-result"
+                            hx-swap="innerHTML"
+                            hx-disabled-elt="this"
+                            class="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700
+                                   disabled:opacity-50 disabled:cursor-not-allowed">
+                        Generate Cover Letter
+                    </button>
                 </div>
-                {% endfor %}
             </div>
-            {% else %}
-            <p class="text-sm text-gray-400">No activity recorded.</p>
-            {% endif %}
+            <div id="resume-ai-result"></div>
+
+            <div class="border-t my-4"></div>
+
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">Generated Documents</h3>
+            <div id="resume-versions-list"
+                 hx-get="/jobs/{{ job.dedup_key | urlencode }}/resume-versions"
+                 hx-trigger="load, refreshVersions from:body"
+                 hx-target="this">
+                <p class="text-sm text-gray-400">Loading...</p>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- AI Resume Tools (full width for diff readability) -->
-<div class="mt-6 space-y-6">
-    <div class="bg-white rounded-lg shadow-sm border p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">AI Resume Tools</h2>
-            <div class="flex gap-2">
-                <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/tailor-resume"
-                        hx-target="#resume-ai-result"
-                        hx-swap="innerHTML"
-                        hx-disabled-elt="this"
-                        class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700
-                               disabled:opacity-50 disabled:cursor-not-allowed">
-                    Tailor Resume
-                </button>
-                <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/cover-letter"
-                        hx-target="#resume-ai-result"
-                        hx-swap="innerHTML"
-                        hx-disabled-elt="this"
-                        class="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700
-                               disabled:opacity-50 disabled:cursor-not-allowed">
-                    Generate Cover Letter
-                </button>
-            </div>
-        </div>
-        <div id="resume-ai-result"></div>
-    </div>
-
-    <!-- Generated Documents -->
-    <div class="bg-white rounded-lg shadow-sm border p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-3">Generated Documents</h2>
-        <div id="resume-versions-list"
-             hx-get="/jobs/{{ job.dedup_key | urlencode }}/resume-versions"
-             hx-trigger="load, refreshVersions from:body"
-             hx-target="this">
-            <p class="text-sm text-gray-400">Loading...</p>
-        </div>
+<!-- Metadata Footer -->
+<div class="mt-6">
+    <div class="bg-white rounded-lg shadow-sm border p-6 text-xs text-gray-400">
+        <p>ID: {{ job.id }} | Dedup: {{ job.dedup_key }}{% if job.first_seen_at %} | First seen: {{ job.first_seen_at }}{% endif %}{% if job.last_seen_at %} | Last seen: {{ job.last_seen_at }}{% endif %} | Added: {{ job.created_at }} | Updated: {{ job.updated_at }}</p>
     </div>
 </div>
 {% endblock %}
