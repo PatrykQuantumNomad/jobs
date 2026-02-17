@@ -87,9 +87,10 @@ None active. Previous milestone blockers resolved:
 | 001 | Fix technical debt: remove Config shim, dead static mount, update arch docs | 2026-02-08 | 9f7f3de | [001-fix-technical-debt](./quick/001-fix-technical-debt/) |
 | 002 | Fix CI: increase test coverage from 62.61% to 80%+ (115 new tests) | 2026-02-08 | bf35a16 | [002-fix-ci-increase-test-coverage-from-62-61](./quick/002-fix-ci-increase-test-coverage-from-62-61/) |
 | 003 | Fix kanban drag-and-drop destroying board (htmx.ajax swap bug) | 2026-02-08 | 31dc69b | [003-fix-kanban-drag-and-drop-status-switchin](./quick/003-fix-kanban-drag-and-drop-status-switchin/) |
+| 004 | Redesign job detail page: intent-based 2-column layout | 2026-02-17 | fe8eded | [004-redesign-job-detail-page-layout](./quick/004-redesign-job-detail-page-layout/) |
 
 ## Session Continuity
 
-Last session: 2026-02-13
-Stopped at: v1.3 milestone archived. Ready for next milestone.
-Resume with: `/gsd:new-milestone`
+Last session: 2026-02-17
+Stopped at: Completed quick task 004 (job detail page layout redesign). Awaiting visual verification.
+Resume with: `/gsd:new-milestone` or visual verify of job detail page
