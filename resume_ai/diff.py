@@ -56,8 +56,8 @@ def wrap_diff_html(diff_table: str) -> str:
         "<style>"
         ".resume-diff table { width: 100%; border-collapse: collapse; "
         "table-layout: fixed; font-size: 13px; font-family: monospace; }"
-        ".resume-diff td { padding: 3px 8px; vertical-align: top; "
-        "word-wrap: break-word; overflow-wrap: break-word; }"
+        ".resume-diff td, .resume-diff td[nowrap] { padding: 3px 8px; vertical-align: top; "
+        "white-space: pre-wrap !important; word-wrap: break-word; overflow-wrap: break-word; }"
         ".resume-diff th { padding: 6px 8px; text-align: left; "
         "background: #f3f4f6; font-weight: 600; font-size: 13px; }"
         ".resume-diff .diff_add { background: #d1fae5; }"
@@ -65,6 +65,8 @@ def wrap_diff_html(diff_table: str) -> str:
         ".resume-diff .diff_sub { background: #fee2e2; }"
         ".resume-diff .diff_header { background: #e5e7eb; }"
         ".resume-diff .diff_next { display: none; }"
+        ".resume-diff col:first-child, .resume-diff col:nth-child(4) "
+        "{ width: 2.5em; }"
         "</style>"
     )
     return f'{css}\n<div class="resume-diff">\n{diff_table}\n</div>'

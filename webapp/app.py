@@ -5,6 +5,7 @@ import csv
 import io
 import json
 import logging
+import re
 import urllib.parse
 from datetime import date
 from pathlib import Path
@@ -43,6 +44,9 @@ DEFAULT_RESUME_PATH = "resumes/Patryk_Golabek_Resume.pdf"
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.filters["parse_json"] = lambda s: (
     json.loads(s) if isinstance(s, str) and s else (s or {})
+)
+templates.env.filters["clean_newlines"] = lambda s: (
+    re.sub(r"\n{3,}", "\n\n", s.replace("\\n", "\n")) if isinstance(s, str) else (s or "")
 )
 STATUSES = [
     "discovered",

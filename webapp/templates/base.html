@@ -77,6 +77,19 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
+
+        /* Scrollable: always-visible scrollbar + bottom fade mask */
+        .scrollable::-webkit-scrollbar { width: 6px; }
+        .scrollable::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 9999px; }
+        .scrollable::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 9999px; }
+        .scrollable::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        .scrollable {
+            overflow-y: scroll;
+            scrollbar-width: thin;
+            scrollbar-color: #c7c7c7 #f3f4f6;
+            mask-image: linear-gradient(to bottom, black calc(100% - 1.5rem), transparent);
+            -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 1.5rem), transparent);
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
