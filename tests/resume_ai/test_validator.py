@@ -11,7 +11,11 @@ Tests cover:
 
 import pytest
 
-from resume_ai.validator import ValidationResult, _extract_entities, validate_no_fabrication
+from resume_ai.validator import (
+    ValidationResult,
+    _extract_entities,
+    validate_no_fabrication,
+)
 
 # ---------------------------------------------------------------------------
 # UNIT-07: Entity extraction
@@ -109,6 +113,22 @@ class TestExtractEntities:
         entities = _extract_entities(text)
         assert "500" in entities["metrics"]
         assert "1000" in entities["metrics"]
+
+    def test_section_headers_not_companies(self):
+        """Resume section headers like PROFESSIONAL SUMMARY should not appear as companies."""
+        text = "PROFESSIONAL SUMMARY\nExperienced engineer.\n\nWORK EXPERIENCE\nBuilt systems."
+        entities = _extract_entities(text)
+        assert "professional summary" not in entities["companies"]
+        assert "work experience" not in entities["companies"]
+
+    def test_short_caps_words_not_skills(self):
+        """Common 2-letter English words in ALL_CAPS should not be extracted as skills."""
+        text = "Managed IT department. DO this task. Work IN the OR department."
+        entities = _extract_entities(text)
+        assert "it" not in entities["skills"]
+        assert "do" not in entities["skills"]
+        assert "in" not in entities["skills"]
+        assert "or" not in entities["skills"]
 
 
 # ---------------------------------------------------------------------------
@@ -208,6 +228,41 @@ class TestAntiFabrication:
         assert len(result.new_companies) > 0
         assert len(result.new_skills) > 0
         assert len(result.new_metrics) > 0
+
+    def test_jd_skills_not_flagged(self):
+        """Skills from the job description are allowlisted and not flagged."""
+        original = "Experience with Python and Kubernetes for container orchestration"
+        tailored = "Experience with Python, Kubernetes, and Terraform for container orchestration"
+        jd = "Requirements: Terraform, Kubernetes, Python, CI/CD pipelines"
+        result = validate_no_fabrication(original, tailored, job_description=jd)
+        assert result.is_valid is True
+        assert "terraform" not in result.new_skills
+
+    def test_section_headers_not_flagged_as_companies(self):
+        """Section headers like PROFESSIONAL SUMMARY should not be flagged as new companies."""
+        original = "Worked at Google using Python for backend."
+        tailored = (
+            "PROFESSIONAL SUMMARY\nExperience with Python at Google.\n"
+            "WORK EXPERIENCE\nBackend development."
+        )
+        result = validate_no_fabrication(original, tailored)
+        assert "professional summary" not in result.new_companies
+        assert "work experience" not in result.new_companies
+
+    def test_acronym_expansion_not_flagged(self):
+        """Acronym expansions should not be flagged when the acronym is in the original."""
+        original = "Deployed services on GKE clusters using Kubernetes"
+        tailored = "Deployed services on Google Kubernetes Engine clusters using Kubernetes"
+        result = validate_no_fabrication(original, tailored)
+        # "google kubernetes engine" should not be flagged as a new company
+        assert "google kubernetes engine" not in result.new_companies
+
+    def test_jd_param_is_optional(self):
+        """Calling validate_no_fabrication without job_description is backward compatible."""
+        text = "Worked at Google using Python for backend systems"
+        result = validate_no_fabrication(text, text)
+        assert result.is_valid is True
+        assert result.warnings == []
 
 
 # ---------------------------------------------------------------------------

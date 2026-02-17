@@ -40,6 +40,75 @@ class ValidationResult(BaseModel):
 # Known tech keywords for skill extraction
 # ---------------------------------------------------------------------------
 
+_SECTION_HEADERS: set[str] = {
+    "professional summary",
+    "work experience",
+    "technical skills",
+    "professional experience",
+    "education",
+    "certifications",
+    "projects",
+    "skills",
+    "summary",
+    "objective",
+    "achievements",
+    "core competencies",
+    "key achievements",
+    "career highlights",
+    "additional information",
+    "volunteer experience",
+    "publications",
+    "awards",
+    "honors",
+    "references",
+    "contact information",
+}
+
+_ACRONYM_EXPANSIONS: dict[str, list[str]] = {
+    "gke": ["google kubernetes engine"],
+    "eks": ["elastic kubernetes service", "amazon eks"],
+    "aks": ["azure kubernetes service"],
+    "gcp": ["google cloud platform", "google cloud"],
+    "aws": ["amazon web services"],
+    "ci/cd": ["continuous integration", "continuous deployment", "continuous delivery"],
+    "sso": ["single sign-on", "single sign on"],
+    "etl": ["extract transform load"],
+    "rag": ["retrieval augmented generation", "retrieval-augmented generation"],
+    "llm": ["large language model"],
+    "ml": ["machine learning"],
+    "ai": ["artificial intelligence"],
+    "k8s": ["kubernetes"],
+    "sqs": ["simple queue service", "amazon sqs"],
+    "ec2": ["elastic compute cloud", "amazon ec2"],
+    "s3": ["simple storage service", "amazon s3"],
+}
+
+# Common 2-letter English words that should not be extracted as skills from ALL_CAPS patterns
+_SHORT_COMMON_WORDS: set[str] = {
+    "it",
+    "or",
+    "at",
+    "to",
+    "in",
+    "on",
+    "of",
+    "do",
+    "up",
+    "my",
+    "no",
+    "so",
+    "an",
+    "am",
+    "be",
+    "if",
+    "is",
+    "us",
+    "he",
+    "me",
+    "we",
+    "ok",
+}
+
 _TECH_KEYWORDS: set[str] = {
     # Cloud & infrastructure
     "kubernetes",
@@ -316,6 +385,9 @@ def _extract_entities(text: str) -> dict[str, set[str]]:
         if captured and not _is_stop_word(captured.split()[0]):
             companies.add(_normalize(captured))
 
+    # Filter out resume section headers from companies
+    companies = {c for c in companies if c not in _SECTION_HEADERS}
+
     # --- Skills ---
     skills: set[str] = set()
     # Match known tech keywords
@@ -330,9 +402,12 @@ def _extract_entities(text: str) -> dict[str, set[str]]:
         skills.add(_normalize(match.group(0)))
 
     # ALL_CAPS terms (acronyms like GKE, EKS, AWS) -- 2+ uppercase letters
+    # Filter out short common English words (IT, OR, DO, etc.)
     caps_pattern = re.compile(r"\b([A-Z]{2,})\b")
     for match in caps_pattern.finditer(text):
-        skills.add(_normalize(match.group(0)))
+        normalized = _normalize(match.group(0))
+        if normalized not in _SHORT_COMMON_WORDS:
+            skills.add(normalized)
 
     # --- Metrics ---
     metrics: set[str] = set()
@@ -369,9 +444,30 @@ def _extract_entities(text: str) -> dict[str, set[str]]:
 # ---------------------------------------------------------------------------
 
 
+def _is_acronym_expansion(entity: str, reference_skills: set[str]) -> bool:
+    """Check if *entity* is an expansion of an acronym present in *reference_skills*.
+
+    Also checks the reverse: if *entity* is an acronym whose expansion appears in
+    *reference_skills*.
+    """
+    entity_lower = entity.lower()
+    for acronym, expansions in _ACRONYM_EXPANSIONS.items():
+        # entity is an expansion, acronym is in reference
+        if entity_lower in expansions and acronym in reference_skills:
+            return True
+        # entity is the acronym, one of its expansions is in reference
+        if entity_lower == acronym:
+            for expansion in expansions:
+                if expansion in reference_skills:
+                    return True
+    return False
+
+
 def validate_no_fabrication(
     original_text: str,
     tailored_text: str,
+    *,
+    job_description: str = "",
 ) -> ValidationResult:
     """Compare entities in tailored output against the original resume.
 
@@ -385,6 +481,9 @@ def validate_no_fabrication(
         The original resume text (before tailoring).
     tailored_text:
         The tailored resume or cover letter text (after LLM processing).
+    job_description:
+        Optional job description text.  Skills mentioned in the JD are
+        allowlisted (expected in a tailored resume) and will not be flagged.
 
     Returns
     -------
@@ -394,8 +493,30 @@ def validate_no_fabrication(
     original_entities = _extract_entities(original_text)
     tailored_entities = _extract_entities(tailored_text)
 
-    new_companies = sorted(tailored_entities["companies"] - original_entities["companies"])
-    new_skills = sorted(tailored_entities["skills"] - original_entities["skills"])
+    # Extract JD entities to allowlist skills that come from the job description
+    jd_entities = (
+        _extract_entities(job_description)
+        if job_description
+        else {
+            "companies": set(),
+            "skills": set(),
+            "metrics": set(),
+        }
+    )
+    jd_skills = jd_entities["skills"]
+
+    # Companies: subtract original, then filter acronym expansions
+    new_companies = tailored_entities["companies"] - original_entities["companies"]
+    new_companies = sorted(
+        c for c in new_companies if not _is_acronym_expansion(c, original_entities["skills"])
+    )
+
+    # Skills: subtract original AND JD skills, then filter acronym expansions
+    new_skills = tailored_entities["skills"] - original_entities["skills"] - jd_skills
+    new_skills = sorted(
+        s for s in new_skills if not _is_acronym_expansion(s, original_entities["skills"])
+    )
+
     new_metrics = sorted(tailored_entities["metrics"] - original_entities["metrics"])
 
     warnings: list[str] = []
