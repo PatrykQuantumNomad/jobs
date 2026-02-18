@@ -12,7 +12,7 @@
             {% else %}
             <span class="flex-shrink-0 text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">{{ v.resume_type }}</span>
             {% endif %}
-            <span class="text-xs text-gray-400 truncate">{{ v.created_at }}</span>
+            <span class="text-xs text-gray-400 truncate">{{ v.created_at | localtime }}</span>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
             <span class="text-xs text-gray-400">{{ v.model_used }}</span>

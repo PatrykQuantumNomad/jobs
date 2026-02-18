@@ -285,7 +285,7 @@
                                 {{ event.event_type }}{% if event.detail %}: {{ event.detail }}{% endif %}
                             {% endif %}
                         </div>
-                        <div class="text-gray-400 mt-0.5">{{ event.created_at }}</div>
+                        <div class="text-gray-400 mt-0.5">{{ event.created_at | localtime }}</div>
                     </div>
                 </div>
                 {% endfor %}
@@ -341,7 +341,7 @@
 {# ── Metadata Footer ── #}
 <div class="mt-6 mb-4">
     <p class="text-xs text-gray-400 text-center">
-        ID: {{ job.id }} | Dedup: {{ job.dedup_key }}{% if job.first_seen_at %} | First seen: {{ job.first_seen_at }}{% endif %}{% if job.last_seen_at %} | Last seen: {{ job.last_seen_at }}{% endif %} | Added: {{ job.created_at }} | Updated: {{ job.updated_at }}
+        ID: {{ job.id }} | Dedup: {{ job.dedup_key }}{% if job.first_seen_at %} | First seen: {{ job.first_seen_at | localtime }}{% endif %}{% if job.last_seen_at %} | Last seen: {{ job.last_seen_at | localtime }}{% endif %} | Added: {{ job.created_at | localtime }} | Updated: {{ job.updated_at | localtime }}
     </p>
 </div>
 {% endblock %}

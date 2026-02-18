@@ -7,7 +7,7 @@ import json
 import logging
 import re
 import urllib.parse
-from datetime import date
+from datetime import UTC, date
 from pathlib import Path
 from typing import Annotated
 
@@ -74,6 +74,29 @@ templates.env.filters["parse_json"] = lambda s: (
 templates.env.filters["clean_newlines"] = lambda s: (
     re.sub(r"\n{3,}", "\n\n", s.replace("\\n", "\n")) if isinstance(s, str) else (s or "")
 )
+
+
+def _localtime(value: str | None) -> str:
+    """Convert a UTC datetime string from SQLite to local timezone display.
+
+    Handles formats: ``'YYYY-MM-DD HH:MM:SS'`` and ``'YYYY-MM-DDTHH:MM:SS'``.
+    Returns a human-friendly ``'YYYY-MM-DD h:MM AM/PM'`` in the server's local timezone.
+    """
+    if not value or not isinstance(value, str):
+        return value or ""
+    from datetime import datetime
+
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"):
+        try:
+            utc_dt = datetime.strptime(value, fmt).replace(tzinfo=UTC)
+            local_dt = utc_dt.astimezone()
+            return local_dt.strftime("%Y-%m-%d %-I:%M %p")
+        except ValueError:
+            continue
+    return value
+
+
+templates.env.filters["localtime"] = _localtime
 STATUSES = [
     "discovered",
     "scored",
