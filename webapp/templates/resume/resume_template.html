@@ -6,7 +6,7 @@
     <style>
         @page {
             size: letter;
-            margin: 0.6in 0.7in;
+            margin: 0.5in 0.6in;
         }
 
         * {
@@ -18,88 +18,120 @@
         body {
             font-family: 'Calibri', 'Carlito', 'Helvetica Neue', Arial, sans-serif;
             font-size: 10pt;
-            line-height: 1.4;
-            color: #333;
+            line-height: 1.45;
+            color: #2d2d2d;
+            -webkit-font-smoothing: antialiased;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
         }
 
         h1 {
-            font-size: 18pt;
-            font-weight: bold;
-            margin: 0;
+            font-size: 20pt;
+            font-weight: 700;
             text-align: center;
-            color: #111;
+            color: #1a1a1a;
+            letter-spacing: 0.5pt;
+            margin: 0;
         }
 
         .contact-info {
             text-align: center;
             font-size: 9pt;
-            color: #555;
+            color: #4a5568;
             margin-top: 4pt;
+            line-height: 1.6;
         }
 
         .contact-info a {
             color: #2563eb;
-            text-decoration: none;
+            text-decoration: underline;
+        }
+
+        /* Explicit link styling for WeasyPrint PDF rendering */
+        a {
+            color: #2563eb;
+            text-decoration: underline;
+        }
+        a[href]::after {
+            content: none;
         }
 
         h2 {
-            font-size: 13pt;
-            font-weight: bold;
+            font-size: 11pt;
+            font-weight: 700;
             text-transform: uppercase;
-            border-bottom: 1px solid #555;
-            padding-bottom: 2px;
-            margin-top: 14pt;
+            letter-spacing: 1pt;
+            color: #1a365d;
+            border-bottom: 1.5pt solid #1a365d;
+            padding-bottom: 3pt;
+            margin-top: 12pt;
             margin-bottom: 6pt;
-            color: #222;
+            page-break-after: avoid;
+            break-after: avoid;
         }
 
         .summary-text {
             margin-bottom: 4pt;
+            text-align: justify;
+            hyphens: auto;
         }
 
         .skills-section {
-            margin-bottom: 4pt;
+            page-break-inside: avoid;
+            break-inside: avoid;
+            margin-bottom: 3pt;
         }
 
         .skill-category {
-            font-weight: bold;
+            font-weight: 700;
+            color: #1a365d;
         }
 
         .experience-entry {
             page-break-inside: avoid;
-            margin-bottom: 8pt;
+            break-inside: avoid;
+            margin-bottom: 10pt;
         }
 
         .job-header {
             display: flex;
             justify-content: space-between;
-            margin-top: 8pt;
+            align-items: baseline;
+            margin-top: 6pt;
+            margin-bottom: 2pt;
         }
 
         .job-title {
-            font-weight: bold;
+            font-weight: 700;
+            color: #1a1a1a;
         }
 
         .job-company {
-            font-weight: bold;
+            font-weight: 600;
+            color: #2d3748;
         }
 
         .job-period {
             font-style: italic;
-            color: #555;
+            color: #718096;
+            font-size: 9pt;
+            white-space: nowrap;
         }
 
         ul {
-            margin: 2pt 0;
-            padding-left: 16pt;
+            margin: 3pt 0;
+            padding-left: 14pt;
         }
 
         li {
             margin-bottom: 2pt;
+            line-height: 1.4;
         }
 
         .projects-list {
-            margin-top: 2pt;
+            page-break-inside: avoid;
+            break-inside: avoid;
+            margin-top: 4pt;
         }
 
         .projects-list li {
@@ -107,7 +139,9 @@
         }
 
         .education-text {
-            margin-top: 2pt;
+            page-break-inside: avoid;
+            break-inside: avoid;
+            margin-top: 4pt;
         }
     </style>
 </head>
