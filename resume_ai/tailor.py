@@ -26,22 +26,54 @@ education credentials.
 4. You MUST NOT fabricate quantified results (e.g., "reduced costs by 40%") \
 unless that exact metric appears in the original.
 
-WHAT YOU MAY DO:
+KEYWORD EXTRACTION (do this first):
+1. Read the job description carefully and identify the top 10-15 keywords and \
+phrases that represent core requirements (technologies, methodologies, \
+domain terms, soft skills like "cross-functional collaboration").
+2. Note which keywords already appear in the original resume (these just need \
+emphasis via reordering) and which do NOT appear but have equivalent \
+experience (these need rephrasing to bridge the gap).
+3. List the keywords you addressed in the keyword_alignment output field.
+
+PROFESSIONAL SUMMARY — ROLE-SPECIFIC, NOT GENERIC:
+- Write the summary specifically for this role at this company.
+- Open with the candidate's most relevant title/identity that matches the JD \
+(e.g., "Platform engineering leader" not just "experienced engineer").
+- Reference the company by name and connect the candidate's specific \
+strengths to what the role demands.
+- Weave in 3-5 top JD keywords naturally — never keyword-stuff.
+- Include one quantified achievement from the resume that is most relevant.
+- BAD: "Experienced engineer with a passion for technology."
+- GOOD: "Platform engineering leader with 10+ years building Kubernetes-native \
+infrastructure at scale, bringing deep GKE and Terraform expertise to \
+{company_name}'s cloud modernization mission."
+
+BULLET POINT OPTIMIZATION:
+- For each achievement bullet, ask: "Does this use the JD's language?"
+- Where the candidate has equivalent experience, rephrase the bullet to use \
+the JD's terminology while preserving the factual claim. \
+Example: If JD says "observability" and resume says "monitoring" for the \
+same concept, rephrase to "observability" (this is allowed rephrasing, \
+NOT fabrication).
+- Front-load bullets with action verbs that match the JD's tone.
+- Prioritize bullets that demonstrate the JD's stated requirements.
+
+WHAT YOU MAY ALSO DO:
 - Reorder sections to put the most relevant content first.
 - Reorder bullet points within a section by relevance to the target role.
 - Rephrase bullet points for clarity, conciseness, and keyword alignment \
-  while preserving the original meaning and all factual claims.
+while preserving the original meaning and all factual claims.
 - Adjust the professional summary to emphasize the skills and experience \
-  most relevant to the target role.
+most relevant to the target role.
 - Reorder the skills list so the most relevant categories and individual \
-  skills appear first.
+skills appear first.
 - Expand acronyms from the job description on first use \
-  (e.g., "Google Kubernetes Engine (GKE)").
+(e.g., "Google Kubernetes Engine (GKE)").
 
 FORMATTING:
 - Keep the resume to a maximum of 2 pages.
 - Use standard ATS-friendly section headers: PROFESSIONAL SUMMARY, \
-  TECHNICAL SKILLS, WORK EXPERIENCE, KEY PROJECTS, EDUCATION.
+TECHNICAL SKILLS, WORK EXPERIENCE, KEY PROJECTS, EDUCATION.
 - Use clear, concise language.  Avoid jargon the ATS may not recognize.
 
 In your tailoring_notes field, explain what you changed and why.\
@@ -88,7 +120,12 @@ async def tailor_resume(
         f"## Target Job Description\n\n{job_description}\n\n"
         f"## Target Role\n\n"
         f"- **Job Title:** {job_title}\n"
-        f"- **Company:** {company_name}\n"
+        f"- **Company:** {company_name}\n\n"
+        f"## Instructions\n\n"
+        f"Tailor this resume for the {job_title} role at {company_name}. "
+        f"Follow the KEYWORD EXTRACTION, PROFESSIONAL SUMMARY, and BULLET POINT "
+        f"OPTIMIZATION instructions from your system prompt. "
+        f"Populate the keyword_alignment field with the JD keywords you addressed."
     )
 
     try:

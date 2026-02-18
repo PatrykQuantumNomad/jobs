@@ -82,6 +82,20 @@ class TestTailorResume:
         assert "MUST NOT" in SYSTEM_PROMPT
         assert "fabricate" in SYSTEM_PROMPT.lower()
 
+    def test_system_prompt_contains_keyword_extraction(self):
+        """SYSTEM_PROMPT includes keyword extraction instructions."""
+        assert "KEYWORD EXTRACTION" in SYSTEM_PROMPT
+        assert "keyword_alignment" in SYSTEM_PROMPT
+
+    def test_system_prompt_contains_summary_instructions(self):
+        """SYSTEM_PROMPT includes role-specific summary instructions."""
+        assert "PROFESSIONAL SUMMARY" in SYSTEM_PROMPT
+        assert "ROLE-SPECIFIC" in SYSTEM_PROMPT
+
+    def test_system_prompt_contains_bullet_optimization(self):
+        """SYSTEM_PROMPT includes bullet point optimization instructions."""
+        assert "BULLET POINT OPTIMIZATION" in SYSTEM_PROMPT
+
 
 @pytest.mark.unit
 class TestFormatResumeAsText:

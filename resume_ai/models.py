@@ -76,6 +76,14 @@ class TailoredResume(BaseModel):
             "was adjusted for this specific role."
         ),
     )
+    keyword_alignment: list[str] = Field(
+        default_factory=list,
+        description=(
+            "List of specific keywords and phrases extracted from the job description "
+            "that were naturally incorporated into the tailored resume content. "
+            "Each entry should be the exact keyword/phrase from the JD."
+        ),
+    )
 
 
 class CoverLetter(BaseModel):

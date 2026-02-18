@@ -108,7 +108,7 @@ class TestTailoredResume:
         assert r.education == "BSc Computer Science"
 
     def test_model_dump_keys(self):
-        """model_dump(mode='json') returns dict with all six keys."""
+        """model_dump(mode='json') returns dict with all seven keys."""
         r = self._make_resume()
         dumped = r.model_dump(mode="json")
         expected_keys = {
@@ -118,6 +118,7 @@ class TestTailoredResume:
             "key_projects",
             "education",
             "tailoring_notes",
+            "keyword_alignment",
         }
         assert set(dumped.keys()) == expected_keys
 
@@ -142,6 +143,16 @@ class TestTailoredResume:
                 key_projects=[],
                 education="BSc",
             )  # type: ignore[call-arg]
+
+    def test_keyword_alignment_defaults_to_empty_list(self):
+        """keyword_alignment defaults to empty list when not provided."""
+        r = self._make_resume()
+        assert r.keyword_alignment == []
+
+    def test_keyword_alignment_accepts_list(self):
+        """keyword_alignment accepts a list of keyword strings."""
+        r = self._make_resume(keyword_alignment=["kubernetes", "terraform"])
+        assert r.keyword_alignment == ["kubernetes", "terraform"]
 
 
 @pytest.mark.unit
