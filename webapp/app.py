@@ -7,7 +7,7 @@ import json
 import logging
 import re
 import urllib.parse
-from datetime import UTC, date
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Annotated
 
@@ -84,8 +84,6 @@ def _localtime(value: str | None) -> str:
     """
     if not value or not isinstance(value, str):
         return value or ""
-    from datetime import datetime
-
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"):
         try:
             utc_dt = datetime.strptime(value, fmt).replace(tzinfo=UTC)
@@ -349,7 +347,9 @@ async def _run_resume_tailor(
         )
         name_slug = candidate_name.replace(" ", "_")
         company_slug = job["company"].replace(" ", "_")[:30]
-        filename = f"{name_slug}_Resume_{company_slug}_{date.today().isoformat()}.pdf"
+        now = datetime.now()
+        timestamp = now.strftime("%Y-%m-%d_%H%M%S")
+        filename = f"{name_slug}_Resume_{company_slug}_{timestamp}.pdf"
         RESUMES_TAILORED_DIR.mkdir(parents=True, exist_ok=True)
         output_path = RESUMES_TAILORED_DIR / filename
 
@@ -544,7 +544,9 @@ async def _run_cover_letter(
         )
         name_slug = candidate_name.replace(" ", "_")
         company_slug = job["company"].replace(" ", "_")[:30]
-        filename = f"{name_slug}_CoverLetter_{company_slug}_{date.today().isoformat()}.pdf"
+        now = datetime.now()
+        timestamp = now.strftime("%Y-%m-%d_%H%M%S")
+        filename = f"{name_slug}_CoverLetter_{company_slug}_{timestamp}.pdf"
         RESUMES_TAILORED_DIR.mkdir(parents=True, exist_ok=True)
         output_path = RESUMES_TAILORED_DIR / filename
 
