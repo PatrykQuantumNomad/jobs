@@ -90,9 +90,10 @@ None active. Previous milestone blockers resolved:
 | 004 | Redesign job detail page: intent-based 2-column layout | 2026-02-17 | fe8eded | [004-redesign-job-detail-page-layout](./quick/004-redesign-job-detail-page-layout/) |
 | 005 | Fix resume PDF header name and improve anti-fabrication validator | 2026-02-17 | a5888f8 | [005-fix-resume-pdf-header-name-and-improve-a](./quick/005-fix-resume-pdf-header-name-and-improve-a/) |
 | 006 | Improve resume AI prompts (keyword extraction, role-specific summary) and fix PDF layout | 2026-02-18 | bd51728 | [006-improve-resume-ai-prompts-and-fix-pdf-ou](./quick/006-improve-resume-ai-prompts-and-fix-pdf-ou/) |
+| 007 | Add interview prep button: generate tailored interview questions via Claude CLI | 2026-02-22 | e9ec08f | [007-add-button-to-generate-interview-questio](./quick/007-add-button-to-generate-interview-questio/) |
 
 ## Session Continuity
 
-Last session: 2026-02-17
-Stopped at: Research-backed resume template rewrite (ATS, design, WeasyPrint)
+Last session: 2026-02-22
+Stopped at: Completed quick-007 (interview prep button)
 Resume with: `/gsd:new-milestone` or next quick task
