@@ -325,6 +325,28 @@
         <div id="resume-ai-result"></div>
     </div>
 
+    {# Interview Prep #}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">Interview Prep</h2>
+            <div class="flex items-center gap-2">
+                <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/interview-questions"
+                        hx-target="#interview-prep-result"
+                        hx-swap="innerHTML"
+                        hx-indicator="#interview-prep-spinner"
+                        hx-disabled-elt="this"
+                        class="bg-gray-800 text-white px-4 py-1.5 rounded-lg text-sm font-medium
+                               hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    Generate Questions
+                </button>
+                <div id="interview-prep-spinner" class="htmx-indicator">
+                    <span class="text-xs text-gray-500">Generating interview questions... 10-15 seconds</span>
+                </div>
+            </div>
+        </div>
+        <div id="interview-prep-result"></div>
+    </div>
+
     {# Generated Documents #}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Generated Documents</h2>

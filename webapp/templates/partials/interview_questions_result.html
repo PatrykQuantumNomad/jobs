@@ -1,0 +1,41 @@
+<div class="space-y-5">
+    {# Technical Questions #}
+    <div>
+        <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-2">Technical Questions</h3>
+        <ol class="list-decimal list-inside space-y-2">
+            {% for q in technical_questions %}
+            <li class="text-sm text-gray-700 leading-relaxed">{{ q }}</li>
+            {% endfor %}
+        </ol>
+    </div>
+
+    {# Behavioral Questions #}
+    <div>
+        <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-2">Behavioral Questions</h3>
+        <ol class="list-decimal list-inside space-y-2">
+            {% for q in behavioral_questions %}
+            <li class="text-sm text-gray-700 leading-relaxed">{{ q }}</li>
+            {% endfor %}
+        </ol>
+    </div>
+
+    {# Questions to Ask the Interviewer #}
+    <div>
+        <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-2">Questions to Ask the Interviewer</h3>
+        <ul class="list-disc list-inside space-y-2">
+            {% for q in company_specific_questions %}
+            <li class="text-sm text-gray-700 leading-relaxed">{{ q }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    {# Key Topics to Review #}
+    <div>
+        <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-2">Key Topics to Review</h3>
+        <div class="flex flex-wrap gap-2">
+            {% for topic in key_topics %}
+            <span class="text-xs px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 font-medium">{{ topic }}</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
