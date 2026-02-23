@@ -1,0 +1,56 @@
+<!-- Global lightbox overlay for full-size screenshot viewing.
+     Any <img data-lightbox> on the page will open this on click. -->
+<div
+  id="lightbox-overlay"
+  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm cursor-zoom-out"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Full-size image"
+>
+  <img
+    id="lightbox-img"
+    src=""
+    alt=""
+    class="max-w-[92vw] max-h-[92vh] rounded-lg shadow-2xl object-contain"
+  />
+</div>
+
+<script>
+function initLightbox() {
+  const overlay = document.getElementById('lightbox-overlay');
+  const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement | null;
+  if (!overlay || !lightboxImg) return;
+
+  // Open lightbox on any data-lightbox image click
+  document.querySelectorAll<HTMLImageElement>('img[data-lightbox]').forEach(img => {
+    img.style.cursor = 'zoom-in';
+    img.addEventListener('click', (e) => {
+      e.stopPropagation();
+      lightboxImg.src = img.src;
+      lightboxImg.alt = img.alt;
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    });
+  });
+
+  // Close on overlay click
+  overlay.addEventListener('click', closeLightbox);
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
+      closeLightbox();
+    }
+  });
+
+  function closeLightbox() {
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+}
+
+initLightbox();
+document.addEventListener('astro:page-load', initLightbox);
+</script>

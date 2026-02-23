@@ -34,6 +34,17 @@ const tabs = [
     icon: "brain",
   },
   {
+    id: "interview-prep",
+    label: "Interview Prep",
+    image: "/screenshots/interview-prep.png",
+    alt: "AI-generated interview questions tailored to the job description",
+
+    title: "Interview Preparation",
+    description:
+      "Generate tailored technical, behavioral, and company-specific interview questions from any job posting — with key topics to review.",
+    icon: "mic",
+  },
+  {
     id: "docs",
     label: "Generated Docs",
     image: "/screenshots/generate-docs.png",
@@ -54,7 +65,7 @@ const tabs = [
       AI-Powered Tools
     </h2>
     <p class="mt-3 text-surface-600 text-center max-w-2xl mx-auto">
-      Score jobs, tailor resumes, and generate cover letters — all powered by Claude
+      Score jobs, tailor resumes, generate cover letters, and prep for interviews — all powered by Claude
     </p>
 
     <!-- Tab bar -->
@@ -79,6 +90,7 @@ const tabs = [
       {tabs.map((tab, i) => (
         <img
           data-ai-panel={tab.id}
+          data-lightbox
           src={tab.image}
           alt={tab.alt}
           loading="lazy"
@@ -121,6 +133,13 @@ const tabs = [
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="2" y="4" width="20" height="16" rx="2" />
                 <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+            )}
+            {tab.icon === "mic" && (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="22" />
               </svg>
             )}
             {tab.icon === "archive" && (

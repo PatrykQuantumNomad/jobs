@@ -14,14 +14,10 @@ import logging
 import threading
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from apply_engine.config import ApplyMode
 from apply_engine.dedup import is_already_applied
 from apply_engine.events import ApplyEvent, ApplyEventType
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -192,7 +188,7 @@ class ApplyEngine:
                         job_dedup_key=dedup_key,
                     )
                 )
-                self._fill_external_form(job, mode, emit)
+                self._fill_external_form(job, emit)
                 return
 
             # Browser platform (indeed, dice)
@@ -368,7 +364,7 @@ class ApplyEngine:
             if pw and ctx:
                 close_browser(pw, ctx)
 
-    def _fill_external_form(self, job: dict, mode: str, emit: Callable) -> None:
+    def _fill_external_form(self, job: dict, emit: Callable) -> None:
         """Handle external ATS apply (e.g., RemoteOK jobs with apply_url)."""
         dedup_key = job.get("dedup_key", "")
         apply_url = job.get("apply_url") or job.get("url", "")

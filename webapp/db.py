@@ -18,7 +18,7 @@ else:
 # Schema
 # ---------------------------------------------------------------------------
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS jobs (
@@ -146,6 +146,9 @@ MIGRATIONS: dict[int, list[str]] = {
         "ALTER TABLE jobs ADD COLUMN ai_score INTEGER",
         "ALTER TABLE jobs ADD COLUMN ai_score_breakdown TEXT",
         "ALTER TABLE jobs ADD COLUMN ai_scored_at TEXT",
+    ],
+    8: [
+        "ALTER TABLE jobs ADD COLUMN interview_prep TEXT",
     ],
 }
 
@@ -505,6 +508,18 @@ def update_ai_score(dedup_key: str, score: int, breakdown: dict) -> None:
             (score, json.dumps(breakdown), now, now, dedup_key),
         )
     log_activity(dedup_key, "ai_scored", new_value=str(score))
+
+
+def update_interview_prep(dedup_key: str, prep_data: dict) -> None:
+    """Store interview prep questions for a job (overwrites previous)."""
+    now = datetime.now().isoformat()
+    with get_conn() as conn:
+        conn.execute(
+            """UPDATE jobs
+               SET interview_prep = ?, updated_at = ?
+               WHERE dedup_key = ?""",
+            (json.dumps(prep_data), now, dedup_key),
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 """Job Tracker Web Dashboard — FastAPI + htmx + SQLite."""
 
 import asyncio
+import contextlib
 import csv
 import io
 import json
@@ -783,6 +784,8 @@ async def interview_questions_endpoint(request: Request, dedup_key: str):
             company_name=job["company"],
         )
 
+        prep_data = result.model_dump(mode="json")
+        db.update_interview_prep(dedup_key, prep_data)
         db.log_activity(dedup_key, "interview_prep", detail="Generated interview questions")
 
         return templates.TemplateResponse(
@@ -978,6 +981,12 @@ async def job_detail(request: Request, dedup_key: str):
 
     activity = db.get_activity_log(dedup_key)
 
+    # Parse saved interview prep if present
+    saved_interview_prep = None
+    if job.get("interview_prep"):
+        with contextlib.suppress(json.JSONDecodeError, TypeError):
+            saved_interview_prep = json.loads(job["interview_prep"])
+
     return templates.TemplateResponse(
         request,
         "job_detail.html",
@@ -985,6 +994,7 @@ async def job_detail(request: Request, dedup_key: str):
             "job": job,
             "statuses": STATUSES,
             "activity": activity,
+            "saved_interview_prep": saved_interview_prep,
         },
     )
 

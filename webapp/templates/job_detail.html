@@ -327,24 +327,31 @@
 
     {# Interview Prep #}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center justify-between">
             <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">Interview Prep</h2>
-            <div class="flex items-center gap-2">
-                <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/interview-questions"
-                        hx-target="#interview-prep-result"
-                        hx-swap="innerHTML"
-                        hx-indicator="#interview-prep-spinner"
-                        hx-disabled-elt="this"
-                        class="bg-gray-800 text-white px-4 py-1.5 rounded-lg text-sm font-medium
-                               hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                    Generate Questions
-                </button>
-                <div id="interview-prep-spinner" class="htmx-indicator">
-                    <span class="text-xs text-gray-500">Generating interview questions... 10-15 seconds</span>
-                </div>
-            </div>
+            <button hx-post="/jobs/{{ job.dedup_key | urlencode }}/interview-questions"
+                    hx-target="#interview-prep-result"
+                    hx-swap="innerHTML"
+                    hx-indicator="#interview-prep-spinner"
+                    hx-disabled-elt="this"
+                    class="bg-gray-800 text-white px-4 py-1.5 rounded-lg text-sm font-medium
+                           hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                Generate Questions
+            </button>
         </div>
-        <div id="interview-prep-result"></div>
+        <div id="interview-prep-spinner" class="htmx-indicator text-center py-3">
+            <span class="text-xs text-gray-500">Generating interview questions... 10-15 seconds</span>
+        </div>
+        <div id="interview-prep-result" class="max-h-[28rem] overflow-y-auto mt-3 pr-1 scrollable">
+            {% if saved_interview_prep %}
+            {% with technical_questions=saved_interview_prep.technical_questions,
+                    behavioral_questions=saved_interview_prep.behavioral_questions,
+                    company_specific_questions=saved_interview_prep.company_specific_questions,
+                    key_topics=saved_interview_prep.key_topics %}
+            {% include "partials/interview_questions_result.html" %}
+            {% endwith %}
+            {% endif %}
+        </div>
     </div>
 
     {# Generated Documents #}

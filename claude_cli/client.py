@@ -27,14 +27,13 @@ log = logging.getLogger(__name__)
 _AUTH_KEYWORDS = ["not authenticated", "login", "auth", "setup-token", "subscription"]
 
 
-def _detect_auth_error(returncode: int, stderr: str, envelope: dict | None) -> bool:
+def _detect_auth_error(stderr: str, envelope: dict | None) -> bool:
     """Check whether a CLI error indicates an authentication failure.
 
     Inspects stderr text and, when available, the response envelope's ``result``
     field for known authentication-related keywords.
 
     Args:
-        returncode: Process exit code.
         stderr: Decoded stderr output.
         envelope: Parsed JSON envelope, or None if stdout was not valid JSON.
 
@@ -149,7 +148,7 @@ class _ExecutionResult:
         # Check for non-zero exit first
         if self.returncode != 0:
             envelope = self._try_parse_envelope()
-            if _detect_auth_error(self.returncode, self.stderr, envelope):
+            if _detect_auth_error(self.stderr, envelope):
                 raise CLIAuthError(
                     f"Claude CLI authentication failure (exit code {self.returncode}). "
                     "Run 'claude setup-token' to authenticate."
@@ -165,7 +164,7 @@ class _ExecutionResult:
             parsed = parse_cli_response(self.stdout, output_model)
         except Exception:
             envelope = self._try_parse_envelope()
-            if envelope and _detect_auth_error(0, self.stderr, envelope):
+            if envelope and _detect_auth_error(self.stderr, envelope):
                 raise CLIAuthError(
                     "Claude CLI authentication failure detected in response. "
                     "Run 'claude setup-token' to authenticate."
