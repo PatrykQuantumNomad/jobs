@@ -5,4 +5,4 @@ Sitemap: https://jobflow.patrykgolabek.dev/sitemap-index.xml
 
 # LLM-friendly plain-text summary
 # See https://llmstxt.org for specification
-llms.txt: https://jobflow.patrykgolabek.dev/llms.txt
+# llms.txt: https://jobflow.patrykgolabek.dev/llms.txt
